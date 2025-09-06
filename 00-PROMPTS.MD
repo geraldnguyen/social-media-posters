@@ -26,3 +26,6 @@ Create or update a CHANGELOG.MD file with a summary of the changes
 
 Add support for running the script locally by loading the secret from a local .env file if present
 
+## Adjustments - Support remote media
+
+If the media file path is from the internet (http or https) and size less than 5MB (configurable as an parameter) download the file, then use the downloaded file's path to upload.
