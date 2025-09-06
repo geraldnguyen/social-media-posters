@@ -1,3 +1,46 @@
+# Resolving Import Errors for Common Utilities
+
+If you encounter import errors such as `Import "social_media_utils" could not be resolved` when running or editing the post-to-* scripts, follow these steps to ensure Python and your editor can find the `common` utilities:
+
+## 1. Add `common` to PYTHONPATH
+
+- Create a `.env` file in your project root (if it doesn't exist).
+- Add the following line:
+  - On Windows:
+    ```
+    PYTHONPATH=${PYTHONPATH};${workspaceFolder}/common
+    ```
+  - On macOS/Linux:
+    ```
+    PYTHONPATH=${PYTHONPATH}:${workspaceFolder}/common
+    ```
+
+This allows both your scripts and VS Code to resolve imports like `from social_media_utils import ...`.
+
+## 2. (Optional) VS Code Settings
+
+You can also add the following to `.vscode/settings.json` to help Pylance find the `common` directory:
+
+```json
+{
+  "python.analysis.extraPaths": [
+    "./common"
+  ]
+}
+```
+
+## 3. Keep the sys.path Modification in Scripts
+
+Each script already includes:
+
+```python
+sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
+```
+
+This ensures the script works when run directly.
+
+---
+By following these steps, you can avoid import errors and keep your code modular and reusable across all post-to-* actions.
 # Social Media Posters
 
 A collection of GitHub Actions for posting content to various social media platforms. These actions provide a simple and automated way to share content across multiple social networks from your GitHub workflows.
