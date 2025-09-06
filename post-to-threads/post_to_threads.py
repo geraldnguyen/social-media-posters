@@ -5,6 +5,16 @@ Post content to Threads using the Threads API.
 
 import os
 import sys
+from pathlib import Path
+
+# Load environment variables from a local .env file if present (for local development)
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+except ImportError:
+    pass  # python-dotenv is not installed; skip loading .env
 import logging
 import requests
 import time
