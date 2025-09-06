@@ -1,0 +1,58 @@
+name: 'Post to Threads'
+description: 'Post content to Threads using the Threads API'
+author: 'Gerald Nguyen'
+branding:
+  icon: 'message-circle'
+  color: 'black'
+
+inputs:
+  access-token:
+    description: 'Threads User Access Token'
+    required: true
+  user-id:
+    description: 'Threads User ID'
+    required: true
+  content:
+    description: 'Content to post to Threads'
+    required: true
+  media-file:
+    description: 'Publicly accessible URL to image or video file (optional)'
+    required: false
+  link:
+    description: 'Link to attach to the post (optional)'
+    required: false
+  log-level:
+    description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
+    required: false
+    default: 'INFO'
+
+outputs:
+  post-id:
+    description: 'ID of the created post'
+  post-url:
+    description: 'URL of the created post'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r ${{ github.action_path }}/requirements.txt
+    
+    - name: Post to Threads
+      shell: bash
+      env:
+        THREADS_ACCESS_TOKEN: ${{ inputs.access-token }}
+        THREADS_USER_ID: ${{ inputs.user-id }}
+        POST_CONTENT: ${{ inputs.content }}
+        MEDIA_FILE: ${{ inputs.media-file }}
+        POST_LINK: ${{ inputs.link }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+      run: |
+        python ${{ github.action_path }}/post_to_threads.py
