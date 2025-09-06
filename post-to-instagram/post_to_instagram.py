@@ -12,17 +12,7 @@ from pathlib import Path
 from PIL import Image
 
 # Add common module to path
-import sys
-# NOTE: This script assumes you are running from the project root (social-media-posters)
-# and that 'common' is a package (contains __init__.py).
-from common.social_media_utils import (
-    setup_logging,
-    get_required_env_var,
-    get_optional_env_var,
-    validate_post_content,
-    handle_api_error,
-    log_success
-)
+sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
 
 from social_media_utils import (
     setup_logging,
