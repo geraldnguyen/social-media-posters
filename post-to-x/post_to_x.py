@@ -7,12 +7,10 @@ import os
 import sys
 import logging
 import tweepy
-from pathlib import Path
-
-# Add common module to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
-
-from social_media_utils import (
+import sys
+# NOTE: This script assumes you are running from the project root (social-media-posters)
+# and that 'common' is a package (contains __init__.py).
+from common.social_media_utils import (
     setup_logging,
     get_required_env_var,
     get_optional_env_var,
