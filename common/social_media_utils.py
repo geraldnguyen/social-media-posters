@@ -4,6 +4,8 @@ import os
 import sys
 import logging
 from typing import Optional, Dict, Any
+import requests
+from pathlib import Path
 
 
 def setup_logging(level: str = "INFO") -> logging.Logger:
@@ -58,17 +60,53 @@ def log_success(platform: str, post_id: Optional[str] = None) -> None:
         logging.info(f"Successfully posted to {platform}")
 
 
-def parse_media_files(media_input: str) -> list:
-    """Parse media files input (comma-separated paths)."""
+def download_file_if_url(file_path, max_download_size_mb=5):
+    """
+    If file_path is an http(s) URL and file size is less than max_download_size_mb, download it and return the local path.
+    Otherwise, return the original file_path.
+    """
+    max_bytes = max_download_size_mb * 1024 * 1024
+    local_path = file_path
+    if file_path.startswith("http://") or file_path.startswith("https://"):
+        try:
+            resp = requests.get(file_path, stream=True, timeout=10)
+            resp.raise_for_status()
+            content_length = resp.headers.get('Content-Length')
+            if content_length and int(content_length) > max_bytes:
+                raise ValueError(f"File at {file_path} exceeds max size of {max_download_size_mb}MB")
+            # Download to temp file
+            suffix = Path(file_path).suffix or ".tmp"
+            temp = Path("_downloaded_media_" + os.urandom(8).hex() + suffix)
+            total = 0
+            with open(temp, "wb") as f:
+                for chunk in resp.iter_content(1024 * 64):
+                    total += len(chunk)
+                    if total > max_bytes:
+                        f.close()
+                        temp.unlink(missing_ok=True)
+                        raise ValueError(f"File at {file_path} exceeds max size of {max_download_size_mb}MB while downloading")
+                    f.write(chunk)
+            local_path = str(temp)
+        except Exception as e:
+            logging.error(f"Failed to download media from {file_path}: {str(e)}")
+            raise
+    return local_path
+
+
+def parse_media_files(media_input: str, max_download_size_mb: int = 5):
+    """
+    Parse media files input (comma-separated paths). For remote files, download if under max_download_size_mb.
+    Returns a list of local file paths (downloaded or original).
+    """
     if not media_input:
         return []
-    
+
     media_files = [f.strip() for f in media_input.split(',') if f.strip()]
-    
-    # Validate files exist
+    local_files = []
     for file_path in media_files:
-        if not os.path.exists(file_path):
+        local_path = download_file_if_url(file_path, max_download_size_mb)
+        if not os.path.exists(local_path):
             logging.error(f"Media file not found: {file_path}")
             sys.exit(1)
-    
-    return media_files
+        local_files.append(local_path)
+    return local_files
