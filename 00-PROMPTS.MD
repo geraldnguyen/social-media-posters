@@ -1,4 +1,6 @@
-# Initialization - GitHub Agent
+# 00 - Initialization
+
+## GitHub Agent
 
 Create multiple GitHub Actions that other can use:
 - Post to X
@@ -17,4 +19,10 @@ Each action is backed by a python script performing appropriate posting tasks. A
 You are free to clean up the codes, standardize the behaviors, and extract common functionality to a shared module if necessary.
 
 Create or update a CHANGELOG.MD file with a summary of the changes
+
+## Adjustments - add instructions for resolving common module import errors with PYTHONPATH and VS Code settings 
+
+## Adjustments - Run the scripts locally
+
+Add support for running the script locally by loading the secret from a local .env file if present
 
