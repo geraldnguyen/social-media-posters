@@ -111,7 +111,7 @@ def post_to_x():
             media_ids=media_ids
         )
         
-        post_id = response.data['id']
+        post_id = response.data['id'] # type: ignore
         post_url = f"https://twitter.com/i/web/status/{post_id}"
         
         # Output for GitHub Actions
