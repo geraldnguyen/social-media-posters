@@ -86,6 +86,20 @@ You need to have an X Developer Account and create an app to get the required AP
     media-files: "screenshots/demo.png"
 ```
 
+## Templated Content: JSON Source
+
+This action supports API-driven templated content using the `@{json...}` or `@{api...}` syntax. Example:
+
+```
+POST_CONTENT=API-driven: @{json.stories[0].description}, @{api.stories[0].permalink}
+CONTENT_JSON=https://tellstory.net/stories/random/index.json
+```
+
+- The action will fetch the JSON from the URL in `CONTENT_JSON`.
+- It will extract values using the JSON path in the template.
+- Both dot notation and array bracket notation are supported.
+- Powered by the `jsonpath-ng` library.
+
 ## Security Notes
 
 - Store all API credentials as GitHub repository secrets

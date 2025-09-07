@@ -69,3 +69,5 @@ Expect:
 - Travel the json path, supporting both dot notation and array bracket notation to retrieve the value
 
 Create unit tests for the changes
+
+Then run the tests

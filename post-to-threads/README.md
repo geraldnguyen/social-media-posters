@@ -180,3 +180,17 @@ jobs:
 ## Note
 
 The Threads API is relatively new and may have changes or updates. Please refer to the official [Threads API documentation](https://developers.facebook.com/docs/threads) for the most current information.
+
+## Templated Content: JSON Source
+
+This action supports API-driven templated content using the `@{json...}` or `@{api...}` syntax. Example:
+
+```
+POST_CONTENT=API-driven: @{json.stories[0].description}, @{api.stories[0].permalink}
+CONTENT_JSON=https://tellstory.net/stories/random/index.json
+```
+
+- The action will fetch the JSON from the URL in `CONTENT_JSON`.
+- It will extract values using the JSON path in the template.
+- Both dot notation and array bracket notation are supported.
+- Powered by the `jsonpath-ng` library.

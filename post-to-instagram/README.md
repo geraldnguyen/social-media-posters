@@ -151,6 +151,20 @@ You need to have an Instagram Business or Creator account and create a Facebook 
    - Ensure your token has the correct permissions
    - Check if your token has expired and needs renewal
 
+## Templated Content: JSON Source
+
+This action supports API-driven templated content using the `@{json...}` or `@{api...}` syntax. Example:
+
+```
+POST_CONTENT=API-driven: @{json.stories[0].description}, @{api.stories[0].permalink}
+CONTENT_JSON=https://tellstory.net/stories/random/index.json
+```
+
+- The action will fetch the JSON from the URL in `CONTENT_JSON`.
+- It will extract values using the JSON path in the template.
+- Both dot notation and array bracket notation are supported.
+- Powered by the `jsonpath-ng` library.
+
 ## Credits
 
 - Built using Instagram Graph API
