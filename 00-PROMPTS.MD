@@ -54,3 +54,18 @@ Implement the function process_templated_content_if_needed
 
     return content
 ```
+
+## Adjustments - API-driven templated content
+
+Support the "json" template source:
+
+Given the following values in environment:
+
+POST_CONTENT=API-driven: @{json.stories[0].description}, @{api.stories[0].permalink}
+CONTENT_JSON=https://tellstory.net/stories/random/index.json
+
+Expect:
+- Retrieve the json at the URL given in CONTENT_JSON variable
+- Travel the json path, supporting both dot notation and array bracket notation to retrieve the value
+
+Create unit tests for the changes
