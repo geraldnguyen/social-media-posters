@@ -23,6 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
 
 from social_media_utils import (
+    process_templated_content_if_needed,
     setup_logging,
     get_required_env_var,
     get_optional_env_var,
@@ -90,6 +91,7 @@ def post_to_x():
     try:
         # Get post content
         content = get_required_env_var("POST_CONTENT")
+        content = process_templated_content_if_needed(content)
         
         # Validate content (X has a 280 character limit)
         if not validate_post_content(content, max_length=280):
@@ -101,25 +103,30 @@ def post_to_x():
         
         # Create X client
         client = create_x_client()
-        
+
         # Upload media if provided
         media_ids = upload_media(client, media_files) if media_files else None
-        
+
+        # DRY RUN GUARD
+        from social_media_utils import dry_run_guard
+        request_body = {"text": content, "media_ids": media_ids}
+        dry_run_guard("X", content, media_files, request_body)
+
         # Create the post
         response = client.create_tweet(
             text=content,
             media_ids=media_ids
         )
-        
+
         post_id = response.data['id'] # type: ignore
         post_url = f"https://twitter.com/i/web/status/{post_id}"
-        
+
         # Output for GitHub Actions
         if 'GITHUB_OUTPUT' in os.environ:
             with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                 f.write(f"post-id={post_id}\n")
                 f.write(f"post-url={post_url}\n")
-        
+
         log_success("X", post_id)
         logger.info(f"Post URL: {post_url}")
         

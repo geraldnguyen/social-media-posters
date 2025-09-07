@@ -92,15 +92,19 @@ def post_to_facebook():
         
         # Create Facebook client
         graph = create_facebook_client()
-        
+
         # Prepare post data
         post_data = {
             'message': content
         }
-        
+
         if link:
             post_data['link'] = link
-        
+
+        # DRY RUN GUARD
+        from social_media_utils import dry_run_guard
+        dry_run_guard("Facebook Page", content, media_files, post_data)
+
         # Handle media files
         if media_files:
             if len(media_files) == 1:

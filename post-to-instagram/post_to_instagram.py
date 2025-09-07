@@ -162,6 +162,13 @@ def post_to_instagram():
         
         # Create media container
         logger.info("Creating media container...")
+        # DRY RUN GUARD
+        from social_media_utils import dry_run_guard
+        dry_run_guard("Instagram", content, [media_url], {
+            'caption': content,
+            'media_type': media_type,
+            'media_url': media_url
+        })
         creation_id = ig_api.create_media_container(
             user_id=user_id,
             image_url=media_url,

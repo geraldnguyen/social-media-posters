@@ -6,7 +6,24 @@ import logging
 from typing import Optional, Dict, Any
 import requests
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 
+# --- DRY RUN GUARD ---
+def dry_run_guard(platform: str, content: str, media_files: list, request_body: dict):
+    """
+    If DRY_RUN env var is set to true, print info and exit instead of posting.
+    """
+    dry_run = os.getenv('DRY_RUN', '').lower() in ('1', 'true', 'yes')
+    if dry_run:
+        logging.info(f"[DRY RUN] Would post to {platform}.")
+        logging.info(f"[DRY RUN] Content: {content}")
+        logging.info(f"[DRY RUN] Media files: {media_files}")
+        logging.info(f"[DRY RUN] Request body: {request_body}")
+        print(f"[DRY RUN] Would post to {platform}.")
+        print(f"[DRY RUN] Content: {content}")
+        print(f"[DRY RUN] Media files: {media_files}")
+        print(f"[DRY RUN] Request body: {request_body}")
+        sys.exit(0)
 
 def setup_logging(level: str = "INFO") -> logging.Logger:
     """Setup logging configuration for social media actions."""
@@ -26,6 +43,53 @@ def get_required_env_var(var_name: str) -> str:
         logging.error(f"Required environment variable {var_name} not found")
         sys.exit(1)
     return value
+
+def process_templated_content_if_needed(content: str) -> str:
+    """Process templated content if context is provided."""
+    import re
+
+    def get_timezone():
+        tz = os.getenv('TIME_ZONE', 'UTC')
+        logging.debug(f"Resolving timezone: {tz}")
+        if tz.upper() == 'UTC':
+            logging.info("Using UTC timezone.")
+            return timezone.utc
+        m = re.match(r'UTC([+-]\d+)$', tz.upper())
+        if m:
+            offset = int(m.group(1))
+            logging.info(f"Using timezone offset: UTC{offset:+d}")
+            return timezone(timedelta(hours=offset))
+        logging.warning(f"Unrecognized TIME_ZONE '{tz}', defaulting to UTC.")
+        return timezone.utc
+
+    def builtin_value(key: str) -> str:
+        now = datetime.now(get_timezone())
+        if key == 'CURR_DATE':
+            val = now.strftime('%Y-%m-%d')
+        elif key == 'CURR_TIME':
+            val = now.strftime('%H:%M:%S')
+        elif key == 'CURR_DATETIME':
+            val = now.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            val = ''
+        logging.info(f"Resolved builtin.{key} to '{val}'")
+        return val
+
+    def replace_placeholder(match):
+        source, key = match.group(1), match.group(2)
+        if source == 'env':
+            val = os.getenv(key, '')
+            logging.info(f"Resolved env.{key} to '{val}'")
+            return val
+        elif source == 'builtin':
+            return builtin_value(key)
+        logging.warning(f"Unknown placeholder source: {source}")
+        return match.group(0)
+
+    pattern = re.compile(r'\@\{(env|builtin)\.([A-Z0-9_]+)\}')
+    result = pattern.sub(replace_placeholder, content)
+    logging.info(f"Processed templated content: from {content} --> '{result}'")
+    return result
 
 
 def get_optional_env_var(var_name: str, default: str = "") -> str:

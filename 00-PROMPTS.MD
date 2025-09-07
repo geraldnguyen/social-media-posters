@@ -29,3 +29,28 @@ Add support for running the script locally by loading the secret from a local .e
 ## Adjustments - Support remote media
 
 If the media file path is from the internet (http or https) and size less than 5MB (configurable as an parameter) download the file, then use the downloaded file's path to upload.
+
+## Adjustments - Dry-run mode
+
+Add a dry-run mode via environment variable DRY_RUN. If true, just print out the info about the content, media files, the request body, but do not actually post.
+
+Apply the same changes to all post-to-... script. Use a common function or module if possible.
+
+
+## Adjustments - Templated content
+
+Implement the function process_templated_content_if_needed
+
+```
+  def process_templated_content_if_needed(content: str) -> str:
+    """Process templated content if context is provided."""
+    
+    # Copilot: Implement templating logic if needed
+    # Each templated placeholder is in the format ${source.KEY}
+    # where source can be 'env' for environment variables or 'builtin' for built-in values
+    # env.KEY should be replaced with the value of the environment variable KEY
+    # Supported built-in values: CURR_DATE, CURR_TIME, CURR_DATETIME
+    # TIMEZONE can be set via env var TIME_ZONE, default to UTC
+
+    return content
+```

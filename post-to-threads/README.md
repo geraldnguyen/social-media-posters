@@ -1,5 +1,22 @@
 # Post to Threads Action
 
+## Template Interpolation
+
+You can use template placeholders in your post content. The following sources are supported:
+
+- `${env.VAR}`: Replaced with the value of the environment variable `VAR` (e.g., `${env.NAME}`)
+- `${builtin.CURR_DATE}`: Replaced with the current date in `YYYY-MM-DD` format
+- `${builtin.CURR_TIME}`: Replaced with the current time in `HH:MM:SS` format
+- `${builtin.CURR_DATETIME}`: Replaced with the current date and time in `YYYY-MM-DD HH:MM:SS` format
+
+Example:
+
+```env
+POST_CONTENT='Hello ${env.NAME}, today is ${builtin.CURR_DATE} at ${builtin.CURR_TIME}!'
+NAME=Gerald
+```
+This will post: `Hello Gerald, today is 2025-09-07 at 14:18:25!`
+
 This GitHub Action allows you to post content to Threads using the Threads API.
 
 ## Features
