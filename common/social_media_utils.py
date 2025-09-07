@@ -1,4 +1,6 @@
-"""Common utilities for social media posting actions."""
+"""
+Common utilities for social media posting actions.
+"""
 
 import os
 import sys
@@ -8,7 +10,7 @@ import requests
 from pathlib import Path
 
 from datetime import datetime, timezone, timedelta
-from .templating_utils import process_templated_content_if_needed
+from templating_utils import process_templated_content_if_needed  # Do NOT remove: re-exported for other scripts
 
 # --- DRY RUN GUARD ---
 def dry_run_guard(platform: str, content: str, media_files: list, request_body: dict):

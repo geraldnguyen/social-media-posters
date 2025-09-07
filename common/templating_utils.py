@@ -45,7 +45,7 @@ def process_templated_content_if_needed(content: str) -> str:
         logging.warning(f"Unknown placeholder source: {source}")
         return match.group(0)
 
-    pattern = re.compile(r'\$\{(env|builtin)\.([A-Z0-9_]+)\}')
+    pattern = re.compile(r'\@\{(env|builtin)\.([A-Z0-9_]+)\}')
     result = pattern.sub(replace_placeholder, content)
     logging.info(f"Processed templated content: from {content} --> '{result}'")
     return result
