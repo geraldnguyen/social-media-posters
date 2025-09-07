@@ -5,55 +5,62 @@ import logging
 import re
 import requests
 from datetime import datetime, timezone, timedelta
+from jsonpath_ng import parse as jsonpath_parse
+import json
+
 
 def process_templated_content_if_needed(content: str) -> str:
-    import json
-    import requests
-
-    # Cache for loaded JSON
-    _json_cache = {}
-
-    def get_json_data():
-        if 'data' in _json_cache:
-            return _json_cache['data']
-        url = os.getenv('CONTENT_JSON')
-        if not url:
-            logging.warning('CONTENT_JSON environment variable not set.')
-            _json_cache['data'] = None
-            return None
-        try:
-            resp = requests.get(url, timeout=10)
-            resp.raise_for_status()
-            data = resp.json()
-            _json_cache['data'] = data
-            return data
-        except Exception as e:
-            logging.error(f"Failed to fetch or parse JSON from {url}: {e}")
-            _json_cache['data'] = None
-            return None
 
     def extract_json_path(data, path):
-        # Use jsonpath-ng for robust JSON path extraction
-        try:
-            from jsonpath_ng import parse as jsonpath_parse
-        except ImportError:
-            logging.error("jsonpath-ng is not installed. Please install it with 'pip install jsonpath-ng'. Returning unresolved placeholder.")
-            return ''
-        # Convert dot/bracket notation to jsonpath-ng format if needed
-        # Accept both foo.bar[0].baz and foo.bar[0]['baz']
+        
+        logging.info(f"Extracting JSON path: {path} from data: {data}")
         try:
             expr = jsonpath_parse(f'$.{path}')
             matches = [match.value for match in expr.find(data)]
+            logging.info(f"Matches for path '{path}': {matches}")
             if not matches:
+                logging.info(f"No matches found for path '{path}'")
                 return ''
-            # If only one match, return as string
             if len(matches) == 1:
-                return str(matches[0])
+                val = matches[0]
+                logging.info(f"Single match for path '{path}': {val}")
+                if isinstance(val, (dict, list)):
+                    return val
+                return str(val)
             # If multiple matches, join as comma-separated string
+            logging.info(f"Multiple matches for path '{path}': {matches}")
             return ', '.join(str(m) for m in matches)
         except Exception as e:
             logging.error(f"Error parsing JSON path '{path}': {e}")
             return ''
+
+    def get_json_data():
+        raw = os.getenv('CONTENT_JSON')
+        logging.info(f"Raw CONTENT_JSON: {raw}")
+        if not raw:
+            logging.warning('CONTENT_JSON environment variable not set.')
+            return None
+        if '|' in raw:
+            url, json_path = [part.strip() for part in raw.split('|', 1)]
+            logging.info(f"Parsed CONTENT_JSON url: {url}, json_path: {json_path}")
+        else:
+            url, json_path = raw.strip(), None
+            logging.info(f"Parsed CONTENT_JSON url: {url}, no json_path")
+        try:
+            logging.info(f"Fetching JSON from URL: {url}")
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            logging.info(f"Fetched JSON: {data}")
+            if json_path:
+                sub = extract_json_path(data, json_path)
+                logging.info(f"Sub-JSON after path '{json_path}': {sub}")
+                return sub
+            return data
+        except Exception as e:
+            logging.error(f"Failed to fetch or parse JSON from {url}: {e}")
+            return None
+
     
     """Process templated content if context is provided."""
     def get_timezone():
@@ -85,14 +92,18 @@ def process_templated_content_if_needed(content: str) -> str:
 
     def replace_placeholder(match):
         source, key = match.group(1), match.group(2)
+        logging.info(f"Processing placeholder: source={source}, key={key}")
         if source == 'env':
             val = os.getenv(key, '')
             logging.info(f"Resolved env.{key} to '{val}'")
             return val
         elif source == 'builtin':
-            return builtin_value(key)
+            val = builtin_value(key)
+            logging.info(f"Resolved builtin.{key} to '{val}'")
+            return val
         elif source == 'json':
             data = get_json_data()
+            logging.info(f"Using JSON root for lookup: {data}")
             if data is None:
                 logging.warning(f"No JSON data available for {source}.{key}")
                 return match.group(0)
@@ -100,13 +111,14 @@ def process_templated_content_if_needed(content: str) -> str:
             if val == '':
                 logging.warning(f"Could not resolve {source}.{key}, leaving placeholder as-is.")
                 return match.group(0)
-            logging.info(f"Resolved {source}.{key} to '{val}'")
-            return val
+            logging.info(f"Resolved {source}.{key} to '{str(val)}'")
+            return str(val)
         logging.warning(f"Unknown placeholder source: {source}")
         return match.group(0)
 
     # Updated pattern to support env, builtin, json sources with flexible keys/paths
     pattern = re.compile(r'\@\{(env|builtin|json)\.([a-zA-Z0-9_\[\]\.]+)\}')
+    # Always call get_json_data() first to set _json_root if needed
     result = pattern.sub(replace_placeholder, content)
     logging.info(f"Processed templated content: from {content} --> '{result}'")
     return result
