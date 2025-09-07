@@ -127,6 +127,26 @@ CONTENT_JSON=https://tellstory.net/stories/random/index.json
 - Both dot notation and array bracket notation are supported.
 - Powered by the `jsonpath-ng` library.
 
+## Templated Content: Post Retrieval Extraction
+
+You can extract a sub-object from a remote JSON by specifying a path after a pipe (|) in the `CONTENT_JSON` variable. Example:
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[0]
+POST_CONTENT=API-driven: @{json.description}, @{json.permalink}
+```
+This will use the first element of the `stories` array as the root for all `@{json...}` lookups.
+
+## Templated Content: [RANDOM] Array Element Picker
+
+You can use `[RANDOM]` in the path to pick a random element from an array:
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
+POST_CONTENT=API-driven: @{json.description}, @{json.permalink}
+```
+This will randomly select an element from the `stories` array for use in template lookups.
+
 ## Credits
 
 - Built using [Facebook SDK for Python](https://github.com/mobolic/facebook-sdk) library

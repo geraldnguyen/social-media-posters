@@ -40,6 +40,7 @@ def process_templated_content_if_needed(content: str) -> str:
         if not raw:
             logging.warning('CONTENT_JSON environment variable not set.')
             return None
+        import random
         if '|' in raw:
             url, json_path = [part.strip() for part in raw.split('|', 1)]
             logging.info(f"Parsed CONTENT_JSON url: {url}, json_path: {json_path}")
@@ -53,9 +54,32 @@ def process_templated_content_if_needed(content: str) -> str:
             data = resp.json()
             logging.info(f"Fetched JSON: {data}")
             if json_path:
-                sub = extract_json_path(data, json_path)
-                logging.info(f"Sub-JSON after path '{json_path}': {sub}")
-                return sub
+                # Support [RANDOM] in the path
+                if '[RANDOM]' in json_path:
+                    path_before, _, path_after = json_path.partition('[RANDOM]')
+                    path_before = path_before.rstrip('.')
+                    # Remove trailing dot if present
+                    arr = extract_json_path(data, path_before)
+                    if isinstance(arr, list) and arr:
+                        idx = random.randint(0, len(arr) - 1)
+                        logging.info(f"[RANDOM] picked index {idx} from array of length {len(arr)}")
+                        element = arr[idx]
+                        # If there's more path after [RANDOM], extract further
+                        if path_after.strip():
+                            # Remove leading dot or brackets
+                            sub_path = path_after.lstrip('.').lstrip('[]')
+                            sub = extract_json_path(element, sub_path)
+                            logging.info(f"Sub-JSON after path '{json_path}': {sub}")
+                            return sub
+                        logging.info(f"Sub-JSON after path '{json_path}': {element}")
+                        return element
+                    else:
+                        logging.warning(f"[RANDOM] used but path '{path_before}' did not resolve to a non-empty array.")
+                        return None
+                else:
+                    sub = extract_json_path(data, json_path)
+                    logging.info(f"Sub-JSON after path '{json_path}': {sub}")
+                    return sub
             return data
         except Exception as e:
             logging.error(f"Failed to fetch or parse JSON from {url}: {e}")

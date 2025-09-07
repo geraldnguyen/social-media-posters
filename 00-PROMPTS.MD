@@ -90,3 +90,21 @@ Expect:
 Create unit tests for the changes
 
 Then run the tests
+
+## Adjustments - API-driven templated content - post retrieval extraction - Support `[RANDOM]` array element picker
+
+Update the get_json_data function to support `[RANDOM]` array element picker
+
+Given the following values in environment:
+
+POST_CONTENT=API-driven: @{json.description}, @{json.permalink}
+CONTENT_JSON=https://tellstory.net/stories/random/index.json | stories[RANDOM]
+
+Expectation:
+- Pick a random number beween 0 and the size of the arrays resolved by the json path with the `[RANDOM]` part.
+- Obtain the element at the random index picked in the previous step
+- Return the element as the json data
+
+Create unit tests for the changes
+
+Then run the tests
