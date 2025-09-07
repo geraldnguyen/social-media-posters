@@ -23,12 +23,12 @@ class TestTemplatingUtilsJson(unittest.TestCase):
                 {"description": "Desc2", "permalink": "url2"}
             ]
         }
-        content = "API-driven: @{json.stories[0].description}, @{api.stories[0].permalink}"
+        content = "API-driven: @{json.stories[0].description}, @{json.stories[0].permalink}"
         result = process_templated_content_if_needed(content)
         self.assertIn("Desc1", result)
         self.assertIn("url1", result)
         self.assertNotIn("@{json.stories[0].description}", result)
-        self.assertNotIn("@{api.stories[0].permalink}", result)
+        self.assertNotIn("@{json.stories[0].permalink}", result)
 
     @patch('templating_utils.requests.get')
     def test_json_path_missing(self, mock_get):

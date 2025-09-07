@@ -91,7 +91,7 @@ def process_templated_content_if_needed(content: str) -> str:
             return val
         elif source == 'builtin':
             return builtin_value(key)
-        elif source in ('json', 'api'):
+        elif source == 'json':
             data = get_json_data()
             if data is None:
                 logging.warning(f"No JSON data available for {source}.{key}")
@@ -105,8 +105,8 @@ def process_templated_content_if_needed(content: str) -> str:
         logging.warning(f"Unknown placeholder source: {source}")
         return match.group(0)
 
-    # Updated pattern to support env, builtin, json, and api sources with flexible keys/paths
-    pattern = re.compile(r'\@\{(env|builtin|json|api)\.([a-zA-Z0-9_\[\]\.]+)\}')
+    # Updated pattern to support env, builtin, json sources with flexible keys/paths
+    pattern = re.compile(r'\@\{(env|builtin|json)\.([a-zA-Z0-9_\[\]\.]+)\}')
     result = pattern.sub(replace_placeholder, content)
     logging.info(f"Processed templated content: from {content} --> '{result}'")
     return result

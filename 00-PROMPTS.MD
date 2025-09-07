@@ -71,3 +71,22 @@ Expect:
 Create unit tests for the changes
 
 Then run the tests
+
+
+## Adjustments - API-driven templated content - post retrieval extraction
+
+Given the following values in environment:
+
+POST_CONTENT=API-driven: @{json.description}, @{json.permalink}
+CONTENT_JSON=https://tellstory.net/stories/random/index.json | @{json.stories[0]}
+
+
+Expect:
+- Tokenize the CONTENT_JSON variable by space. 
+- Retrieve the json at the URL given in CONTENT_JSON variable
+- If there are a json path following the URL, process the json path, then return the obtain json for use in the POST_CONTENT's processing.
+- Travel the json path from the json obtained in the step above, supporting both dot notation and array bracket notation to retrieve the value
+
+Create unit tests for the changes
+
+Then run the tests
