@@ -52,7 +52,7 @@ def process_templated_content_if_needed(content: str) -> str:
             resp = requests.get(url, timeout=10)
             resp.raise_for_status()
             data = resp.json()
-            logging.info(f"Fetched JSON: {data}")
+            logging.debug(f"Fetched JSON: {data}")
             if json_path:
                 # Support [RANDOM] in the path
                 if '[RANDOM]' in json_path:
