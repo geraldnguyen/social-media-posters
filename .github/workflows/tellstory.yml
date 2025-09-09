@@ -25,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Post to X
-        uses: geraldnguyen/social-media-posters/post-to-x@copilot/fix-34fd7fc5-b084-49a1-8f22-ebdb9d6a477c
+        uses: geraldnguyen/social-media-posters/post-to-x@feature/workflow-x
         with:
           api-key: ${{ secrets.X_API_KEY }}
           api-secret: ${{ secrets.X_API_SECRET }}
@@ -44,7 +44,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Post to Facebook Page
-        uses: geraldnguyen/social-media-posters/post-to-facebook@copilot/fix-34fd7fc5-b084-49a1-8f22-ebdb9d6a477c
+        uses: geraldnguyen/social-media-posters/post-to-facebook@feature/workflow-x
         with:
           access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           page-id: ${{ secrets.FB_PAGE_ID }}
@@ -61,7 +61,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Post to Instagram
-        uses: geraldnguyen/social-media-posters/post-to-instagram@copilot/fix-34fd7fc5-b084-49a1-8f22-ebdb9d6a477c
+        uses: geraldnguyen/social-media-posters/post-to-instagram@feature/workflow-x
         with:
           access-token: ${{ secrets.IG_ACCESS_TOKEN }}
           user-id: ${{ secrets.IG_USER_ID }}
@@ -79,7 +79,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Post to Threads
-        uses: geraldnguyen/social-media-posters/post-to-threads@copilot/fix-34fd7fc5-b084-49a1-8f22-ebdb9d6a477c
+        uses: geraldnguyen/social-media-posters/post-to-threads@feature/workflow-x
         with:
           access-token: ${{ secrets.THREADS_ACCESS_TOKEN }}
           user-id: ${{ secrets.THREADS_USER_ID }}
