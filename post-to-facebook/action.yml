@@ -1,0 +1,58 @@
+name: 'Post to Facebook Page'
+description: 'Post content to a Facebook Page using the Facebook Graph API'
+author: 'Gerald Nguyen'
+branding:
+  icon: 'facebook'
+  color: 'blue'
+
+inputs:
+  access-token:
+    description: 'Facebook Page Access Token'
+    required: true
+  page-id:
+    description: 'Facebook Page ID'
+    required: true
+  content:
+    description: 'Content to post to Facebook Page'
+    required: true
+  media-files:
+    description: 'Comma-separated list of media file paths to attach (optional)'
+    required: false
+  link:
+    description: 'Link to attach to the post (optional)'
+    required: false
+  log-level:
+    description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
+    required: false
+    default: 'INFO'
+
+outputs:
+  post-id:
+    description: 'ID of the created post'
+  post-url:
+    description: 'URL of the created post'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r ${{ github.action_path }}/requirements.txt
+    
+    - name: Post to Facebook Page
+      shell: bash
+      env:
+        FB_ACCESS_TOKEN: ${{ inputs.access-token }}
+        FB_PAGE_ID: ${{ inputs.page-id }}
+        POST_CONTENT: ${{ inputs.content }}
+        MEDIA_FILES: ${{ inputs.media-files }}
+        POST_LINK: ${{ inputs.link }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+      run: |
+        python ${{ github.action_path }}/post_to_facebook.py

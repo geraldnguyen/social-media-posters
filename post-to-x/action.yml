@@ -1,0 +1,62 @@
+name: 'Post to X (Twitter)'
+description: 'Post content to X (formerly Twitter) using the X API v2'
+author: 'Gerald Nguyen'
+branding:
+  icon: 'twitter'
+  color: 'blue'
+
+inputs:
+  api-key:
+    description: 'X API Key (Consumer Key)'
+    required: true
+  api-secret:
+    description: 'X API Secret (Consumer Secret)'
+    required: true
+  access-token:
+    description: 'X Access Token'
+    required: true
+  access-token-secret:
+    description: 'X Access Token Secret'
+    required: true
+  content:
+    description: 'Content to post to X'
+    required: true
+  media-files:
+    description: 'Comma-separated list of media file paths to attach (optional)'
+    required: false
+  log-level:
+    description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
+    required: false
+    default: 'INFO'
+
+outputs:
+  post-id:
+    description: 'ID of the created post'
+  post-url:
+    description: 'URL of the created post'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r ${{ github.action_path }}/requirements.txt
+    
+    - name: Post to X
+      shell: bash
+      env:
+        X_API_KEY: ${{ inputs.api-key }}
+        X_API_SECRET: ${{ inputs.api-secret }}
+        X_ACCESS_TOKEN: ${{ inputs.access-token }}
+        X_ACCESS_TOKEN_SECRET: ${{ inputs.access-token-secret }}
+        POST_CONTENT: ${{ inputs.content }}
+        MEDIA_FILES: ${{ inputs.media-files }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+      run: |
+        python ${{ github.action_path }}/post_to_x.py

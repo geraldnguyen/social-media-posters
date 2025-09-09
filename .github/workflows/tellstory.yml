@@ -1,0 +1,82 @@
+name: 'Tellstory Social Media Posting'
+
+on:
+  workflow_dispatch:
+    inputs:
+      content:
+        description: 'Content template to post. You can use @{json.path.to.field} to include data from a JSON API.'
+        required: true
+        default: 'Hello from Tellstory! @{json.description} @{json.permalink}'
+      content_json:
+        description: 'JSON API URL to fetch data from for templating.'
+        type: boolean
+        required: false
+        default: 'https://tellstory.net/stories/random/index.json | stories[RANDOM]'
+
+jobs:
+  post-to-x:
+    name: Post to X
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Post to X
+        uses: geraldnguyen/social-media-posters/post-to-x@copilot/fix-34fd7fc5-b084-49a1-8f22-ebdb9d6a477c
+        with:
+          api-key: ${{ secrets.X_API_KEY }}
+          api-secret: ${{ secrets.X_API_SECRET }}
+          access-token: ${{ secrets.X_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          content: |
+            ${{ inputs.message }}
+            ${{ inputs.include_link == 'true' && format('🔗 {0}', github.event.repository.html_url) || '' }}
+          log-level: 'INFO'
+
+  post-to-facebook:
+    name: Post to Facebook Page
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Post to Facebook Page
+        uses: geraldnguyen/social-media-posters/post-to-facebook@copilot/fix-34fd7fc5-b084-49a1-8f22-ebdb9d6a477c
+        with:
+          access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          page-id: ${{ secrets.FB_PAGE_ID }}
+          content: |
+            ${{ inputs.message }}
+            ${{ inputs.include_link == 'true' && format('🔗 {0}', github.event.repository.html_url) || '' }}
+          log-level: 'INFO'
+
+  post-to-instagram:
+    name: Post to Instagram
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Post to Instagram
+        uses: geraldnguyen/social-media-posters/post-to-instagram@copilot/fix-34fd7fc5-b084-49a1-8f22-ebdb9d6a477c
+        with:
+          access-token: ${{ secrets.IG_ACCESS_TOKEN }}
+          user-id: ${{ secrets.IG_USER_ID }}
+          content: |
+            ${{ inputs.message }}
+            ${{ inputs.include_link == 'true' && format('🔗 {0}', github.event.repository.html_url) || '' }}
+          # media-file: 'https://your-cdn.com/release-image.jpg' # Uncomment and set if needed
+          log-level: 'INFO'
+
+  post-to-threads:
+    name: Post to Threads
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Post to Threads
+        uses: geraldnguyen/social-media-posters/post-to-threads@copilot/fix-34fd7fc5-b084-49a1-8f22-ebdb9d6a477c
+        with:
+          access-token: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          user-id: ${{ secrets.THREADS_USER_ID }}
+          content: |
+            ${{ inputs.message }}
+            ${{ inputs.include_link == 'true' && format('🔗 {0}', github.event.repository.html_url) || '' }}
+          log-level: 'INFO'

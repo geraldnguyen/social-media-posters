@@ -1,0 +1,54 @@
+name: 'Post to Instagram'
+description: 'Post content to Instagram using the Instagram Basic Display API'
+author: 'Gerald Nguyen'
+branding:
+  icon: 'instagram'
+  color: 'purple'
+
+inputs:
+  access-token:
+    description: 'Instagram User Access Token'
+    required: true
+  user-id:
+    description: 'Instagram User ID'
+    required: true
+  content:
+    description: 'Caption for the Instagram post'
+    required: true
+  media-file:
+    description: 'Path to image or video file to post'
+    required: true
+  log-level:
+    description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
+    required: false
+    default: 'INFO'
+
+outputs:
+  post-id:
+    description: 'ID of the created post'
+  post-url:
+    description: 'URL of the created post'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r ${{ github.action_path }}/requirements.txt
+    
+    - name: Post to Instagram
+      shell: bash
+      env:
+        IG_ACCESS_TOKEN: ${{ inputs.access-token }}
+        IG_USER_ID: ${{ inputs.user-id }}
+        POST_CONTENT: ${{ inputs.content }}
+        MEDIA_FILE: ${{ inputs.media-file }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+      run: |
+        python ${{ github.action_path }}/post_to_instagram.py
