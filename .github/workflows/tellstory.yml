@@ -31,6 +31,9 @@ jobs:
           api-secret: ${{ secrets.X_API_SECRET }}
           access-token: ${{ secrets.X_ACCESS_TOKEN }}
           access-token-secret: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          content: ${{ inputs.content }}
+          content-json: ${{ inputs.content-json }}
+          dry-run: ${{ inputs.dry-run }}
           log-level: 'INFO'
 
   post-to-facebook:
