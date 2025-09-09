@@ -3,15 +3,15 @@ name: 'Tellstory Social Media Posting'
 on:
   workflow_dispatch:
     inputs:
-      message:
-        description: 'Message to post'
+      content:
+        description: 'Content template to post. You can use @{json.path.to.field} to include data from a JSON API.'
         required: true
-        default: 'Hello from Tellstory!'
-      include_link:
-        description: 'Include repository link'
+        default: 'Hello from Tellstory! @{json.description} @{json.permalink}'
+      content_json:
+        description: 'JSON API URL to fetch data from for templating.'
         type: boolean
         required: false
-        default: false
+        default: 'https://tellstory.net/stories/random/index.json | stories[RANDOM]'
 
 jobs:
   post-to-x:
