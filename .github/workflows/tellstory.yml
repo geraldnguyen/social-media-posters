@@ -3,15 +3,23 @@ name: 'Tellstory Social Media Posting'
 on:
   workflow_dispatch:
     inputs:
-      content:
+      POST_CONTENT:
         description: 'Content template to post. You can use @{json.path.to.field} to include data from a JSON API.'
         required: true
         default: 'Hello from Tellstory! @{json.description} @{json.permalink}'
-      content_json:
+      CONTENT_JSON:
         description: 'JSON API URL to fetch data from for templating.'
-        type: boolean
         required: false
         default: 'https://tellstory.net/stories/random/index.json | stories[RANDOM]'
+      DRY_RUN:
+        description: 'Dry run mode. If true, the content will be printed but not posted.'
+        type: boolean
+        required: false
+        default: false
+      MEDIA_FILES:
+        description: 'Comma-separated list of media file URLs to include in the post (if supported by the platform).'
+        required: false
+        default: ''
 
 jobs:
   post-to-x:
