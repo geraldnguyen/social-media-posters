@@ -3,23 +3,19 @@ name: 'Tellstory Social Media Posting'
 on:
   workflow_dispatch:
     inputs:
-      POST_CONTENT:
+      content:
         description: 'Content template to post. You can use @{json.path.to.field} to include data from a JSON API.'
         required: true
         default: 'Hello from Tellstory! @{json.description} @{json.permalink}'
-      CONTENT_JSON:
+      content-json:
         description: 'JSON API URL to fetch data from for templating.'
         required: false
         default: 'https://tellstory.net/stories/random/index.json | stories[RANDOM]'
-      DRY_RUN:
+      dry-run:
         description: 'Dry run mode. If true, the content will be printed but not posted.'
         type: boolean
         required: false
         default: false
-      MEDIA_FILES:
-        description: 'Comma-separated list of media file URLs to include in the post (if supported by the platform).'
-        required: false
-        default: ''
 
 jobs:
   post-to-x:
@@ -35,14 +31,12 @@ jobs:
           api-secret: ${{ secrets.X_API_SECRET }}
           access-token: ${{ secrets.X_ACCESS_TOKEN }}
           access-token-secret: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
-          content: |
-            ${{ inputs.message }}
-            ${{ inputs.include_link == 'true' && format('🔗 {0}', github.event.repository.html_url) || '' }}
           log-level: 'INFO'
 
   post-to-facebook:
     name: Post to Facebook Page
     runs-on: ubuntu-latest
+    if: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,6 +53,7 @@ jobs:
   post-to-instagram:
     name: Post to Instagram
     runs-on: ubuntu-latest
+    if: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,6 +71,7 @@ jobs:
   post-to-threads:
     name: Post to Threads
     runs-on: ubuntu-latest
+    if: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4

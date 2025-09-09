@@ -22,6 +22,16 @@ inputs:
     description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
     required: false
     default: 'INFO'
+  content-json:
+    description: 'JSON API URL and path for dynamic content templating (e.g. https://example.com/data.json | items[RANDOM])'
+    required: false
+  time-zone:
+    description: 'Time zone for date/time placeholders (e.g. UTC, UTC+7)'
+    required: false
+  dry-run:
+    description: 'Dry run mode. If true, the content will be printed but not posted.'
+    required: false
+    default: 'false'
 
 outputs:
   post-id:
@@ -50,5 +60,8 @@ runs:
         POST_CONTENT: ${{ inputs.content }}
         MEDIA_FILE: ${{ inputs.media-file }}
         LOG_LEVEL: ${{ inputs.log-level }}
+        CONTENT_JSON: ${{ inputs.content-json }}
+        TIME_ZONE: ${{ inputs.time-zone }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
         python ${{ github.action_path }}/post_to_instagram.py
