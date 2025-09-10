@@ -114,6 +114,9 @@ def process_templated_content_if_needed(content: str) -> str:
         logging.info(f"Resolved builtin.{key} to '{val}'")
         return val
 
+    # Store result for subsequent use
+    _json_root = get_json_data()
+
     def replace_placeholder(match):
         source, key = match.group(1), match.group(2)
         logging.info(f"Processing placeholder: source={source}, key={key}")
@@ -126,7 +129,7 @@ def process_templated_content_if_needed(content: str) -> str:
             logging.info(f"Resolved builtin.{key} to '{val}'")
             return val
         elif source == 'json':
-            data = get_json_data()
+            data = _json_root  # Use cached json root
             logging.info(f"Using JSON root for lookup: {data}")
             if data is None:
                 logging.warning(f"No JSON data available for {source}.{key}")
