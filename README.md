@@ -161,6 +161,26 @@ All actions share these common features:
 - **Outputs**: Returns post ID and URL for further processing
 - **Security**: Secure handling of API credentials via GitHub secrets
 
+### Templated Content Helpers
+
+All actions include a flexible templating engine that can pull values from environment variables, built-in timestamps, or remote JSON payloads referenced by `CONTENT_JSON`. In addition to basic lookups, you can apply pipe operations to transform list results:
+
+- `each:prefix(str)` adds the specified prefix to each element (great for turning categories into hashtags).
+- `join(str)` concatenates all list items into a single string using the provided separator.
+
+Example:
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
+POST_CONTENT=Updates: @{json.genres | each:prefix('#') | join(' ')}
+```
+
+If the selected story exposes a `genres` list of `Mythology`, `Tragedy`, and `Supernatural`, the rendered content is:
+
+```
+Updates: #Mythology #Tragedy #Supernatural
+```
+
 ## Security Best Practices
 
 1. **Never commit API credentials** to your repository

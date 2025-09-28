@@ -120,6 +120,26 @@ POST_CONTENT=API-driven: @{json.description}, @{json.permalink}
 ```
 This will randomly select an element from the `stories` array for use in template lookups.
 
+## Templated Content: List Operations
+
+You can post-process array values inside a template expression using pipe operations. Two helpers are available:
+
+- `each:prefix(str)`: add the supplied prefix to every element in the list
+- `join(str)`: concatenate all elements into a single string separated by the provided string
+
+Example:
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
+POST_CONTENT=Genres: @{json.genres | each:prefix('#') | join(' ')}
+```
+
+If the selected story contains `"genres": ["Mythology", "Tragedy", "Supernatural"]`, the rendered output becomes:
+
+```
+Genres: #Mythology #Tragedy #Supernatural
+```
+
 ## Security Notes
 
 - Store all API credentials as GitHub repository secrets

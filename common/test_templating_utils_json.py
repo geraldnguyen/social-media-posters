@@ -55,6 +55,26 @@ class TestTemplatingUtilsJson(unittest.TestCase):
         self.assertEqual(result, "42")
 
     @patch('templating_utils.requests.get')
+    def test_json_pipeline_each_prefix_and_join(self, mock_get):
+        mock_get.return_value = Mock(status_code=200)
+        mock_get.return_value.json.return_value = {
+            "genres": ["Mythology", "Tragedy", "Supernatural"]
+        }
+        content = "@{json.genres | each:prefix('#') | join(' ')}"
+        result = process_templated_content_if_needed(content)
+        self.assertEqual(result, "#Mythology #Tragedy #Supernatural")
+
+    @patch('templating_utils.requests.get')
+    def test_json_join_warns_on_non_list(self, mock_get):
+        mock_get.return_value = Mock(status_code=200)
+        mock_get.return_value.json.return_value = {
+            "description": "Simple"
+        }
+        content = "@{json.description | join(', ')}"
+        result = process_templated_content_if_needed(content)
+        self.assertEqual(result, "Simple")
+
+    @patch('templating_utils.requests.get')
     def test_json_fetch_fail(self, mock_get):
         mock_get.side_effect = Exception("fail")
         content = "@{json.foo}"

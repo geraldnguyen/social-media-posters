@@ -147,6 +147,26 @@ POST_CONTENT=API-driven: @{json.description}, @{json.permalink}
 ```
 This will randomly select an element from the `stories` array for use in template lookups.
 
+## Templated Content: List Operations
+
+Array results can be processed in-place using pipe operators in your template expression:
+
+- `each:prefix(str)`: prepend the string to every element returned
+- `join(str)`: join all elements into a single string with the given separator
+
+Example:
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
+POST_CONTENT=Hashtags: @{json.genres | each:prefix('#') | join(' ')}
+```
+
+If the story contains a `genres` array of `["Mythology", "Tragedy", "Supernatural"]`, the rendered content will be:
+
+```
+Hashtags: #Mythology #Tragedy #Supernatural
+```
+
 ## Credits
 
 - Built using [Facebook SDK for Python](https://github.com/mobolic/facebook-sdk) library

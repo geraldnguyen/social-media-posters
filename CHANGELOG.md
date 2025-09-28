@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-09-28
+
+### Added
+
+- Pipeline list operations for the templating engine, supporting `each:prefix(str)` and `join(str)` inside template expressions.
+- Unit tests covering the new templating operations (`test_templating_utils_json.py`).
+- Documentation updates across all action READMEs and the root README to explain the new templating capabilities.
+
 ## [1.0.0] - 2025-01-06
 
 ### Added

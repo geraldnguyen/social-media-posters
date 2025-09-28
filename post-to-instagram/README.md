@@ -185,6 +185,26 @@ POST_CONTENT=API-driven: @{json.description}, @{json.permalink}
 ```
 This will randomly select an element from the `stories` array for use in template lookups.
 
+## Templated Content: List Operations
+
+Pipe operators let you transform list values before they are rendered:
+
+- `each:prefix(str)`: prefix every element with the provided string (useful for hashtags)
+- `join(str)`: collapse the list into a single string separated by the provided delimiter
+
+Example:
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
+POST_CONTENT=Genres: @{json.genres | each:prefix('#') | join(' ')}
+```
+
+With a `genres` array of `["Mythology", "Tragedy", "Supernatural"]`, the final output becomes:
+
+```
+Genres: #Mythology #Tragedy #Supernatural
+```
+
 ## Credits
 
 - Built using Instagram Graph API

@@ -6,7 +6,6 @@ import re
 import requests
 from datetime import datetime, timezone, timedelta
 from jsonpath_ng import parse as jsonpath_parse
-import json
 
 
 def process_templated_content_if_needed(content: str) -> str:
@@ -17,6 +16,89 @@ def process_templated_content_if_needed(content: str) -> str:
     - @{builtin.CURR_DATE|CURR_TIME|CURR_DATETIME}
     - @{json.path.to.field}
     """
+
+    def split_pipeline(expression: str):
+        segments = []
+        current = []
+        in_single = False
+        in_double = False
+        depth = 0
+
+        for char in expression:
+            if char == '|' and not in_single and not in_double and depth == 0:
+                segment = ''.join(current).strip()
+                if segment:
+                    segments.append(segment)
+                current = []
+                continue
+
+            current.append(char)
+
+            if char == "'" and not in_double:
+                in_single = not in_single
+            elif char == '"' and not in_single:
+                in_double = not in_double
+            elif char == '(' and not in_single and not in_double:
+                depth += 1
+            elif char == ')' and not in_single and not in_double and depth > 0:
+                depth -= 1
+
+        segment = ''.join(current).strip()
+        if segment:
+            segments.append(segment)
+
+        return segments
+
+    def strip_quotes(value: str) -> str:
+        value = value.strip()
+        if len(value) >= 2 and ((value[0] == value[-1] == '"') or (value[0] == value[-1] == "'")):
+            return value[1:-1]
+        return value
+
+    def parse_function_call(expr: str):
+        expr = expr.strip()
+        call_match = re.match(r'^([a-zA-Z_][\w\-]*)\((.*)\)$', expr)
+        if not call_match:
+            return expr, None
+
+        func_name = call_match.group(1)
+        arg_str = call_match.group(2).strip()
+        if not arg_str:
+            return func_name, ''
+        return func_name, strip_quotes(arg_str)
+
+    def apply_operations(value, operations):
+        for op in operations:
+            if not op:
+                continue
+
+            if op.startswith('each:'):
+                func_expr = op[len('each:'):].strip()
+                func_name, func_arg = parse_function_call(func_expr)
+                if func_name == 'prefix':
+                    if not isinstance(value, (list, tuple)):
+                        logging.warning(
+                            "each:prefix operation requires list input but received %s", type(value).__name__
+                        )
+                        continue
+                    prefix = '' if func_arg is None else str(func_arg)
+                    value = [prefix + str(item) for item in value]
+                else:
+                    logging.warning("Unsupported each operation '%s'", func_name)
+            else:
+                func_name, func_arg = parse_function_call(op)
+                if func_name == 'join':
+                    if not isinstance(value, (list, tuple)):
+                        logging.warning(
+                            "join operation requires list input but received %s", type(value).__name__
+                        )
+                        continue
+                    separator = '' if func_arg is None else str(func_arg)
+                    value = separator.join(str(item) for item in value)
+                else:
+                    logging.warning("Unsupported pipeline operation '%s'", func_name)
+
+        return value
 
     def extract_json_path(data, path):
         logging.debug("Extracting JSON path: %s from data: %s", path, data)
@@ -128,16 +210,23 @@ def process_templated_content_if_needed(content: str) -> str:
 
 
     def replace_placeholder(match):
-        source, key = match.group(1), match.group(2)
-        logging.debug("Processing placeholder: source=%s, key=%s", source, key)
+        source, expression = match.group(1), match.group(2)
+        logging.debug("Processing placeholder: source=%s, expression=%s", source, expression)
+
+        segments = split_pipeline(expression)
+        if not segments:
+            logging.warning("Empty placeholder expression for source '%s'", source)
+            return match.group(0)
+
+        key = segments[0]
+        operations = segments[1:]
+
         if source == 'env':
             val = os.getenv(key, '')
             logging.debug("Resolved env.%s to '%s'", key, val)
-            return val
         elif source == 'builtin':
             val = builtin_value(key)
             logging.debug("Resolved builtin.%s to '%s'", key, val)
-            return val
         elif source == 'json':
             data = _json_root
             logging.debug("Using JSON root for lookup: %s", data)
@@ -145,17 +234,22 @@ def process_templated_content_if_needed(content: str) -> str:
                 logging.warning("No JSON data available for %s.%s", source, key)
                 return match.group(0)
             val = extract_json_path(data, key)
-            if val == '':
+            if val == '' or val is None:
                 logging.warning("Could not resolve %s.%s, leaving placeholder as-is.", source, key)
                 return match.group(0)
             logging.debug("Resolved %s.%s to '%s'", source, key, str(val))
-            return str(val)
-        logging.warning("Unknown placeholder source: %s", source)
-        return match.group(0)
+        else:
+            logging.warning("Unknown placeholder source: %s", source)
+            return match.group(0)
+
+        if operations:
+            val = apply_operations(val, operations)
+
+        return str(val)
 
 
     # Updated pattern to support env, builtin, json sources with flexible keys/paths
-    pattern = re.compile(r'\@\{(env|builtin|json)\.([a-zA-Z0-9_\[\]\.]+)\}')
+    pattern = re.compile(r'\@\{(env|builtin|json)\.([^}]+)\}')
     # Apply replacements
     result = pattern.sub(replace_placeholder, content)
     logging.debug("Processed templated content: from %s --> '%s'", content, result)

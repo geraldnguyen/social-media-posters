@@ -214,3 +214,23 @@ CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
 POST_CONTENT=API-driven: @{json.description}, @{json.permalink}
 ```
 This will randomly select an element from the `stories` array for use in template lookups.
+
+## Templated Content: List Operations
+
+Pipe operators allow you to transform lists before they are rendered:
+
+- `each:prefix(str)`: prepend the provided string to every list element
+- `join(str)`: merge the list into a single string separated by the provided delimiter
+
+Example:
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
+POST_CONTENT=Topics: @{json.genres | each:prefix('#') | join(' ')}
+```
+
+If the chosen story has `genres` of `["Mythology", "Tragedy", "Supernatural"]`, the rendered content becomes:
+
+```
+Topics: #Mythology #Tragedy #Supernatural
+```

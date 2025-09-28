@@ -108,3 +108,51 @@ Expectation:
 Create unit tests for the changes
 
 Then run the tests
+
+## Adjustment - List operations
+
+Expand the Pipe operator to template expression within POST_CONTENT to support the following list operations
+- `each:prefix(str)`: prefix the `str` to each each element in the input array
+- `join(str)`: Join all elements in the input array into a single string using the `str` concatenator
+
+
+Example: Assume the `json` value evaluated to
+
+```
+{
+      "title": "The Myth of Tereus and Procne",
+      "url": "/stories/mythology/the-myth-of-tereus-and-procne/",
+      "permalink": "https://tellstory.net/stories/mythology/the-myth-of-tereus-and-procne/",
+      "date": "2025-08-05",
+      "genres": [
+        "Mythology",
+        "Tragedy",
+        "Supernatural"
+      ],
+      "origins": [
+        "Ancient Greece"
+      ],
+      "description": "a short description",
+      "summary": "A short summary",
+      "word_count": 2025,
+      "featured": false
+    }
+```
+
+and the `POST_CONTENT` having value
+
+```
+POST_CONTENT=API-driven with random pick: @{json.description}, @{json.permalink} @{json.genres | each:prefix('#') | join(' ')}
+```
+
+The template engine shall product the following output
+
+```
+API-driven with random pick: a short description, https://tellstory.net/stories/mythology/the-myth-of-tereus-and-procne/ #Mythology #Tragedy #Supernatural
+```
+
+Expectation:
+- Implement the above requirements
+- Create unit tests for the changes
+- Then run the tests
+- Before handover, update all relevant .MD file documenting the new functionality changes
