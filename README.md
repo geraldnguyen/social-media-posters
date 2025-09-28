@@ -178,17 +178,22 @@ All actions include a flexible templating engine that can pull values from envir
 - `each:case_kebab()` converts each element to kebab-case
 - `each:case_snake()` converts each element to snake_case
 
+#### Length Operations
+- `max_length(int, suffix?)` limits string length with optional suffix (e.g., "...")
+- `each:max_length(int, suffix?)` applies max_length to each item in a list
+- `join_while(separator, max_length)` joins items until maximum length is reached
+
 Example:
 
 ```
 CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
-POST_CONTENT=Updates: @{json.genres | each:case_upper() | each:prefix('#') | join(' ')}
+POST_CONTENT=Summary: @{json.description | max_length(150, '...')} Tags: @{json.genres | each:case_upper() | each:prefix('#') | join_while(' ', 100)}
 ```
 
 If the selected story exposes a `genres` list of `mythology`, `tragedy`, and `supernatural`, the rendered content is:
 
 ```
-Updates: #MYTHOLOGY #TRAGEDY #SUPERNATURAL
+Summary: This is a captivating tale of ancient gods and mortals, exploring themes of destiny, sacrifice, and the supernatural forces that govern our world... Tags: #MYTHOLOGY #TRAGEDY #SUPERNATURAL
 ```
 
 ## Security Best Practices

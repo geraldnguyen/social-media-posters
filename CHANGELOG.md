@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-01-28
+
+### Added
+
+- Length operations for the templating engine, supporting:
+  - `max_length(int, suffix?)` - limits string length with optional suffix
+  - `each:max_length(int, suffix?)` - applies max_length to each item in a list
+  - `join_while(separator, max_length)` - joins items until maximum length is reached
+- Word-boundary aware truncation for better text formatting
+- Unit tests covering all length operations (`test_templating_utils_length_operations.py`)
+- Documentation updates across all action READMEs and the root README to explain the new length operations
+
 ## [1.2.0] - 2025-09-28
 
 ### Added

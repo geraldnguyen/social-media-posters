@@ -64,8 +64,38 @@ def process_templated_content_if_needed(content: str) -> str:
         func_name = call_match.group(1)
         arg_str = call_match.group(2).strip()
         if not arg_str:
-            return func_name, ''
-        return func_name, strip_quotes(arg_str)
+            return func_name, []
+        
+        # Parse multiple arguments separated by commas
+        args = []
+        current_arg = []
+        in_quotes = False
+        quote_char = None
+        paren_depth = 0
+        
+        for char in arg_str:
+            if char in ('"', "'") and paren_depth == 0:
+                if not in_quotes:
+                    in_quotes = True
+                    quote_char = char
+                elif char == quote_char:
+                    in_quotes = False
+                    quote_char = None
+            elif char == '(' and not in_quotes:
+                paren_depth += 1
+            elif char == ')' and not in_quotes:
+                paren_depth -= 1
+            elif char == ',' and not in_quotes and paren_depth == 0:
+                args.append(strip_quotes(''.join(current_arg).strip()))
+                current_arg = []
+                continue
+            
+            current_arg.append(char)
+        
+        if current_arg:
+            args.append(strip_quotes(''.join(current_arg).strip()))
+        
+        return func_name, args
 
     def apply_case_transformation(text: str, case_type: str) -> str:
         """Apply case transformation to a string."""
@@ -100,6 +130,28 @@ def process_templated_content_if_needed(content: str) -> str:
         else:
             return text
 
+    def apply_max_length(text: str, max_length: int, suffix: str = '') -> str:
+        """Clip text at word boundary if it exceeds max_length and append suffix."""
+        text = str(text)
+        if len(text) <= max_length:
+            return text
+        
+        if max_length <= 0:
+            return suffix
+        
+        # Find the last space before or at max_length
+        truncated = text[:max_length]
+        last_space = truncated.rfind(' ')
+        
+        if last_space == -1:
+            # No space found, clip at max_length
+            result = truncated
+        else:
+            # Clip at last word boundary
+            result = truncated[:last_space]
+        
+        return result + suffix
+
     def apply_operations(value, operations):
         for op in operations:
             if not op:
@@ -114,7 +166,7 @@ def process_templated_content_if_needed(content: str) -> str:
                             "each:prefix operation requires list input but received %s", type(value).__name__
                         )
                         continue
-                    prefix = '' if func_arg is None else str(func_arg)
+                    prefix = '' if not func_arg else str(func_arg[0] if func_arg else '')
                     value = [prefix + str(item) for item in value]
                 elif func_name.startswith('case_'):
                     if not isinstance(value, (list, tuple)):
@@ -123,6 +175,21 @@ def process_templated_content_if_needed(content: str) -> str:
                         )
                         continue
                     value = [apply_case_transformation(str(item), func_name) for item in value]
+                elif func_name == 'max_length':
+                    if not isinstance(value, (list, tuple)):
+                        logging.warning(
+                            "each:max_length operation requires list input but received %s", type(value).__name__
+                        )
+                        continue
+                    if not func_arg or len(func_arg) < 1:
+                        logging.warning("each:max_length requires at least 1 argument (max_length)")
+                        continue
+                    try:
+                        max_len = int(func_arg[0])
+                        suffix = func_arg[1] if len(func_arg) > 1 else ''
+                        value = [apply_max_length(str(item), max_len, str(suffix)) for item in value]
+                    except (ValueError, IndexError) as e:
+                        logging.warning("Invalid arguments for each:max_length: %s", e)
                 else:
                     logging.warning("Unsupported each operation '%s'", func_name)
             else:
@@ -133,8 +200,49 @@ def process_templated_content_if_needed(content: str) -> str:
                             "join operation requires list input but received %s", type(value).__name__
                         )
                         continue
-                    separator = '' if func_arg is None else str(func_arg)
+                    separator = '' if not func_arg else str(func_arg[0] if func_arg else '')
                     value = separator.join(str(item) for item in value)
+                elif func_name == 'max_length':
+                    if not func_arg or len(func_arg) < 1:
+                        logging.warning("max_length requires at least 1 argument (max_length)")
+                        continue
+                    try:
+                        max_len = int(func_arg[0])
+                        suffix = func_arg[1] if len(func_arg) > 1 else ''
+                        value = apply_max_length(str(value), max_len, str(suffix))
+                    except (ValueError, IndexError) as e:
+                        logging.warning("Invalid arguments for max_length: %s", e)
+                elif func_name == 'join_while':
+                    if not isinstance(value, (list, tuple)):
+                        logging.warning(
+                            "join_while operation requires list input but received %s", type(value).__name__
+                        )
+                        continue
+                    if not func_arg or len(func_arg) < 2:
+                        logging.warning("join_while requires 2 arguments (separator, max_length)")
+                        continue
+                    try:
+                        separator = str(func_arg[0])
+                        max_len = int(func_arg[1])
+                        result_parts = []
+                        for item in value:
+                            item_str = str(item)
+                            if not result_parts:
+                                # First item
+                                if len(item_str) <= max_len:
+                                    result_parts.append(item_str)
+                                else:
+                                    break
+                            else:
+                                # Check if adding this item would exceed max_len
+                                tentative = separator.join(result_parts) + separator + item_str
+                                if len(tentative) <= max_len:
+                                    result_parts.append(item_str)
+                                else:
+                                    break
+                        value = separator.join(result_parts)
+                    except (ValueError, IndexError) as e:
+                        logging.warning("Invalid arguments for join_while: %s", e)
                 else:
                     logging.warning("Unsupported pipeline operation '%s'", func_name)
 

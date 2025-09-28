@@ -177,6 +177,45 @@ If the story contains a `genres` array of `["MYTHOLOGY", "TRAGEDY", "SUPERNATURA
 Hashtags: #mythology #tragedy #supernatural
 ```
 
+### Length Operations
+
+You can control text length using length operations:
+
+#### max_length Operation
+
+Limits the length of a string with optional suffix.
+
+```
+@{json.description | max_length(100)}
+@{json.title | max_length(50, '...')}
+```
+
+#### each:max_length Operation
+
+Applies max_length to each item in a list.
+
+```
+@{json.tags | each:max_length(20) | join(' #')}
+```
+
+#### join_while Operation
+
+Joins list items with a separator until a maximum length is reached.
+
+```
+@{json.tags | join_while(' #', 50)}
+@{json.categories | join_while(', ', 100)}
+```
+
+### Length Operations Example
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[RANDOM] 
+POST_CONTENT=Summary: @{json.description | max_length(100, '...')} Tags: @{json.tags | join_while(' #', 50)}
+```
+
+This will clip the description at 100 characters (at word boundary) and join tags with '#' separator until the total length reaches 50 characters.
+
 ## Credits
 
 - Built using [Facebook SDK for Python](https://github.com/mobolic/facebook-sdk) library

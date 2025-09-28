@@ -62,6 +62,7 @@ def validate_post_content(content: str, max_length: Optional[int] = None) -> boo
         logging.error("Post content cannot be empty")
         return False
     
+    logging.info(f"Validating post content of length {len(content)}: {content!r}")
     if max_length and len(content) > max_length:
         logging.error(f"Post content exceeds maximum length of {max_length} characters")
         return False

@@ -137,6 +137,11 @@ You can post-process array values inside a template expression using pipe operat
 - `each:case_kebab()`: convert each element to kebab-case (`hello world` → `hello-world`)
 - `each:case_snake()`: convert each element to snake_case (`hello world` → `hello_world`)
 
+### Length Operations
+- `max_length(int, str)`: clip text at word boundary if it exceeds the specified length and append suffix
+- `each:max_length(int, str)`: apply max_length to each element in a list
+- `join_while(str, int)`: join elements with separator but stop when total length would exceed limit
+
 Example:
 
 ```
@@ -149,6 +154,15 @@ If the selected story contains `"genres": ["mythology", "tragedy", "supernatural
 ```
 Genres: #MYTHOLOGY #TRAGEDY #SUPERNATURAL
 ```
+
+### Length Operations Example
+
+```
+CONTENT_JSON=https://example.com/data.json | stories[RANDOM] 
+POST_CONTENT=Summary: @{json.description | max_length(100, '...')} Tags: @{json.tags | join_while(' #', 50)}
+```
+
+This will clip the description at 100 characters (at word boundary) and join tags with '#' separator until the total length reaches 50 characters.
 
 ## Security Notes
 

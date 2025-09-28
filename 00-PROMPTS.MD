@@ -178,13 +178,9 @@ Expectation:
 ## Adjustment - List operations - length operations
 
 Expand the Pipe operator to template expression within POST_CONTENT to support the following list operations
-- each:case_title(): example: `hello world` -> `Hello World`
-- each:case_sentence(): example: `hello world` -> `Hello world`
-- each:case_upper(): example: `hello world` -> `HELLO WORLD`
-- each:case_lower(): example: `Hello WORLD` -> `hello world`
-- each:case_pascal(): example: `hello world` -> `HelloWorld`
-- each:case_kebab(): example: `hello world` -> `hello-world`
-- each:case_snake(): example: `hello world` -> `hello_world`
+- `max_length(int, str)`: The input string's length must be less than or equal to the 1st positive integer `int` argument, else the string will be clipped at the end of its last word and appended the 2nd argument `str`. The total length of the resulting string may be larger than the 1st argument. 
+- `each:max_length(int, str)`: similar to `max_length(int, str)` but apply to element of a list or array
+- `join_while(str, int)`: operate similar to `join(str)` but stop and return the resulting string when it encounters any element whose joining would create a string whose length is larger than the 2nd argument `int`
 
 Expectation:
 - Implement the above requirements
