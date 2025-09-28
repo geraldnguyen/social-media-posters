@@ -165,20 +165,30 @@ All actions share these common features:
 
 All actions include a flexible templating engine that can pull values from environment variables, built-in timestamps, or remote JSON payloads referenced by `CONTENT_JSON`. In addition to basic lookups, you can apply pipe operations to transform list results:
 
+#### Basic Operations
 - `each:prefix(str)` adds the specified prefix to each element (great for turning categories into hashtags).
 - `join(str)` concatenates all list items into a single string using the provided separator.
+
+#### Case Transformation Operations  
+- `each:case_title()` converts each element to Title Case
+- `each:case_sentence()` converts each element to Sentence case
+- `each:case_upper()` converts each element to UPPERCASE
+- `each:case_lower()` converts each element to lowercase
+- `each:case_pascal()` converts each element to PascalCase
+- `each:case_kebab()` converts each element to kebab-case
+- `each:case_snake()` converts each element to snake_case
 
 Example:
 
 ```
 CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
-POST_CONTENT=Updates: @{json.genres | each:prefix('#') | join(' ')}
+POST_CONTENT=Updates: @{json.genres | each:case_upper() | each:prefix('#') | join(' ')}
 ```
 
-If the selected story exposes a `genres` list of `Mythology`, `Tragedy`, and `Supernatural`, the rendered content is:
+If the selected story exposes a `genres` list of `mythology`, `tragedy`, and `supernatural`, the rendered content is:
 
 ```
-Updates: #Mythology #Tragedy #Supernatural
+Updates: #MYTHOLOGY #TRAGEDY #SUPERNATURAL
 ```
 
 ## Security Best Practices

@@ -151,20 +151,30 @@ This will randomly select an element from the `stories` array for use in templat
 
 Array results can be processed in-place using pipe operators in your template expression:
 
+### Basic Operations
 - `each:prefix(str)`: prepend the string to every element returned
 - `join(str)`: join all elements into a single string with the given separator
+
+### Case Transformation Operations
+- `each:case_title()`: convert each element to Title Case (`hello world` → `Hello World`)
+- `each:case_sentence()`: convert each element to Sentence case (`hello world` → `Hello world`)
+- `each:case_upper()`: convert each element to UPPERCASE (`hello world` → `HELLO WORLD`)
+- `each:case_lower()`: convert each element to lowercase (`Hello WORLD` → `hello world`)
+- `each:case_pascal()`: convert each element to PascalCase (`hello world` → `HelloWorld`)
+- `each:case_kebab()`: convert each element to kebab-case (`hello world` → `hello-world`)
+- `each:case_snake()`: convert each element to snake_case (`hello world` → `hello_world`)
 
 Example:
 
 ```
 CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
-POST_CONTENT=Hashtags: @{json.genres | each:prefix('#') | join(' ')}
+POST_CONTENT=Hashtags: @{json.genres | each:case_lower() | each:prefix('#') | join(' ')}
 ```
 
-If the story contains a `genres` array of `["Mythology", "Tragedy", "Supernatural"]`, the rendered content will be:
+If the story contains a `genres` array of `["MYTHOLOGY", "TRAGEDY", "SUPERNATURAL"]`, the rendered content will be:
 
 ```
-Hashtags: #Mythology #Tragedy #Supernatural
+Hashtags: #mythology #tragedy #supernatural
 ```
 
 ## Credits

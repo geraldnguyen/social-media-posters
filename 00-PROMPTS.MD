@@ -156,3 +156,40 @@ Expectation:
 - Create unit tests for the changes
 - Then run the tests
 - Before handover, update all relevant .MD file documenting the new functionality changes
+
+## Adjustment - List operations - casing operations
+
+Expand the Pipe operator to template expression within POST_CONTENT to support the following list operations
+- each:case_title(): example: `hello world` -> `Hello World`
+- each:case_sentence(): example: `hello world` -> `Hello world`
+- each:case_upper(): example: `hello world` -> `HELLO WORLD`
+- each:case_lower(): example: `Hello WORLD` -> `hello world`
+- each:case_pascal(): example: `hello world` -> `HelloWorld`
+- each:case_kebab(): example: `hello world` -> `hello-world`
+- each:case_snake(): example: `hello world` -> `hello_world`
+
+Expectation:
+- Implement the above requirements
+- Create unit tests for the changes
+- Then run the tests
+- Before handover, update all relevant .MD file documenting the new functionality changes
+
+
+## Adjustment - List operations - length operations
+
+Expand the Pipe operator to template expression within POST_CONTENT to support the following list operations
+- each:case_title(): example: `hello world` -> `Hello World`
+- each:case_sentence(): example: `hello world` -> `Hello world`
+- each:case_upper(): example: `hello world` -> `HELLO WORLD`
+- each:case_lower(): example: `Hello WORLD` -> `hello world`
+- each:case_pascal(): example: `hello world` -> `HelloWorld`
+- each:case_kebab(): example: `hello world` -> `hello-world`
+- each:case_snake(): example: `hello world` -> `hello_world`
+
+Expectation:
+- Implement the above requirements
+- Create unit tests for the changes
+- Then run the tests
+- Before handover, update all relevant .MD file documenting the new functionality changes
+
+

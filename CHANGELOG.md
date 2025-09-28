@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-09-28
+
+### Added
+
+- Case transformation operations for the templating engine, supporting:
+  - `each:case_title()` - converts to Title Case
+  - `each:case_sentence()` - converts to Sentence case  
+  - `each:case_upper()` - converts to UPPERCASE
+  - `each:case_lower()` - converts to lowercase
+  - `each:case_pascal()` - converts to PascalCase
+  - `each:case_kebab()` - converts to kebab-case
+  - `each:case_snake()` - converts to snake_case
+- Unit tests covering all case transformation operations (`test_templating_utils_case_operations.py`).
+- Documentation updates across all action READMEs and the root README to explain the new case transformation capabilities.
+
 ## [1.1.0] - 2025-09-28
 
 ### Added

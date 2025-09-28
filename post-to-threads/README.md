@@ -219,18 +219,28 @@ This will randomly select an element from the `stories` array for use in templat
 
 Pipe operators allow you to transform lists before they are rendered:
 
+### Basic Operations
 - `each:prefix(str)`: prepend the provided string to every list element
 - `join(str)`: merge the list into a single string separated by the provided delimiter
+
+### Case Transformation Operations
+- `each:case_title()`: convert each element to Title Case (`hello world` → `Hello World`)
+- `each:case_sentence()`: convert each element to Sentence case (`hello world` → `Hello world`)
+- `each:case_upper()`: convert each element to UPPERCASE (`hello world` → `HELLO WORLD`)
+- `each:case_lower()`: convert each element to lowercase (`Hello WORLD` → `hello world`)
+- `each:case_pascal()`: convert each element to PascalCase (`hello world` → `HelloWorld`)
+- `each:case_kebab()`: convert each element to kebab-case (`hello world` → `hello-world`)
+- `each:case_snake()`: convert each element to snake_case (`hello world` → `hello_world`)
 
 Example:
 
 ```
 CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
-POST_CONTENT=Topics: @{json.genres | each:prefix('#') | join(' ')}
+POST_CONTENT=Topics: @{json.genres | each:case_pascal() | each:prefix('#') | join(' ')}
 ```
 
-If the chosen story has `genres` of `["Mythology", "Tragedy", "Supernatural"]`, the rendered content becomes:
+If the chosen story has `genres` of `["ancient mythology", "greek tragedy", "supernatural events"]`, the rendered content becomes:
 
 ```
-Topics: #Mythology #Tragedy #Supernatural
+Topics: #AncientMythology #GreekTragedy #SupernaturalEvents
 ```

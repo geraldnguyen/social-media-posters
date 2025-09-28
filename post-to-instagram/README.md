@@ -189,17 +189,27 @@ This will randomly select an element from the `stories` array for use in templat
 
 Pipe operators let you transform list values before they are rendered:
 
+### Basic Operations
 - `each:prefix(str)`: prefix every element with the provided string (useful for hashtags)
 - `join(str)`: collapse the list into a single string separated by the provided delimiter
+
+### Case Transformation Operations
+- `each:case_title()`: convert each element to Title Case (`hello world` → `Hello World`)
+- `each:case_sentence()`: convert each element to Sentence case (`hello world` → `Hello world`)
+- `each:case_upper()`: convert each element to UPPERCASE (`hello world` → `HELLO WORLD`)
+- `each:case_lower()`: convert each element to lowercase (`Hello WORLD` → `hello world`)
+- `each:case_pascal()`: convert each element to PascalCase (`hello world` → `HelloWorld`)
+- `each:case_kebab()`: convert each element to kebab-case (`hello world` → `hello-world`)
+- `each:case_snake()`: convert each element to snake_case (`hello world` → `hello_world`)
 
 Example:
 
 ```
 CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
-POST_CONTENT=Genres: @{json.genres | each:prefix('#') | join(' ')}
+POST_CONTENT=Genres: @{json.genres | each:case_title() | each:prefix('#') | join(' ')}
 ```
 
-With a `genres` array of `["Mythology", "Tragedy", "Supernatural"]`, the final output becomes:
+With a `genres` array of `["mythology", "tragedy", "supernatural"]`, the final output becomes:
 
 ```
 Genres: #Mythology #Tragedy #Supernatural

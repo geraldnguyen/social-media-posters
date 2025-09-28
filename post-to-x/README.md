@@ -122,22 +122,32 @@ This will randomly select an element from the `stories` array for use in templat
 
 ## Templated Content: List Operations
 
-You can post-process array values inside a template expression using pipe operations. Two helpers are available:
+You can post-process array values inside a template expression using pipe operations. Available operations include:
 
+### Basic Operations
 - `each:prefix(str)`: add the supplied prefix to every element in the list
 - `join(str)`: concatenate all elements into a single string separated by the provided string
+
+### Case Transformation Operations
+- `each:case_title()`: convert each element to Title Case (`hello world` → `Hello World`)
+- `each:case_sentence()`: convert each element to Sentence case (`hello world` → `Hello world`)
+- `each:case_upper()`: convert each element to UPPERCASE (`hello world` → `HELLO WORLD`)
+- `each:case_lower()`: convert each element to lowercase (`Hello WORLD` → `hello world`)
+- `each:case_pascal()`: convert each element to PascalCase (`hello world` → `HelloWorld`)
+- `each:case_kebab()`: convert each element to kebab-case (`hello world` → `hello-world`)
+- `each:case_snake()`: convert each element to snake_case (`hello world` → `hello_world`)
 
 Example:
 
 ```
 CONTENT_JSON=https://example.com/data.json | stories[RANDOM]
-POST_CONTENT=Genres: @{json.genres | each:prefix('#') | join(' ')}
+POST_CONTENT=Genres: @{json.genres | each:case_upper() | each:prefix('#') | join(' ')}
 ```
 
-If the selected story contains `"genres": ["Mythology", "Tragedy", "Supernatural"]`, the rendered output becomes:
+If the selected story contains `"genres": ["mythology", "tragedy", "supernatural"]`, the rendered output becomes:
 
 ```
-Genres: #Mythology #Tragedy #Supernatural
+Genres: #MYTHOLOGY #TRAGEDY #SUPERNATURAL
 ```
 
 ## Security Notes

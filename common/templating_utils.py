@@ -67,6 +67,39 @@ def process_templated_content_if_needed(content: str) -> str:
             return func_name, ''
         return func_name, strip_quotes(arg_str)
 
+    def apply_case_transformation(text: str, case_type: str) -> str:
+        """Apply case transformation to a string."""
+        if case_type == 'case_title':
+            return text.title()
+        elif case_type == 'case_sentence':
+            return text.capitalize()
+        elif case_type == 'case_upper':
+            return text.upper()
+        elif case_type == 'case_lower':
+            return text.lower()
+        elif case_type == 'case_pascal':
+            # Convert to PascalCase: remove spaces and capitalize each word
+            words = re.split(r'[\s_-]+', text.strip())
+            return ''.join(word.capitalize() for word in words if word)
+        elif case_type == 'case_kebab':
+            # Convert to kebab-case: lowercase with hyphens
+            # First handle CamelCase by inserting hyphens before uppercase letters (except first)
+            text = re.sub(r'(?<!^)(?=[A-Z])', '-', text)
+            # Replace spaces and underscores with hyphens
+            text = re.sub(r'[\s_]+', '-', text)
+            # Convert to lowercase and clean up multiple hyphens
+            return re.sub(r'-+', '-', text.lower()).strip('-')
+        elif case_type == 'case_snake':
+            # Convert to snake_case: lowercase with underscores
+            # First handle CamelCase by inserting underscores before uppercase letters (except first)
+            text = re.sub(r'(?<!^)(?=[A-Z])', '_', text)
+            # Replace spaces and hyphens with underscores
+            text = re.sub(r'[\s-]+', '_', text)
+            # Convert to lowercase and clean up multiple underscores
+            return re.sub(r'_+', '_', text.lower()).strip('_')
+        else:
+            return text
+
     def apply_operations(value, operations):
         for op in operations:
             if not op:
@@ -83,6 +116,13 @@ def process_templated_content_if_needed(content: str) -> str:
                         continue
                     prefix = '' if func_arg is None else str(func_arg)
                     value = [prefix + str(item) for item in value]
+                elif func_name.startswith('case_'):
+                    if not isinstance(value, (list, tuple)):
+                        logging.warning(
+                            "each:%s operation requires list input but received %s", func_name, type(value).__name__
+                        )
+                        continue
+                    value = [apply_case_transformation(str(item), func_name) for item in value]
                 else:
                     logging.warning("Unsupported each operation '%s'", func_name)
             else:
