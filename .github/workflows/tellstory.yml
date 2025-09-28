@@ -25,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Post to X
-        uses: geraldnguyen/social-media-posters/post-to-x@feature/workflow-x
+        uses: geraldnguyen/social-media-posters/post-to-x@v0.1.0
         with:
           api-key: ${{ secrets.X_API_KEY }}
           api-secret: ${{ secrets.X_API_SECRET }}
