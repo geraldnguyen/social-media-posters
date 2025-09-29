@@ -9,7 +9,7 @@ from pathlib import Path
 # Load environment variables from a local .env file if present (for local development)
 try:
     from dotenv import load_dotenv
-    env_path = Path(__file__).parent.parent / '.env'
+    env_path = Path(__file__).parent / '.env'
     if env_path.exists():
         load_dotenv(dotenv_path=env_path)
 except ImportError:
@@ -27,6 +27,7 @@ from social_media_utils import (
     setup_logging,
     get_required_env_var,
     get_optional_env_var,
+    process_templated_content_if_needed,
     validate_post_content,
     handle_api_error,
     log_success,
@@ -80,7 +81,9 @@ def post_to_facebook():
         # Get required parameters
         page_id = get_required_env_var("FB_PAGE_ID")
         content = get_required_env_var("POST_CONTENT")
-        
+        # Process templated content if present (env, builtin, json sources)
+        content = process_templated_content_if_needed(content)
+
         # Validate content
         if not validate_post_content(content):
             sys.exit(1)
