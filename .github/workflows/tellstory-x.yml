@@ -1,0 +1,37 @@
+name: 'Tellstory Social Media Posting'
+
+on:
+  workflow_dispatch:
+    inputs:
+      content:
+        description: 'Content template to post. You can use @{json.path.to.field} to include data from a JSON API.'
+        required: true
+        default: "Social-media-poster: @{json.description | max_length(150, '...')} Follow me for more @{json.permalink} @{json.origins | each:case_pascal | each:prefix('#') | join_while(' ', 30)} @{json.genres | each:case_pascal | each:prefix('#') | join_while(' ', 40)}"
+      content-json:
+        description: 'JSON API URL to fetch data from for templating.'
+        required: false
+        default: 'https://tellstory.net/stories/random/index.json | stories[RANDOM]'
+      dry-run:
+        description: 'Dry run mode. If true, the content will be printed but not posted.'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  post-to-x:
+    name: Post to X
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Post to X
+        uses: geraldnguyen/social-media-posters/post-to-x@v0.1.0
+        with:
+          api-key: ${{ secrets.X_API_KEY }}
+          api-secret: ${{ secrets.X_API_SECRET }}
+          access-token: ${{ secrets.X_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          content: ${{ inputs.content }}
+          content-json: ${{ inputs.content-json }}
+          dry-run: ${{ inputs.dry-run }}
+          log-level: 'INFO'

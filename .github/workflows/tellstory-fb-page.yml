@@ -1,0 +1,42 @@
+name: 'Tellstory Social Media Posting'
+
+on:
+  workflow_dispatch:
+    inputs:
+      content:
+        description: 'Content template to post. You can use @{json.path.to.field} to include data from a JSON API.'
+        required: true
+        default: "Social-media-poster: @{json.description | max_length(200, '...')} Follow me for more @{json.origins | each:case_pascal | each:prefix('#') | join(' ')} @{json.genres | each:case_pascal | each:prefix('#') | join(' ')} @{json.themes | each:case_pascal | each:prefix('#') | join(' ')}"
+      content-link:
+        description: 'Content link to share. You can use @{json.path.to.field} to include a link from a JSON API.'
+        required: true
+        default: "@{json.permalink}"
+      content-json:
+        description: 'JSON API URL to fetch data from for templating.'
+        required: false
+        default: 'https://tellstory.net/stories/random/index.json | stories[RANDOM]'
+      dry-run:
+        description: 'Dry run mode. If true, the content will be printed but not posted.'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  post-to-facebook:
+    name: Post to Facebook Page
+    runs-on: ubuntu-latest
+    if: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Post to Facebook Page
+        uses: geraldnguyen/social-media-posters/post-to-facebook@feature/fb-page
+        with:
+          access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          page-id: ${{ secrets.FB_PAGE_ID }}          
+          content: ${{ inputs.content }}
+          content-json: ${{ inputs.content-json }}
+          link: ${{ inputs.content-link }}
+          dry-run: ${{ inputs.dry-run }}
+          log-level: 'INFO'
+
