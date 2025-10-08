@@ -1,7 +1,7 @@
 import os
 import unittest
 from unittest.mock import patch, Mock
-from templating_utils import process_templated_content_if_needed
+from templating_utils import process_templated_contents as process_templated_content_if_needed
 
 class TestTemplatingUtilsCaseOperations(unittest.TestCase):
     
@@ -20,7 +20,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "words": ["hello world", "foo bar", "test case"]
         }
         content = "@{json.words | each:case_title() | join(', ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "Hello World, Foo Bar, Test Case")
 
     @patch('templating_utils.requests.get')
@@ -30,7 +30,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "words": ["hello world", "foo bar", "test case"]
         }
         content = "@{json.words | each:case_sentence() | join(', ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "Hello world, Foo bar, Test case")
 
     @patch('templating_utils.requests.get')
@@ -40,7 +40,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "words": ["hello world", "Foo Bar", "Test Case"]
         }
         content = "@{json.words | each:case_upper() | join(', ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "HELLO WORLD, FOO BAR, TEST CASE")
 
     @patch('templating_utils.requests.get')
@@ -50,7 +50,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "words": ["HELLO WORLD", "Foo Bar", "Test Case"]
         }
         content = "@{json.words | each:case_lower() | join(', ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "hello world, foo bar, test case")
 
     @patch('templating_utils.requests.get')
@@ -60,7 +60,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "words": ["hello world", "foo bar baz", "test-case_item"]
         }
         content = "@{json.words | each:case_pascal() | join(', ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "HelloWorld, FooBarBaz, TestCaseItem")
 
     @patch('templating_utils.requests.get')
@@ -70,7 +70,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "words": ["hello world", "FooBar", "test_case_item"]
         }
         content = "@{json.words | each:case_kebab() | join(', ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "hello-world, foo-bar, test-case-item")
 
     @patch('templating_utils.requests.get')
@@ -80,7 +80,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "words": ["hello world", "FooBar", "test-case-item"]
         }
         content = "@{json.words | each:case_snake() | join(', ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "hello_world, foo_bar, test_case_item")
 
     @patch('templating_utils.requests.get')
@@ -90,7 +90,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "text": "hello world"
         }
         content = "@{json.text | each:case_title()}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         # Should return original string since it's not a list
         self.assertEqual(result, "hello world")
 
@@ -101,7 +101,7 @@ class TestTemplatingUtilsCaseOperations(unittest.TestCase):
             "items": ["hello world", "foo bar"]
         }
         content = "@{json.items | each:case_upper() | each:prefix('#') | join(' ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "#HELLO WORLD #FOO BAR")
 
 if __name__ == '__main__':

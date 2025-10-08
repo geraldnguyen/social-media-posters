@@ -22,8 +22,8 @@ from pathlib import Path
 # Add common module to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
 
+from templating_utils import process_templated_contents
 from social_media_utils import (
-    process_templated_content_if_needed,
     setup_logging,
     get_required_env_var,
     get_optional_env_var,
@@ -91,7 +91,7 @@ def post_to_x():
     try:
         # Get post content
         content = get_required_env_var("POST_CONTENT")
-        content = process_templated_content_if_needed(content)
+        content, = process_templated_contents(content)
         
         # Validate content (X has a 280 character limit)
         if not validate_post_content(content, max_length=280):

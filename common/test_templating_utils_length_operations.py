@@ -1,7 +1,7 @@
 import os
 import unittest
 from unittest.mock import patch, Mock
-from templating_utils import process_templated_content_if_needed
+from templating_utils import process_templated_contents as process_templated_content_if_needed
 
 class TestTemplatingUtilsLengthOperations(unittest.TestCase):
     
@@ -20,7 +20,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             "description": "This is a very long description that should be truncated"
         }
         content = "@{json.description | max_length(20, '...')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "This is a very long...")
 
     @patch('templating_utils.requests.get')
@@ -30,7 +30,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             "description": "Short text"
         }
         content = "@{json.description | max_length(50)}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "Short text")
 
     @patch('templating_utils.requests.get')
@@ -40,7 +40,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             "description": "Exactly twenty chars"
         }
         content = "@{json.description | max_length(20, '...')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "Exactly twenty chars")
 
     @patch('templating_utils.requests.get')
@@ -50,7 +50,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             "description": "This is a test sentence for word boundary"
         }
         content = "@{json.description | max_length(15, '...')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         # Should clip at "This is a test" (14 chars) + "..." = "This is a test..."
         self.assertEqual(result, "This is a test...")
 
@@ -65,7 +65,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             ]
         }
         content = "@{json.descriptions | each:max_length(10, '...') | join(', ')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "Short, This is a..., Medium...")
 
     @patch('templating_utils.requests.get')
@@ -75,7 +75,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             "tags": ["one", "two", "three", "four", "five"]
         }
         content = "@{json.tags | join_while(' ', 12)}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         # "one two three" = 13 chars, "one two" = 7 chars (fits), "one two three" = 13 chars (exceeds)
         self.assertEqual(result, "one two")
 
@@ -86,7 +86,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             "tags": ["verylongfirstitem", "short"]
         }
         content = "@{json.tags | join_while(' ', 10)}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         # First item is too long, so result should be empty
         self.assertEqual(result, "")
 
@@ -97,7 +97,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             "tags": ["a", "b", "c"]
         }
         content = "@{json.tags | join_while(' ', 10)}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "a b c")
 
     @patch('templating_utils.requests.get')
@@ -111,7 +111,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
             ]
         }
         content = "@{json.items | each:max_length(15, '...') | join_while(', ', 40)}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         # After each:max_length: ["This is a very...", "Short item", "Another..."]
         # join_while with 40 chars: "This is a very..., Short item" = 33 chars (fits)
         # Adding ", Another..." would make it 46 chars (exceeds 40)
@@ -125,7 +125,7 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
         }
         # max_length on a list should warn
         content = "@{json.items | max_length(10, '...')}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         # Should apply max_length to the string representation of the list
         expected = str(["one", "two", "three"])
         if len(expected) > 10:

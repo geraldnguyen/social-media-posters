@@ -22,11 +22,11 @@ import uuid
 # Add common module to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
 
+from templating_utils import process_templated_contents
 from social_media_utils import (
     setup_logging,
     get_required_env_var,
     get_optional_env_var,
-    process_templated_content_if_needed,
     validate_post_content,
     handle_api_error,
     log_success,
@@ -121,8 +121,6 @@ def post_to_facebook():
         page_id = get_required_env_var("FB_PAGE_ID")
         access_token = get_required_env_var("FB_ACCESS_TOKEN")
         content = get_required_env_var("POST_CONTENT")
-        # Process templated content if present (env, builtin, json sources)
-        content = process_templated_content_if_needed(content)
 
         # Determine privacy mode
         privacy_mode = get_optional_env_var("POST_PRIVACY", "public").strip().lower()
@@ -131,27 +129,14 @@ def post_to_facebook():
             sys.exit(1)
         published = privacy_mode == "public"
 
+        # Get optional parameters
+        link = get_optional_env_var("POST_LINK", "")
+        # Process templated content and link using the same JSON root
+        content, link = process_templated_contents(content, link)
+
         # Validate content
         if not validate_post_content(content):
             sys.exit(1)
-        
-        # Get optional parameters
-        link = get_optional_env_var("POST_LINK", "")
-        # Process POST_CONTENT and POST_LINK in a single templating call so
-        # they share the same API-driven JSON context (important for [RANDOM]).
-        if link:
-            delim = f"__FB_DELIM_{uuid.uuid4().hex}__"
-            combined = f"{content}{delim}{link}"
-            processed_combined = process_templated_content_if_needed(combined)
-            if delim in processed_combined:
-                content, link = processed_combined.split(delim, 1)
-            else:
-                # fallback, process individually
-                content = process_templated_content_if_needed(content)
-                link = process_templated_content_if_needed(link)
-        else:
-            # No link to process; just process content
-            content = process_templated_content_if_needed(content)
         media_input = get_optional_env_var("MEDIA_FILES", "")
         media_files = parse_media_files(media_input)
         

@@ -188,4 +188,17 @@ Expectation:
 - Then run the tests
 - Before handover, update all relevant .MD file documenting the new functionality changes
 
+## Adjustment - Process multiple template strings using the same json root
 
+Create a `process_templated_contents` function in templating_utils.py:
+- Support varargs parameters, each is a templated string to process
+- Reuse the existing helpers from `process_templated_content_if_needed` 
+- Fetches CONTENT_JSON only once, and use the same obtained `json` to process all templated string arguments
+
+Create new unit tests for `process_templated_contents`
+
+Then modify the `post_to_x.py` to call `process_templated_contents` to process POST_CONTENT
+
+Then modify the `post_to_facebook.py` to call `process_templated_contents` to process POST_CONTENT and POST_LINK
+
+Then safely delete `process_templated_content_if_needed`

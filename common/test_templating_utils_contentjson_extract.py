@@ -1,7 +1,7 @@
 import os
 import unittest
 from unittest.mock import patch, Mock
-from templating_utils import process_templated_content_if_needed
+from templating_utils import process_templated_contents as process_templated_content_if_needed
 
 class TestContentJsonWithExtraction(unittest.TestCase):
     @patch('templating_utils.requests.get')
@@ -19,7 +19,7 @@ class TestContentJsonWithExtraction(unittest.TestCase):
         os.environ['CONTENT_JSON'] = "https://example.com/data.json | stories[0]"
         # POST_CONTENT uses fields from the sub-JSON
         content = "API-driven: @{json.description}, @{json.permalink}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertIn("Desc1", result)
         self.assertIn("https://link1", result)
         self.assertNotIn("@{json.description}", result)
@@ -32,7 +32,7 @@ class TestContentJsonWithExtraction(unittest.TestCase):
         mock_get.return_value.json.return_value = mock_json
         os.environ['CONTENT_JSON'] = "https://example.com/data.json | stories[0]"
         content = "@{json.description}"
-        result = process_templated_content_if_needed(content)
+        result, = process_templated_content_if_needed(content)
         self.assertEqual(result, "@{json.description}")
 
 if __name__ == "__main__":
