@@ -17,6 +17,8 @@ except ImportError:
 import sys
 import logging
 from atproto import Client, models
+import requests
+from bs4 import BeautifulSoup
 
 # Add common module to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
@@ -31,6 +33,29 @@ from social_media_utils import (
     log_success,
     parse_media_files
 )
+
+
+def fetch_link_metadata(url: str) -> dict:
+    """Fetch metadata (title, description, image) from a URL for a link card."""
+    try:
+        response = requests.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.content, 'lxml')
+        
+        title = soup.find('meta', property='og:title') or soup.find('title')
+        description = soup.find('meta', property='og:description') or soup.find('meta', attrs={'name': 'description'})
+        image_url_tag = soup.find('meta', property='og:image')
+        
+        return {
+            'url': url,
+            'title': title.get('content', title.text) if title else '',
+            'description': description.get('content', '') if description else '',
+            'image_url': image_url_tag.get('content') if image_url_tag else None
+        }
+    except requests.RequestException as e:
+        logging.warning(f"Could not fetch metadata from link {url}: {e}")
+        return None
 
 
 def post_to_bluesky():
@@ -95,7 +120,11 @@ def post_to_bluesky():
         # Add link information
         if link:
             dry_run_request['link'] = link
-            dry_run_request['link_note'] = 'Link included in text (rich link cards not yet implemented)'
+            dry_run_request['embed_type'] = 'external'
+            dry_run_request['embed_details'] = {
+                'type': 'app.bsky.embed.external',
+                'note': 'Will attempt to fetch metadata to create a link card'
+            }
         
         dry_run_guard("Bluesky", content, media_files, dry_run_request)
         
@@ -130,10 +159,35 @@ def post_to_bluesky():
                 else:
                     logger.warning(f"Unsupported media type for Bluesky: {file_ext}")
         
-        # Create the post with or without images
+        # Create the post with or without images/link card
         embed = None
         if images:
             embed = models.AppBskyEmbedImages.Main(images=images)
+        elif link:
+            # Attempt to create a link card embed
+            metadata = fetch_link_metadata(link)
+            if metadata:
+                thumb_blob = None
+                # If there's an image, download and upload it
+                if metadata['image_url']:
+                    try:
+                        img_response = requests.get(metadata['image_url'], timeout=10)
+                        img_response.raise_for_status()
+                        
+                        # Upload the thumbnail image
+                        upload_result = client.upload_blob(img_response.content)
+                        thumb_blob = upload_result.blob
+                        logging.info(f"Successfully uploaded link card thumbnail from {metadata['image_url']}")
+                    except Exception as exc:
+                        logging.warning(f"Could not upload link card thumbnail: {exc}")
+
+                external = models.AppBskyEmbedExternal.External(
+                    uri=metadata['url'],
+                    title=metadata['title'],
+                    description=metadata['description'],
+                    thumb=thumb_blob
+                )
+                embed = models.AppBskyEmbedExternal.Main(external=external)
         
         try:
             response = client.send_post(text=content, embed=embed)
