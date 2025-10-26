@@ -5,6 +5,7 @@ Common utilities for social media posting actions.
 import os
 import sys
 import logging
+import json
 from typing import Optional, Dict, Any
 import requests
 from pathlib import Path
@@ -18,14 +19,63 @@ def dry_run_guard(platform: str, content: str, media_files: list, request_body: 
     """
     dry_run = os.getenv('DRY_RUN', '').lower() in ('1', 'true', 'yes')
     if dry_run:
+        print("=" * 80)
+        print(f"[DRY RUN MODE] Would post to {platform}")
+        print("=" * 80)
+        
+        # Format and print request details
+        print("\n📝 POST CONTENT:")
+        print(f"   {content}")
+        
+        # Print text details
+        if 'text_length' in request_body:
+            print(f"\n📊 TEXT DETAILS:")
+            print(f"   Length: {request_body['text_length']} characters")
+        
+        # Print link information
+        if 'link' in request_body:
+            print(f"\n🔗 LINK:")
+            print(f"   {request_body['link']}")
+            if 'link_note' in request_body:
+                print(f"   Note: {request_body['link_note']}")
+        
+        # Print media files with details
+        if media_files:
+            print(f"\n🖼️  MEDIA FILES:")
+            if isinstance(request_body.get('media_files'), list):
+                for media_info in request_body['media_files']:
+                    print(f"   [{media_info['index']}] {media_info['filename']}")
+                    print(f"       Path: {media_info['path']}")
+                    print(f"       Size: {media_info['size_kb']} KB ({media_info['size_bytes']} bytes)")
+                    print(f"       Type: {media_info['extension']}")
+            else:
+                print(f"   {request_body.get('media_files', media_files)}")
+        
+        # Print embed information
+        if 'embed_type' in request_body:
+            print(f"\n🎨 EMBED:")
+            print(f"   Type: {request_body['embed_type']}")
+            if 'embed_details' in request_body:
+                details = request_body['embed_details']
+                for key, value in details.items():
+                    print(f"   {key.replace('_', ' ').title()}: {value}")
+        
+        # Print raw request body for debugging
+        print(f"\n🔧 RAW REQUEST DATA:")
+        # Create a copy without redundant fields for cleaner output
+        clean_request = {k: v for k, v in request_body.items() 
+                        if k not in ['media_files', 'embed_details'] or not isinstance(v, (list, dict))}
+        print(f"   {json.dumps(clean_request, indent=2)}")
+        
+        print("\n" + "=" * 80)
+        print("[DRY RUN MODE] No actual post was created")
+        print("=" * 80)
+        
+        # Also log for consistency
         logging.info(f"[DRY RUN] Would post to {platform}.")
         logging.info(f"[DRY RUN] Content: {content}")
         logging.info(f"[DRY RUN] Media files: {media_files}")
-        logging.info(f"[DRY RUN] Request body: {request_body}")
-        print(f"[DRY RUN] Would post to {platform}.")
-        print(f"[DRY RUN] Content: {content}")
-        print(f"[DRY RUN] Media files: {media_files}")
-        print(f"[DRY RUN] Request body: {request_body}")
+        
         sys.exit(0)
 
 def setup_logging(level: str = "INFO") -> logging.Logger:

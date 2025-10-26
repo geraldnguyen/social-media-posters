@@ -17,7 +17,7 @@ NAME=Gerald
 ```
 This will post: `Hello Gerald, today is 2025-09-07 at 14:18:25!`
 
-This GitHub Action allows you to post content to Bluesky using the AT Protocol API.
+This GitHub Action allows you to post content to Bluesky using the official AT Protocol Python SDK.
 
 ## Features
 
@@ -121,13 +121,19 @@ You need a Bluesky account to use this action:
 - Video uploads are not currently supported
 - Link cards require additional metadata fetching (currently links are included as text)
 
-## AT Protocol
+## AT Protocol SDK
 
-This action uses the AT Protocol (Authenticated Transfer Protocol) which powers Bluesky. The main endpoints used are:
+This action uses the official [atproto](https://pypi.org/project/atproto/) Python SDK which provides a clean, typed interface for interacting with Bluesky and other AT Protocol services. The SDK handles:
 
-- `com.atproto.server.createSession` - Authentication
-- `com.atproto.repo.uploadBlob` - Media upload
-- `com.atproto.repo.createRecord` - Post creation
+- Authentication and session management
+- Blob (media) uploads with proper MIME type detection
+- Post creation with structured data models
+- Error handling and retries
+
+Key SDK methods used:
+- `Client.login()` - Authenticate with Bluesky
+- `Client.upload_blob()` - Upload images
+- `Client.send_post()` - Create posts with text and embedded media
 
 ## Troubleshooting
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Post content to Bluesky using the AT Protocol API.
+Post content to Bluesky using the AT Protocol Python SDK.
 """
 
 import os
@@ -16,9 +16,7 @@ except ImportError:
     pass  # python-dotenv is not installed; skip loading .env
 import sys
 import logging
-import requests
-import mimetypes
-from datetime import datetime, timezone
+from atproto import Client, models
 
 # Add common module to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
@@ -33,123 +31,6 @@ from social_media_utils import (
     log_success,
     parse_media_files
 )
-
-
-BLUESKY_API_BASE_URL = "https://bsky.social/xrpc"
-
-
-def create_session(identifier: str, password: str) -> dict:
-    """Create an authenticated session with Bluesky."""
-    url = f"{BLUESKY_API_BASE_URL}/com.atproto.server.createSession"
-    
-    payload = {
-        "identifier": identifier,
-        "password": password
-    }
-    
-    try:
-        response = requests.post(url, json=payload, timeout=30)
-        response.raise_for_status()
-        session_data = response.json()
-        logging.info("Successfully authenticated with Bluesky")
-        return session_data
-    except requests.RequestException as exc:
-        logging.error(f"Bluesky authentication failed: {exc}")
-        raise
-    except ValueError:
-        logging.error(f"Bluesky authentication returned non-JSON response: {response.text}")
-        raise
-
-
-def upload_blob(access_token: str, file_path: str) -> dict:
-    """Upload a media file (blob) to Bluesky."""
-    url = f"{BLUESKY_API_BASE_URL}/com.atproto.repo.uploadBlob"
-    
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-    }
-    
-    # Detect MIME type
-    mime_type, _ = mimetypes.guess_type(file_path)
-    if not mime_type:
-        mime_type = "application/octet-stream"
-    
-    headers["Content-Type"] = mime_type
-    
-    try:
-        with open(file_path, 'rb') as f:
-            file_data = f.read()
-        
-        response = requests.post(url, headers=headers, data=file_data, timeout=60)
-        response.raise_for_status()
-        blob_data = response.json()
-        logging.info(f"Successfully uploaded blob: {file_path}")
-        return blob_data.get('blob')
-    except requests.RequestException as exc:
-        logging.error(f"Failed to upload blob {file_path}: {exc}")
-        raise
-    except ValueError:
-        logging.error(f"Blob upload returned non-JSON response: {response.text}")
-        raise
-
-
-def create_post(access_token: str, did: str, text: str, media_blobs: list = None, link: str = None) -> dict:
-    """Create a post on Bluesky."""
-    url = f"{BLUESKY_API_BASE_URL}/com.atproto.repo.createRecord"
-    
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    
-    # Build the post record
-    record = {
-        "$type": "app.bsky.feed.post",
-        "text": text,
-        "createdAt": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-    }
-    
-    # Add embedded media if present
-    if media_blobs:
-        images = []
-        for blob in media_blobs[:4]:  # Bluesky supports up to 4 images
-            images.append({
-                "alt": "",
-                "image": blob
-            })
-        
-        if images:
-            record["embed"] = {
-                "$type": "app.bsky.embed.images",
-                "images": images
-            }
-    
-    # Add link embed if present and no media
-    elif link:
-        # For now, we'll include the link in the text
-        # Full link card embedding would require fetching link metadata
-        pass
-    
-    payload = {
-        "repo": did,
-        "collection": "app.bsky.feed.post",
-        "record": record
-    }
-    
-    try:
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        post_data = response.json()
-        logging.info("Successfully created Bluesky post")
-        return post_data
-    except requests.RequestException as exc:
-        logging.error(f"Failed to create Bluesky post: {exc}")
-        if hasattr(exc.response, 'text'):
-            logging.error(f"Response: {exc.response.text}")
-        raise
-    except ValueError:
-        logging.error(f"Create post returned non-JSON response: {response.text}")
-        raise
 
 
 def post_to_bluesky():
@@ -180,42 +61,90 @@ def post_to_bluesky():
         from social_media_utils import dry_run_guard
         dry_run_request = {
             'text': content,
-            'identifier': identifier
+            'text_length': len(content),
+            'identifier': identifier,
         }
+        
+        # Add detailed media information
         if media_files:
-            dry_run_request['media_files'] = ', '.join(media_files)
+            dry_run_request['media_files_count'] = len(media_files)
+            dry_run_request['media_files'] = []
+            for idx, media_file in enumerate(media_files, 1):
+                file_path = Path(media_file)
+                file_size = file_path.stat().st_size if file_path.exists() else 0
+                dry_run_request['media_files'].append({
+                    'index': idx,
+                    'path': str(media_file),
+                    'filename': file_path.name,
+                    'extension': file_path.suffix,
+                    'size_bytes': file_size,
+                    'size_kb': round(file_size / 1024, 2) if file_size > 0 else 0
+                })
+            
+            # Determine embed type
+            image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            image_count = sum(1 for f in media_files if Path(f).suffix.lower() in image_exts)
+            if image_count > 0:
+                dry_run_request['embed_type'] = 'images'
+                dry_run_request['embed_details'] = {
+                    'type': 'app.bsky.embed.images',
+                    'image_count': min(image_count, 4),
+                    'note': f'{image_count} image(s) will be embedded (max 4 supported)'
+                }
+        
+        # Add link information
         if link:
             dry_run_request['link'] = link
+            dry_run_request['link_note'] = 'Link included in text (rich link cards not yet implemented)'
+        
         dry_run_guard("Bluesky", content, media_files, dry_run_request)
         
-        # Authenticate
-        session = create_session(identifier, password)
-        access_token = session.get('accessJwt')
-        did = session.get('did')
+        # Authenticate using the AT Protocol SDK
+        client = Client()
+        try:
+            client.login(identifier, password)
+            logging.info("Successfully authenticated with Bluesky")
+        except Exception as exc:
+            logging.error(f"Bluesky authentication failed: {exc}")
+            raise
         
-        if not access_token or not did:
-            logging.error("Failed to get access token or DID from session")
-            sys.exit(1)
-        
-        # Upload media files if present
-        media_blobs = []
+        # Prepare images for embedding
+        images = []
         if media_files:
             for media_file in media_files[:4]:  # Bluesky supports up to 4 images
                 file_ext = Path(media_file).suffix.lower()
                 
                 # Only support images for now
                 if file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
-                    blob = upload_blob(access_token, media_file)
-                    media_blobs.append(blob)
+                    try:
+                        with open(media_file, 'rb') as f:
+                            img_data = f.read()
+                        
+                        # Upload the image and get the blob reference
+                        upload_result = client.upload_blob(img_data)
+                        images.append(models.AppBskyEmbedImages.Image(alt="", image=upload_result.blob))
+                        logging.info(f"Successfully uploaded image: {media_file}")
+                    except Exception as exc:
+                        logging.error(f"Failed to upload image {media_file}: {exc}")
+                        raise
                 else:
                     logger.warning(f"Unsupported media type for Bluesky: {file_ext}")
         
-        # Create the post
-        post_data = create_post(access_token, did, content, media_blobs, link)
+        # Create the post with or without images
+        embed = None
+        if images:
+            embed = models.AppBskyEmbedImages.Main(images=images)
+        
+        try:
+            response = client.send_post(text=content, embed=embed)
+            logging.info("Successfully created Bluesky post")
+        except Exception as exc:
+            logging.error(f"Failed to create Bluesky post: {exc}")
+            raise
         
         # Extract post URI and construct URL
-        post_uri = post_data.get('uri', '')
-        post_cid = post_data.get('cid', '')
+        post_uri = response.uri
+        post_cid = response.cid
         
         # Construct the Bluesky post URL
         # URI format: at://did:plc:xxx/app.bsky.feed.post/xxx
@@ -223,7 +152,8 @@ def post_to_bluesky():
             parts = post_uri.split('/')
             if len(parts) >= 3:
                 post_id = parts[-1]
-                handle = session.get('handle', identifier)
+                # Get handle from the client session
+                handle = client.me.handle if hasattr(client.me, 'handle') else identifier
                 post_url = f"https://bsky.app/profile/{handle}/post/{post_id}"
             else:
                 post_url = post_uri
