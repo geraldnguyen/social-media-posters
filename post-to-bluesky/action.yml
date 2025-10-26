@@ -1,0 +1,73 @@
+name: 'Post to Bluesky'
+description: 'Post content to Bluesky using the AT Protocol API'
+author: 'Gerald Nguyen'
+branding:
+  icon: 'message-circle'
+  color: 'blue'
+
+inputs:
+  identifier:
+    description: 'Bluesky identifier (handle or email)'
+    required: true
+  password:
+    description: 'Bluesky password or app password'
+    required: true
+  content:
+    description: 'Content to post to Bluesky (max 300 characters)'
+    required: true
+  media-files:
+    description: 'Comma-separated list of image file paths to attach (optional, max 4 images)'
+    required: false
+  link:
+    description: 'Link to include in the post (optional)'
+    required: false
+  log-level:
+    description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
+    required: false
+    default: 'INFO'
+  content-json:
+    description: 'JSON API URL and path for dynamic content templating (e.g. https://example.com/data.json | items[RANDOM])'
+    required: false
+  time-zone:
+    description: 'Time zone for date/time placeholders (e.g. UTC, UTC+7)'
+    required: false
+  dry-run:
+    description: 'Dry run mode. If true, the content will be printed but not posted.'
+    required: false
+    default: 'false'
+
+outputs:
+  post-uri:
+    description: 'AT Protocol URI of the created post'
+  post-cid:
+    description: 'Content ID (CID) of the created post'
+  post-url:
+    description: 'URL of the created post'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r ${{ github.action_path }}/requirements.txt
+    
+    - name: Post to Bluesky
+      shell: bash
+      env:
+        BLUESKY_IDENTIFIER: ${{ inputs.identifier }}
+        BLUESKY_PASSWORD: ${{ inputs.password }}
+        POST_CONTENT: ${{ inputs.content }}
+        MEDIA_FILES: ${{ inputs.media-files }}
+        POST_LINK: ${{ inputs.link }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+        CONTENT_JSON: ${{ inputs.content-json }}
+        TIME_ZONE: ${{ inputs.time-zone }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        python ${{ github.action_path }}/post_to_bluesky.py
