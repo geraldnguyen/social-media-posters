@@ -9,23 +9,26 @@ from jsonpath_ng import parse as jsonpath_parse
 
 
 def extract_json_path(data, path):
-    logging.debug("Extracting JSON path: %s from data: %s", path, data)
+    logging.debug("Extracting JSON path: %s from data type: %s", path, type(data).__name__)
     try:
         expr = jsonpath_parse(f'$.{path}')
         matches = [match.value for match in expr.find(data)]
-        logging.debug("Matches for path '%s': %s", path, matches)
+        logging.debug("JSON path '%s' found %d matches", path, len(matches))
+        
         if not matches:
             logging.debug("No matches found for path '%s'", path)
             return ''
         if len(matches) == 1:
             val = matches[0]
-            logging.debug("Single match for path '%s': %s", path, val)
+            logging.debug("Single match for path '%s': type=%s, value='%s'", path, type(val).__name__, str(val)[:100])
             if isinstance(val, (dict, list)):
                 return val
             return str(val)
         # If multiple matches, join as comma-separated string
-        logging.debug("Multiple matches for path '%s': %s", path, matches)
-        return ', '.join(str(m) for m in matches)
+        logging.debug("Multiple matches for path '%s': %d values", path, len(matches))
+        result = ', '.join(str(m) for m in matches)
+        logging.debug("Joined result: '%s'", result[:100])
+        return result
     except Exception as e:
         logging.error("Error parsing JSON path '%s': %s", path, e)
         return ''
@@ -37,7 +40,10 @@ def get_json_data():
     if not raw:
         logging.warning('CONTENT_JSON environment variable not set.')
         return None
+    
     import random
+    logging.debug("Parsing CONTENT_JSON value: %s", raw)
+    
     if '|' in raw:
         url, json_path = [part.strip() for part in raw.split('|', 1)]
         logging.debug("Parsed CONTENT_JSON url: %s, json_path: %s", url, json_path)
@@ -48,15 +54,20 @@ def get_json_data():
     try:
         logging.info("Fetching JSON from URL: %s", url)
         resp = requests.get(url, timeout=10)
+        logging.debug("HTTP response status: %d", resp.status_code)
         resp.raise_for_status()
         data = resp.json()
-        logging.debug("Fetched JSON: %s", data)
+        logging.debug("Fetched JSON data (length: %d characters)", len(str(data)))
+        logging.debug("Fetched JSON keys: %s", list(data.keys()) if isinstance(data, dict) else "not a dict")
 
         if json_path:
+            logging.info("Extracting JSON path: %s", json_path)
             # Support [RANDOM] in the path
             if '[RANDOM]' in json_path:
+                logging.debug("Detected [RANDOM] selector in path")
                 path_before, _, path_after = json_path.partition('[RANDOM]')
                 path_before = path_before.rstrip('.')
+                logging.debug("Path before [RANDOM]: %s", path_before)
                 arr = extract_json_path(data, path_before)
                 if isinstance(arr, list) and arr:
                     idx = random.randint(0, len(arr) - 1)
@@ -64,6 +75,7 @@ def get_json_data():
                     element = arr[idx]
                     if path_after.strip():
                         sub_path = path_after.lstrip('.').lstrip('[]')
+                        logging.debug("Processing sub-path after [RANDOM]: %s", sub_path)
                         sub = extract_json_path(element, sub_path)
                         logging.debug("Sub-JSON after path '%s': %s", json_path, sub)
                         return sub
@@ -79,7 +91,14 @@ def get_json_data():
                 logging.debug("Sub-JSON after path '%s': %s", json_path, sub)
                 return sub
 
+        logging.info("Returning full JSON data (no path specified)")
         return data
+    except requests.RequestException as e:
+        logging.error("HTTP request failed for URL %s: %s", url, e)
+        return None
+    except ValueError as e:
+        logging.error("Failed to parse JSON response from %s: %s", url, e)
+        return None
     except Exception as e:
         logging.error("Failed to fetch or parse JSON from %s: %s", url, e)
         return None
@@ -87,7 +106,7 @@ def get_json_data():
 
 def get_timezone():
     tz = os.getenv('TIME_ZONE', 'UTC')
-    logging.debug("Resolving timezone: %s", tz)
+    logging.debug("Resolving timezone from TIME_ZONE env var: %s", tz)
     if tz.upper() == 'UTC':
         logging.debug("Using UTC timezone.")
         return timezone.utc
@@ -102,22 +121,59 @@ def get_timezone():
 
 def builtin_value(key: str) -> str:
     now = datetime.now(get_timezone())
+    logging.debug("Resolving builtin value for key: %s using timezone: %s", key, now.tzinfo)
     if key == 'CURR_DATE':
         val = now.strftime('%Y-%m-%d')
+        logging.debug("Resolved builtin.CURR_DATE to '%s'", val)
     elif key == 'CURR_TIME':
         val = now.strftime('%H:%M:%S')
+        logging.debug("Resolved builtin.CURR_TIME to '%s'", val)
     elif key == 'CURR_DATETIME':
         val = now.strftime('%Y-%m-%d %H:%M:%S')
+        logging.debug("Resolved builtin.CURR_DATETIME to '%s'", val)
     else:
+        logging.warning("Unknown builtin key: %s", key)
         val = ''
-    logging.debug("Resolved builtin.%s to '%s'", key, val)
+        logging.debug("Resolved builtin.%s to empty string", key)
     return val
 
 
 def _process_content_with_json_root(content: str, json_root) -> str:
     """Internal function to process templated content with a given JSON root."""
+    logging.debug("Processing templated content (length: %d)", len(content))
+    logging.debug("JSON root available: %s", json_root is not None)
 
     def split_pipeline(expression: str):
+        segments = []
+        current = []
+        in_single = False
+        in_double = False
+        depth = 0
+
+        for char in expression:
+            if char == '|' and not in_single and not in_double and depth == 0:
+                segment = ''.join(current).strip()
+                if segment:
+                    segments.append(segment)
+                current = []
+                continue
+
+            current.append(char)
+
+            if char == "'" and not in_double:
+                in_single = not in_single
+            elif char == '"' and not in_single:
+                in_double = not in_double
+            elif char == '(' and not in_single and not in_double:
+                depth += 1
+            elif char == ')' and not in_single and not in_double and depth > 0:
+                depth -= 1
+
+        segment = ''.join(current).strip()
+        if segment:
+            segments.append(segment)
+
+        return segments
         segments = []
         current = []
         in_single = False
@@ -157,13 +213,17 @@ def _process_content_with_json_root(content: str, json_root) -> str:
 
     def parse_function_call(expr: str):
         expr = expr.strip()
+        logging.debug("Parsing function call: %s", expr)
         call_match = re.match(r'^([a-zA-Z_][\w\-]*)\((.*)\)$', expr)
         if not call_match:
+            logging.debug("Not a function call, returning as-is: %s", expr)
             return expr, None
 
         func_name = call_match.group(1)
         arg_str = call_match.group(2).strip()
+        logging.debug("Function name: %s, arguments string: %s", func_name, arg_str)
         if not arg_str:
+            logging.debug("No arguments for function %s", func_name)
             return func_name, []
         
         # Parse multiple arguments separated by commas
@@ -195,6 +255,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         if current_arg:
             args.append(strip_quotes(''.join(current_arg).strip()))
         
+        logging.debug("Parsed function %s with %d arguments: %s", func_name, len(args), args)
         return func_name, args
 
     def apply_case_transformation(text: str, case_type: str) -> str:
@@ -253,9 +314,12 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         return result + suffix
 
     def apply_operations(value, operations):
-        for op in operations:
+        logging.debug("Applying %d operations to value (type: %s)", len(operations), type(value).__name__)
+        original_value = value
+        for i, op in enumerate(operations):
             if not op:
                 continue
+            logging.debug("Applying operation %d: %s", i+1, op)
 
             if op.startswith('each:'):
                 func_expr = op[len('each:'):].strip()
@@ -268,6 +332,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         continue
                     prefix = '' if not func_arg else str(func_arg[0] if func_arg else '')
                     value = [prefix + str(item) for item in value]
+                    logging.debug("Applied each:prefix('%s') to list", prefix)
                 elif func_name.startswith('case_'):
                     if not isinstance(value, (list, tuple)):
                         logging.warning(
@@ -275,6 +340,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         )
                         continue
                     value = [apply_case_transformation(str(item), func_name) for item in value]
+                    logging.debug("Applied each:%s to list items", func_name)
                 elif func_name == 'max_length':
                     if not isinstance(value, (list, tuple)):
                         logging.warning(
@@ -288,6 +354,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         max_len = int(func_arg[0])
                         suffix = func_arg[1] if len(func_arg) > 1 else ''
                         value = [apply_max_length(str(item), max_len, str(suffix)) for item in value]
+                        logging.debug("Applied each:max_length(%d, '%s') to list items", max_len, suffix)
                     except (ValueError, IndexError) as e:
                         logging.warning("Invalid arguments for each:max_length: %s", e)
                 else:
@@ -302,6 +369,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         continue
                     separator = '' if not func_arg else str(func_arg[0] if func_arg else '')
                     value = separator.join(str(item) for item in value)
+                    logging.debug("Applied join('%s') to list", separator)
                 elif func_name == 'max_length':
                     if not func_arg or len(func_arg) < 1:
                         logging.warning("max_length requires at least 1 argument (max_length)")
@@ -310,6 +378,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         max_len = int(func_arg[0])
                         suffix = func_arg[1] if len(func_arg) > 1 else ''
                         value = apply_max_length(str(value), max_len, str(suffix))
+                        logging.debug("Applied max_length(%d, '%s') to string", max_len, suffix)
                     except (ValueError, IndexError) as e:
                         logging.warning("Invalid arguments for max_length: %s", e)
                 elif func_name == 'join_while':
@@ -341,11 +410,14 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                                 else:
                                     break
                         value = separator.join(result_parts)
+                        logging.debug("Applied join_while('%s', %d) resulting in %d items", separator, max_len, len(result_parts))
                     except (ValueError, IndexError) as e:
                         logging.warning("Invalid arguments for join_while: %s", e)
                 else:
                     logging.warning("Unsupported pipeline operation '%s'", func_name)
 
+        if value != original_value:
+            logging.debug("Operations transformed value from '%s' to '%s'", str(original_value)[:50], str(value)[:50])
         return value
 
     def replace_placeholder(match):
@@ -353,12 +425,14 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         logging.debug("Processing placeholder: source=%s, expression=%s", source, expression)
 
         segments = split_pipeline(expression)
+        logging.debug("Split expression into %d segments: %s", len(segments), segments)
         if not segments:
             logging.warning("Empty placeholder expression for source '%s'", source)
             return match.group(0)
 
         key = segments[0]
         operations = segments[1:]
+        logging.debug("Key: %s, Operations: %s", key, operations)
 
         if source == 'env':
             val = os.getenv(key, '')
@@ -368,7 +442,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
             logging.debug("Resolved builtin.%s to '%s'", key, val)
         elif source == 'json':
             data = json_root
-            logging.debug("Using JSON root for lookup: %s", data)
+            logging.debug("Using JSON root for lookup: %s", data is not None)
             if data is None:
                 logging.warning("No JSON data available for %s.%s", source, key)
                 return match.group(0)
@@ -376,21 +450,26 @@ def _process_content_with_json_root(content: str, json_root) -> str:
             if val == '' or val is None:
                 logging.warning("Could not resolve %s.%s, leaving placeholder as-is.", source, key)
                 return match.group(0)
-            logging.debug("Resolved %s.%s to '%s'", source, key, str(val))
+            logging.debug("Resolved %s.%s to '%s'", source, key, str(val)[:100])
         else:
             logging.warning("Unknown placeholder source: %s", source)
             return match.group(0)
 
         if operations:
+            logging.debug("Applying %d operations to resolved value", len(operations))
             val = apply_operations(val, operations)
 
-        return str(val)
+        result = str(val)
+        logging.debug("Placeholder replacement result: '%s'", result[:100])
+        return result
 
     # Updated pattern to support env, builtin, json sources with flexible keys/paths
     pattern = re.compile(r'\@\{(env|builtin|json)\.([^}]+)\}')
+    logging.debug("Searching for placeholders in content using pattern: %s", pattern.pattern)
+    
     # Apply replacements
     result = pattern.sub(replace_placeholder, content)
-    logging.debug("Processed templated content: from %s --> '%s'", content, result)
+    logging.debug("Processed templated content: from %s --> '%s'", content, result[:100])
     return result
 
 
@@ -400,5 +479,16 @@ def process_templated_contents(*contents: str) -> tuple[str, ...]:
     Fetches CONTENT_JSON only once and applies it to all provided content strings.
     Returns a tuple of processed strings in the same order.
     """
+    logging.info("Processing %d content strings with templating", len(contents))
     json_root = get_json_data()
-    return tuple(_process_content_with_json_root(content, json_root) for content in contents)
+    logging.debug("Fetched JSON root for template processing")
+    
+    results = []
+    for i, content in enumerate(contents):
+        logging.debug("Processing content string %d (length: %d)", i+1, len(content))
+        processed = _process_content_with_json_root(content, json_root)
+        results.append(processed)
+        logging.debug("Content string %d processed (result length: %d)", i+1, len(processed))
+    
+    logging.info("Completed template processing for %d content strings", len(contents))
+    return tuple(results)
