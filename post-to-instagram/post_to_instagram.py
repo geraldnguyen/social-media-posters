@@ -62,6 +62,21 @@ class InstagramAPI:
         response.raise_for_status()
         return response.json()["id"]
     
+    def create_carousel_container(self, user_id, children_ids, caption):
+        """Create a carousel container for multiple media items."""
+        url = f"{self.base_url}/{user_id}/media"
+        
+        data = {
+            "media_type": "CAROUSEL",
+            "children": ",".join(children_ids),
+            "caption": caption,
+            "access_token": self.access_token
+        }
+        
+        response = requests.post(url, data=data)
+        response.raise_for_status()
+        return response.json()["id"]
+    
     def publish_media(self, user_id, creation_id):
         """Publish the media container."""
         url = f"{self.base_url}/{user_id}/media_publish"
@@ -124,6 +139,7 @@ def upload_media_to_hosting(file_path):
     if file_path.startswith(('http://', 'https://')):
         return file_path
     else:
+        logging.error("Media file must be a publicly accessible URL for Instagram posting: %s", file_path)
         raise ValueError(
             "Media file must be a publicly accessible URL. "
             "Please upload your media to a hosting service and provide the URL."
@@ -140,10 +156,36 @@ def post_to_instagram():
         # Get required parameters
         user_id = get_required_env_var("IG_USER_ID")
         content = get_required_env_var("POST_CONTENT")
-        media_file = get_required_env_var("MEDIA_FILE")
         
+        # Get media files - support both single and multiple
+        media_file = get_optional_env_var("MEDIA_FILE", "")
+        media_files_input = get_optional_env_var("MEDIA_FILES", "")
+        
+        # Validate that exactly one media input is provided
+        if not media_file and not media_files_input:
+            logging.error("Either MEDIA_FILE or MEDIA_FILES must be provided")
+            sys.exit(1)
+        if media_file and media_files_input:
+            logging.error("Cannot specify both MEDIA_FILE and MEDIA_FILES. Use one or the other.")
+            sys.exit(1)
+        
+                
         # Process templated content (Instagram doesn't support links in posts)
-        content, media_file = process_templated_contents(content, media_file)
+        content, media_file, media_files_input = process_templated_contents(content, media_file, media_files_input)
+
+
+        # Parse media files (Instagram requires URLs, so no downloading)
+        if media_file:
+            media_files = [media_file]
+        else:
+            # Simple parsing for Instagram - just split by comma and strip whitespace
+            media_files = [f.strip() for f in media_files_input.split(',') if f.strip()]
+        
+        # Validate media files count
+        if len(media_files) > 10:
+            logging.error("Instagram carousel posts support maximum 10 media files")
+            sys.exit(1)
+
         
         # Validate content
         if not validate_post_content(content, max_length=2200):  # Instagram caption limit
@@ -152,34 +194,67 @@ def post_to_instagram():
         # Create Instagram API client
         ig_api = InstagramAPI(get_required_env_var("IG_ACCESS_TOKEN"))
         
-        # Determine media type
-        file_ext = Path(media_file).suffix.lower() if not media_file.startswith('http') else Path(media_file).suffix.lower()
-        media_type = "VIDEO" if file_ext in ['.mp4', '.mov'] else "IMAGE"
+        # Determine media types and validate
+        media_types = []
+        for media_file in media_files:
+            file_ext = Path(media_file).suffix.lower() if not media_file.startswith('http') else Path(media_file).suffix.lower()
+            if file_ext in ['.mp4', '.mov']:
+                media_types.append("VIDEO")
+            else:
+                media_types.append("IMAGE")
         
-        # Validate image if it's an image file and local
-        if media_type == "IMAGE" and not media_file.startswith('http'):
-            if not validate_image(media_file):
+        # Validate media files are URLs (required for Instagram API)
+        for media_file in media_files:
+            if not media_file.startswith(('http://', 'https://')):
+                logging.error(f"Instagram requires publicly accessible URLs. Invalid media file: {media_file}")
                 sys.exit(1)
         
-        # Get media URL (upload to hosting service if needed)
-        media_url = upload_media_to_hosting(media_file)
-        logger.info(f"Using media URL: {media_url}")
+        logger.info(f"Using media URLs: {media_files}")
         
-        # Create media container
-        logger.info("Creating media container...")
         # DRY RUN GUARD
         from social_media_utils import dry_run_guard
-        dry_run_guard("Instagram", content, [media_url], {
+        dry_run_request = {
             'caption': content,
-            'media_type': media_type,
-            'media_url': media_url
-        })
-        creation_id = ig_api.create_media_container(
-            user_id=user_id,
-            image_url=media_url,
-            caption=content,
-            media_type=media_type
-        )
+            'media_count': len(media_files),
+            'media_types': media_types,
+            'media_urls': media_files,  # media_files now contains the URLs directly
+            'is_carousel': len(media_files) > 1
+        }
+        dry_run_guard("Instagram", content, media_files, dry_run_request)
+        
+        # Create media container(s)
+        if len(media_files) == 1:
+            # Single media post
+            logger.info("Creating single media container...")
+            creation_id = ig_api.create_media_container(
+                user_id=user_id,
+                image_url=media_files[0],
+                caption=content,
+                media_type=media_types[0]
+            )
+        else:
+            # Carousel post - create individual containers first
+            logger.info(f"Creating carousel with {len(media_files)} media items...")
+            child_container_ids = []
+            
+            for i, (media_url, media_type) in enumerate(zip(media_files, media_types)):
+                logger.info(f"Creating child container {i+1}/{len(media_files)}...")
+                # Note: Individual containers in carousel don't have captions
+                child_id = ig_api.create_media_container(
+                    user_id=user_id,
+                    image_url=media_url,
+                    caption="",  # No caption for individual items in carousel
+                    media_type=media_type
+                )
+                child_container_ids.append(child_id)
+            
+            # Create the carousel container
+            logger.info("Creating carousel container...")
+            creation_id = ig_api.create_carousel_container(
+                user_id=user_id,
+                children_ids=child_container_ids,
+                caption=content
+            )
         
         logger.info(f"Media container created with ID: {creation_id}")
         

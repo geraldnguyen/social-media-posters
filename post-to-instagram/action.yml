@@ -16,8 +16,11 @@ inputs:
     description: 'Caption for the Instagram post'
     required: true
   media-file:
-    description: 'Path to image or video file to post'
-    required: true
+    description: 'Path to single image or video file to post (use either media-file OR media-files)'
+    required: false
+  media-files:
+    description: 'Comma-separated list of media file paths for carousel post (max 10, use either media-file OR media-files)'
+    required: false
   log-level:
     description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
     required: false

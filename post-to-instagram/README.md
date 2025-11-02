@@ -2,27 +2,34 @@
 
 ## Template Interpolation
 
-You can use template placeholders in your post content. The following sources are supported:
+You can use template placeholders in your post content and media file URLs. The following sources are supported:
 
 - `${env.VAR}`: Replaced with the value of the environment variable `VAR` (e.g., `${env.NAME}`)
 - `${builtin.CURR_DATE}`: Replaced with the current date in `YYYY-MM-DD` format
 - `${builtin.CURR_TIME}`: Replaced with the current time in `HH:MM:SS` format
 - `${builtin.CURR_DATETIME}`: Replaced with the current date and time in `YYYY-MM-DD HH:MM:SS` format
 
+Template interpolation works for:
+- **Content**: Post captions
+- **Media files**: Both `media-file` and `media-files` inputs
+
 Example:
 
 ```env
 POST_CONTENT='Hello ${env.NAME}, today is ${builtin.CURR_DATE} at ${builtin.CURR_TIME}!'
+MEDIA_FILE='https://example.com/images/${builtin.CURR_DATE}/photo.jpg'
 NAME=Gerald
 ```
-This will post: `Hello Gerald, today is 2025-09-07 at 14:18:25!`
+This will post: `Hello Gerald, today is 2025-09-07 at 14:18:25!` with media from `https://example.com/images/2025-09-07/photo.jpg`
 
 This GitHub Action allows you to post content to Instagram using the Instagram Graph API.
 
 ## Features
 
-- Post images and videos to Instagram
+- Post single images and videos to Instagram
+- Create carousel posts with multiple images/videos (up to 10 media files)
 - Add captions to posts
+- Template interpolation support
 - Configurable logging levels
 - Returns post ID and URL for further processing
 
@@ -42,14 +49,44 @@ You need to have an Instagram Business or Creator account and create a Facebook 
 
 ## Usage
 
+### Single Media Post
+
 ```yaml
-- name: Post to Instagram
+- name: Post single image to Instagram
   uses: ./post-to-instagram
   with:
     access-token: ${{ secrets.IG_ACCESS_TOKEN }}
     user-id: ${{ secrets.IG_USER_ID }}
+    content: "Check out this amazing photo! 📸"
+    media-file: "path/to/image.jpg"
+```
+
+### Carousel Post (Multiple Images)
+
+```yaml
+- name: Post carousel to Instagram
+  uses: ./post-to-instagram
+  with:
+    access-token: ${{ secrets.IG_ACCESS_TOKEN }}
+    user-id: ${{ secrets.IG_USER_ID }}
+    content: "My photo series! 📸"
+    media-files: "image1.jpg,image2.jpg,image3.jpg"
+```
     content: "Hello from GitHub Actions! 🚀 #automation #github"
     media-file: "https://example.com/hosted-image.jpg"  # Must be publicly accessible URL
+    log-level: "INFO"  # Optional
+```
+
+### Carousel Post Example
+
+```yaml
+- name: Post carousel to Instagram
+  uses: ./post-to-instagram
+  with:
+    access-token: ${{ secrets.IG_ACCESS_TOKEN }}
+    user-id: ${{ secrets.IG_USER_ID }}
+    content: "My photo series! 📸 #carousel #photos"
+    media-files: "https://example.com/image1.jpg,https://example.com/image2.jpg,https://example.com/image3.jpg"
     log-level: "INFO"  # Optional
 ```
 
@@ -60,8 +97,11 @@ You need to have an Instagram Business or Creator account and create a Facebook 
 | `access-token` | Instagram User Access Token | Yes | - |
 | `user-id` | Instagram User ID | Yes | - |
 | `content` | Caption for the Instagram post (max 2200 characters) | Yes | - |
-| `media-file` | Publicly accessible URL to image or video file | Yes | - |
+| `media-file` | Publicly accessible URL to single image or video file (use either media-file OR media-files) | No* | - |
+| `media-files` | Comma-separated list of publicly accessible media URLs for carousel (max 10, use either media-file OR media-files) | No* | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
+
+*Either `media-file` or `media-files` must be provided, but not both.
 
 ## Outputs
 
@@ -88,6 +128,28 @@ You need to have an Instagram Business or Creator account and create a Facebook 
 - Supported formats: MP4, MOV
 - Maximum file size: 100MB
 - Maximum duration: 60 seconds
+
+### Carousel Posts
+
+Instagram supports carousel posts with multiple images and videos in a single post. Use the `media-files` input to create carousel posts.
+
+**Carousel Requirements:**
+- Maximum 10 media files per carousel
+- All media files must be publicly accessible URLs
+- Mixed content allowed (images + videos)
+- Same caption applies to the entire carousel
+- Individual media items cannot have separate captions
+
+**Example Carousel Post:**
+```yaml
+- name: Post carousel to Instagram
+  uses: ./post-to-instagram
+  with:
+    access-token: ${{ secrets.IG_ACCESS_TOKEN }}
+    user-id: ${{ secrets.IG_USER_ID }}
+    content: "My photo series! 📸 #carousel"
+    media-files: "https://example.com/photo1.jpg,https://example.com/photo2.jpg,https://example.com/video.mp4"
+```
 
 ### Example with Image Hosting
 
@@ -129,10 +191,10 @@ You need to have an Instagram Business or Creator account and create a Facebook 
 
 ## Limitations
 
-- Media files must be publicly accessible URLs (not local files)
+- **Media files must be publicly accessible URLs** (Instagram API requirement - files are not downloaded locally)
 - Instagram has strict content policies
 - Rate limits apply based on your app usage
-- Only supports single media posts (no carousels)
+- Carousel posts support up to 10 media files
 - Requires Instagram Business or Creator account
 
 ## Troubleshooting

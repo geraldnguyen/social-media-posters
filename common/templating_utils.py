@@ -485,10 +485,10 @@ def process_templated_contents(*contents: str) -> tuple[str, ...]:
     
     results = []
     for i, content in enumerate(contents):
-        logging.debug("Processing content string %d (length: %d)", i+1, len(content))
+        logging.info("Processing content string %d (length: %d): %s", i+1, len(content), content)
         processed = _process_content_with_json_root(content, json_root)
         results.append(processed)
-        logging.debug("Content string %d processed (result length: %d)", i+1, len(processed))
+        logging.info("Content string %d processed (result length: %d): %s", i+1, len(processed), processed)
     
     logging.info("Completed template processing for %d content strings", len(contents))
     return tuple(results)
