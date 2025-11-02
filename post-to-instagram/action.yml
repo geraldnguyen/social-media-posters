@@ -62,6 +62,7 @@ runs:
         IG_USER_ID: ${{ inputs.user-id }}
         POST_CONTENT: ${{ inputs.content }}
         MEDIA_FILE: ${{ inputs.media-file }}
+        MEDIA_FILES: ${{ inputs.media-files }}
         LOG_LEVEL: ${{ inputs.log-level }}
         CONTENT_JSON: ${{ inputs.content-json }}
         TIME_ZONE: ${{ inputs.time-zone }}
