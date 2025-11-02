@@ -9,7 +9,7 @@ from pathlib import Path
 # Load environment variables from a local .env file if present (for local development)
 try:
     from dotenv import load_dotenv
-    env_path = Path(__file__).parent.parent / '.env'
+    env_path = Path(__file__).parent / '.env'
     if env_path.exists():
         load_dotenv(dotenv_path=env_path)
 except ImportError:
@@ -32,6 +32,8 @@ from social_media_utils import (
     handle_api_error,
     log_success
 )
+
+from templating_utils import process_templated_contents
 
 
 class InstagramAPI:
@@ -139,6 +141,9 @@ def post_to_instagram():
         user_id = get_required_env_var("IG_USER_ID")
         content = get_required_env_var("POST_CONTENT")
         media_file = get_required_env_var("MEDIA_FILE")
+        
+        # Process templated content (Instagram doesn't support links in posts)
+        content, media_file = process_templated_contents(content, media_file)
         
         # Validate content
         if not validate_post_content(content, max_length=2200):  # Instagram caption limit
