@@ -128,6 +128,10 @@ You can post-process array values inside a template expression using pipe operat
 - `each:prefix(str)`: add the supplied prefix to every element in the list
 - `join(str)`: concatenate all elements into a single string separated by the provided string
 
+### Selection Operations
+- `random()`: select a random element from a list (throws error if list is null or empty)
+- `attr(name)`: extract the named attribute from each object in a list of objects
+
 ### Case Transformation Operations
 - `each:case_title()`: convert each element to Title Case (`hello world` → `Hello World`)
 - `each:case_sentence()`: convert each element to Sentence case (`hello world` → `Hello world`)
@@ -163,6 +167,15 @@ POST_CONTENT=Summary: @{json.description | max_length(100, '...')} Tags: @{json.
 ```
 
 This will clip the description at 100 characters (at word boundary) and join tags with '#' separator until the total length reaches 50 characters.
+
+### Selection Operations Example
+
+```
+CONTENT_JSON=https://example.com/data.json | stories
+POST_CONTENT=Random story: @{json | random() | attr(title)}
+```
+
+This will randomly select a story object from the `stories` array and extract its `title` attribute.
 
 ## Security Notes
 

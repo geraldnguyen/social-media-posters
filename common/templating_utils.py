@@ -413,6 +413,25 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         logging.debug("Applied join_while('%s', %d) resulting in %d items", separator, max_len, len(result_parts))
                     except (ValueError, IndexError) as e:
                         logging.warning("Invalid arguments for join_while: %s", e)
+                elif func_name == 'random':
+                    if not isinstance(value, (list, tuple)):
+                        raise ValueError("random() operation requires list input")
+                    if not value:
+                        raise ValueError("random() operation requires non-empty list")
+                    import random
+                    idx = random.randint(0, len(value) - 1)
+                    value = value[idx]
+                    logging.info("Applied random() selecting index %d - obtained %s", idx, value)
+                elif func_name == 'attr':
+                    if not isinstance(value, dict):
+                        raise ValueError("attr() operation requires dict input but provided %s of type %s", value, type(value).__name__)
+                    if not func_arg or len(func_arg) < 1:
+                        raise ValueError("attr() requires at least 1 argument (attribute name)")
+                    attr_name = func_arg[0]
+                    if attr_name not in value:
+                        raise ValueError(f"attr() attribute '{attr_name}' not found in object")
+                    value = value[attr_name]
+                    logging.debug("Applied attr('%s')", attr_name)
                 else:
                     logging.warning("Unsupported pipeline operation '%s'", func_name)
 

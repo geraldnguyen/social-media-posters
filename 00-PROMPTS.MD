@@ -202,3 +202,17 @@ Then modify the `post_to_x.py` to call `process_templated_contents` to process P
 Then modify the `post_to_facebook.py` to call `process_templated_contents` to process POST_CONTENT and POST_LINK
 
 Then safely delete `process_templated_content_if_needed`
+
+
+## Adjustment - random() and attr(attribute) operations ✅ COMPLETED
+
+Expand the Pipe operator to template expression (e.g. POST_CONTENT, POST_LINK) to support the following operations
+- `random()`: a List opreation. Return an random element from the input list. If the list is null or empty, throw error
+- `attr(name)`: an json object operation. Return the `name` attribute of the input object. If the object is null, throw error. If the attribute does not exist, throw error.
+
+
+Expectation:
+- Implement the above requirements ✅
+- Create unit tests for the changes ✅
+- Then run the tests ✅
+- Before handover, update all relevant .MD file documenting the new functionality changes ✅

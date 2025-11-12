@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-11-12
+
+### Added
+
+- New pipeline operations for the templating engine:
+  - `random()` - selects a random element from a list (throws error if list is null or empty)
+  - `attr(name)` - extracts a named attribute from a JSON object (throws error if object is null or attribute doesn't exist)
+- Unit tests covering the new operations (`test_templating_utils_random_attr.py`)
+- Documentation updates in 00-PROMPTS.MD marking the feature as completed
+
 ## [1.3.0] - 2025-01-28
 
 ### Added

@@ -223,6 +223,10 @@ Pipe operators allow you to transform lists before they are rendered:
 - `each:prefix(str)`: prepend the provided string to every list element
 - `join(str)`: merge the list into a single string separated by the provided delimiter
 
+### Selection Operations
+- `random()`: select a random element from a list (throws error if list is null or empty)
+- `attr(name)`: extract the named attribute from each object in a list of objects
+
 ### Case Transformation Operations
 - `each:case_title()`: convert each element to Title Case (`hello world` → `Hello World`)
 - `each:case_sentence()`: convert each element to Sentence case (`hello world` → `Hello world`)

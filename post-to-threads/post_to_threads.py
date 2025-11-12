@@ -190,7 +190,7 @@ def post_to_threads():
         dry_run_request = {
             'text': content,
             'media_url': media_file,
-            'link_attachment': link
+            'link': link
         }
         logger.info("Checking dry run guard...")
         dry_run_guard("Threads", content, media_files, dry_run_request)
