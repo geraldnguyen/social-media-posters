@@ -216,3 +216,18 @@ Expectation:
 - Create unit tests for the changes ✅
 - Then run the tests ✅
 - Before handover, update all relevant .MD file documenting the new functionality changes ✅
+
+## Post-to-Linkedin
+
+Create a new post-to-linkedin action in the same-named folder.
+
+The post-to-linkedin action shall support all features common to other post-to actions.
+
+Detailed logging and dry-run mode must be available to faciliate troubleshooting.
+
+Expectation:
+- Implement the above requirements
+- Create unit tests for the changes
+- Then run the tests
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes
+
