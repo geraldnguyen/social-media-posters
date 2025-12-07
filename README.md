@@ -80,6 +80,12 @@ Post content to Threads using the Threads API.
 - Supports media and link attachments
 - Media support: Images and videos via URLs
 
+### 💼 [Post to LinkedIn](./post-to-linkedin)
+Post content to LinkedIn using the LinkedIn API v2.
+- Character limit: 3000 characters
+- Supports text posts with media and links
+- Media support: Images (videos not currently supported)
+
 ## Quick Start
 
 1. Choose the social media platform(s) you want to post to
@@ -143,6 +149,12 @@ social-media-posters/
 │   ├── action.yml
 │   ├── post_to_threads.py
 │   ├── requirements.txt
+│   └── README.md
+├── post-to-linkedin/       # LinkedIn posting action
+│   ├── action.yml
+│   ├── post_to_linkedin.py
+│   ├── requirements.txt
+│   ├── test_post_to_linkedin.py
 │   └── README.md
 ├── common/                 # Shared utilities
 │   ├── __init__.py
@@ -212,6 +224,7 @@ Summary: This is a captivating tale of ancient gods and mortals, exploring theme
 | Facebook | Facebook App, Page Admin access, Graph API permissions |
 | Instagram | Business/Creator account, Facebook App, Graph API access |
 | Threads | Threads account, approved Threads App |
+| LinkedIn | LinkedIn Developer Account, App with Share on LinkedIn product |
 
 ## Rate Limits
 
@@ -221,6 +234,7 @@ Each platform has different rate limits:
 - **Facebook**: Varies by app usage and user activity
 - **Instagram**: Limited by Graph API quotas
 - **Threads**: Subject to Meta's API rate limits
+- **LinkedIn**: Subject to LinkedIn API throttling limits
 
 ## Contributing
 

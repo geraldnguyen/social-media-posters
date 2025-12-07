@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2025-12-07
+
+### Added
+
+- **Post to LinkedIn Action** (`post-to-linkedin/`)
+  - Complete LinkedIn posting support using LinkedIn API v2
+  - Support for text posts up to 3000 characters
+  - Image media attachment support (multiple images supported)
+  - Link attachment support with automatic preview
+  - Full templating engine support for dynamic content
+  - Dry-run mode for testing without posting
+  - Detailed logging with configurable log levels
+  - OAuth 2.0 authentication support
+  - Unit tests covering LinkedIn API integration (`test_post_to_linkedin.py`)
+  - Comprehensive documentation with setup instructions and examples
+  - Support for both personal and organization posts via author URN
+  - Compatible with all common features:
+    - Remote media file download
+    - Environment variable templating
+    - JSON API templating with pipe operations
+    - Built-in date/time placeholders
+    - Case transformation operations
+    - Length operations
+    - List operations (prefix, join, random, attr)
+
+### Updated
+
+- Root README.md to include LinkedIn action in:
+  - Available Actions section
+  - Repository Structure
+  - Prerequisites by Platform table
+  - Rate Limits section
+- 00-PROMPTS.MD to mark v1.9.0 requirement as completed
+
+### Dependencies
+
+- **LinkedIn Action**: python-dotenv, requests>=2.31.0, jsonpath-ng
+
 ## [1.4.0] - 2025-11-12
 
 ### Added
