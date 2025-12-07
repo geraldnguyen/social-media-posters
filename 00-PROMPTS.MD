@@ -217,7 +217,7 @@ Expectation:
 - Then run the tests ✅
 - Before handover, update all relevant .MD file documenting the new functionality changes ✅
 
-## Post-to-Linkedin
+## v1.9.0 - Post-to-Linkedin action
 
 Create a new post-to-linkedin action in the same-named folder.
 
