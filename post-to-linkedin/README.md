@@ -59,7 +59,7 @@ Refer to [LinkedIn's OAuth 2.0 documentation](https://learn.microsoft.com/en-us/
 
 To get your person ID:
 ```bash
-curl -X GET https://api.linkedin.com/v2/me \
+curl -X GET https://api.linkedin.com/v2/userinfo \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
