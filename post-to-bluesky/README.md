@@ -42,7 +42,30 @@ You need a Bluesky account to use this action:
 
 ## Usage
 
+### For External Users
+
+If you're using this action from another repository, reference it with the full repository path and version:
+
 ```yaml
+- name: Post to Bluesky
+  uses: geraldnguyen/social-media-posters/post-to-bluesky@v1.9.0
+  with:
+    identifier: ${{ secrets.BLUESKY_IDENTIFIER }}
+    password: ${{ secrets.BLUESKY_PASSWORD }}
+    content: "Hello from GitHub Actions! 🚀"
+    media-files: "path/to/image.jpg,path/to/image2.png"  # Optional
+    link: "https://example.com"  # Optional
+    log-level: "INFO"  # Optional
+```
+
+### For Local Development
+
+If you're developing within the social-media-posters repository:
+
+```yaml
+- name: Checkout repository
+  uses: actions/checkout@v3
+
 - name: Post to Bluesky
   uses: ./post-to-bluesky
   with:
@@ -80,7 +103,7 @@ You need a Bluesky account to use this action:
 
 ```yaml
 - name: Post to Bluesky with images
-  uses: ./post-to-bluesky
+  uses: geraldnguyen/social-media-posters/post-to-bluesky@v1.9.0
   with:
     identifier: ${{ secrets.BLUESKY_IDENTIFIER }}
     password: ${{ secrets.BLUESKY_PASSWORD }}
@@ -92,7 +115,7 @@ You need a Bluesky account to use this action:
 
 ```yaml
 - name: Post daily update to Bluesky
-  uses: ./post-to-bluesky
+  uses: geraldnguyen/social-media-posters/post-to-bluesky@v1.9.0
   with:
     identifier: ${{ secrets.BLUESKY_IDENTIFIER }}
     password: ${{ secrets.BLUESKY_PASSWORD }}
@@ -107,6 +130,50 @@ You need a Bluesky account to use this action:
 - **Never commit passwords to your repository**
 - Use app passwords instead of your main account password
 - App passwords can be revoked if compromised
+
+## GitHub Actions Best Practices
+
+### Version Pinning
+- **Always use a specific version tag** (e.g., `@v1.9.0`) in production workflows for stability
+- **Test updates** in a non-production environment before upgrading
+- **Check the changelog** for breaking changes when updating versions
+
+### Action Reference Format
+- **External repositories**: `geraldnguyen/social-media-posters/post-to-bluesky@v1.9.0`
+- **Local/same repository**: `./post-to-bluesky` (requires checkout step first)
+
+### Workflow Tips
+- **Respect the 300-character limit** for Bluesky posts
+- **Use app passwords** for better security (can be revoked without changing main password)
+- **Implement error handling** with `continue-on-error` or conditional steps
+- **Use template variables** for dynamic, reusable content
+- **Store secrets securely** and never expose them in logs
+- **Use dry-run mode** to test posts before going live
+
+### Example: Production-Ready Workflow
+
+```yaml
+name: Post to Bluesky
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Message to post'
+        required: true
+
+jobs:
+  post-to-bluesky:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Bluesky
+        uses: geraldnguyen/social-media-posters/post-to-bluesky@v1.9.0
+        with:
+          identifier: ${{ secrets.BLUESKY_IDENTIFIER }}
+          password: ${{ secrets.BLUESKY_PASSWORD }}
+          content: ${{ github.event.inputs.message }}
+          log-level: "INFO"
+        continue-on-error: false
+```
 
 ## Supported Media Types
 

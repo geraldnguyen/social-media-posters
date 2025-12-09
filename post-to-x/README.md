@@ -40,7 +40,31 @@ You need to have an X Developer Account and create an app to get the required AP
 
 ## Usage
 
+### For External Users
+
+If you're using this action from another repository, reference it with the full repository path and version:
+
 ```yaml
+- name: Post to X
+  uses: geraldnguyen/social-media-posters/post-to-x@v1.9.0
+  with:
+    api-key: ${{ secrets.X_API_KEY }}
+    api-secret: ${{ secrets.X_API_SECRET }}
+    access-token: ${{ secrets.X_ACCESS_TOKEN }}
+    access-token-secret: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+    content: "Hello from GitHub Actions! 🚀"
+    media-files: "path/to/image.jpg,path/to/video.mp4"  # Optional
+    log-level: "INFO"  # Optional
+```
+
+### For Local Development
+
+If you're developing within the social-media-posters repository:
+
+```yaml
+- name: Checkout repository
+  uses: actions/checkout@v3
+
 - name: Post to X
   uses: ./post-to-x
   with:
@@ -76,7 +100,7 @@ You need to have an X Developer Account and create an app to get the required AP
 
 ```yaml
 - name: Post to X with media
-  uses: ./post-to-x
+  uses: geraldnguyen/social-media-posters/post-to-x@v1.9.0
   with:
     api-key: ${{ secrets.X_API_KEY }}
     api-secret: ${{ secrets.X_API_SECRET }}
@@ -182,6 +206,49 @@ This will randomly select a story object from the `stories` array and extract it
 - Store all API credentials as GitHub repository secrets
 - Never commit API keys or tokens to your repository
 - Use the principle of least privilege for your X app permissions
+
+## GitHub Actions Best Practices
+
+### Version Pinning
+- **Always use a specific version tag** (e.g., `@v1.9.0`) in production workflows for stability
+- **Test updates** in a non-production environment before upgrading
+- **Check the changelog** for breaking changes when updating versions
+
+### Action Reference Format
+- **External repositories**: `geraldnguyen/social-media-posters/post-to-x@v1.9.0`
+- **Local/same repository**: `./post-to-x` (requires checkout step first)
+
+### Workflow Tips
+- **Respect the 280-character limit** for X posts
+- **Use appropriate log levels** (`DEBUG` for troubleshooting, `INFO` for production)
+- **Implement error handling** with `continue-on-error` or conditional steps
+- **Use template variables** for dynamic, reusable content
+- **Store secrets securely** and never expose them in logs
+- **Be mindful of rate limits** based on your API access level
+
+### Example: Production-Ready Workflow
+
+```yaml
+name: Tweet on Release
+on:
+  release:
+    types: [published]
+
+jobs:
+  post-to-x:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post release announcement to X
+        uses: geraldnguyen/social-media-posters/post-to-x@v1.9.0
+        with:
+          api-key: ${{ secrets.X_API_KEY }}
+          api-secret: ${{ secrets.X_API_SECRET }}
+          access-token: ${{ secrets.X_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          content: "🚀 Version ${{ github.event.release.tag_name }} is now live! Check out the release notes: ${{ github.event.release.html_url }}"
+          log-level: "INFO"
+        continue-on-error: true
+```
 
 ## Limitations
 

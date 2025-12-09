@@ -53,35 +53,35 @@ You need to have an Instagram Business or Creator account and create a Facebook 
 
 ```yaml
 - name: Post single image to Instagram
-  uses: ./post-to-instagram
+  uses: geraldnguyen/social-media-posters/post-to-instagram@v1.9.0
   with:
     access-token: ${{ secrets.IG_ACCESS_TOKEN }}
     user-id: ${{ secrets.IG_USER_ID }}
     content: "Check out this amazing photo! 📸"
-    media-file: "path/to/image.jpg"
+    media-file: "https://example.com/hosted-image.jpg"  # Must be publicly accessible URL
 ```
 
 ### Carousel Post (Multiple Images)
 
+For local development within the social-media-posters repository, use relative paths and include a checkout step:
+
 ```yaml
+- name: Checkout repository
+  uses: actions/checkout@v3
+
 - name: Post carousel to Instagram
   uses: ./post-to-instagram
   with:
     access-token: ${{ secrets.IG_ACCESS_TOKEN }}
     user-id: ${{ secrets.IG_USER_ID }}
     content: "My photo series! 📸"
-    media-files: "image1.jpg,image2.jpg,image3.jpg"
+    media-files: "https://example.com/image1.jpg,https://example.com/image2.jpg,https://example.com/image3.jpg"
 ```
-    content: "Hello from GitHub Actions! 🚀 #automation #github"
-    media-file: "https://example.com/hosted-image.jpg"  # Must be publicly accessible URL
-    log-level: "INFO"  # Optional
-```
-
 ### Carousel Post Example
 
 ```yaml
 - name: Post carousel to Instagram
-  uses: ./post-to-instagram
+  uses: geraldnguyen/social-media-posters/post-to-instagram@v1.9.0
   with:
     access-token: ${{ secrets.IG_ACCESS_TOKEN }}
     user-id: ${{ secrets.IG_USER_ID }}
@@ -143,7 +143,7 @@ Instagram supports carousel posts with multiple images and videos in a single po
 **Example Carousel Post:**
 ```yaml
 - name: Post carousel to Instagram
-  uses: ./post-to-instagram
+  uses: geraldnguyen/social-media-posters/post-to-instagram@v1.9.0
   with:
     access-token: ${{ secrets.IG_ACCESS_TOKEN }}
     user-id: ${{ secrets.IG_USER_ID }}
@@ -168,7 +168,7 @@ Instagram supports carousel posts with multiple images and videos in a single po
         echo "IMAGE_URL=https://your-hosting-service.com/image.jpg" >> $GITHUB_ENV
     
     - name: Post to Instagram
-      uses: ./post-to-instagram
+      uses: geraldnguyen/social-media-posters/post-to-instagram@v1.9.0
       with:
         access-token: ${{ secrets.IG_ACCESS_TOKEN }}
         user-id: ${{ secrets.IG_USER_ID }}
@@ -182,6 +182,60 @@ Instagram supports carousel posts with multiple images and videos in a single po
 - Store your user ID as a GitHub repository secret
 - Never commit access tokens to your repository
 - Use long-lived access tokens for production use
+
+## GitHub Actions Best Practices
+
+### Version Pinning
+- **Always use a specific version tag** (e.g., `@v1.9.0`) in production workflows for stability
+- **Test updates** in a non-production environment before upgrading
+- **Check the changelog** for breaking changes when updating versions
+
+### Action Reference Format
+- **External repositories**: `geraldnguyen/social-media-posters/post-to-instagram@v1.9.0`
+- **Local/same repository**: `./post-to-instagram` (requires checkout step first)
+
+### Workflow Tips
+- **Media files must be publicly accessible URLs** (Instagram API requirement)
+- **Respect Instagram's content policies** and guidelines
+- **Use appropriate aspect ratios** (0.8 to 1.91) for best results
+- **Test with different image sizes** before production use
+- **Implement error handling** with `continue-on-error` or conditional steps
+- **Use template variables** for dynamic, reusable content
+- **Store secrets securely** and never expose them in logs
+- **Monitor API rate limits** to avoid throttling
+
+### Example: Production-Ready Workflow
+
+```yaml
+name: Post to Instagram
+on:
+  workflow_dispatch:
+    inputs:
+      caption:
+        description: 'Post caption'
+        required: true
+      image_url:
+        description: 'Public URL of the image'
+        required: true
+
+jobs:
+  post-to-instagram:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Instagram
+        uses: geraldnguyen/social-media-posters/post-to-instagram@v1.9.0
+        with:
+          access-token: ${{ secrets.IG_ACCESS_TOKEN }}
+          user-id: ${{ secrets.IG_USER_ID }}
+          content: ${{ github.event.inputs.caption }}
+          media-file: ${{ github.event.inputs.image_url }}
+          log-level: "INFO"
+        continue-on-error: false
+      
+      - name: Notify on success
+        if: success()
+        run: echo "Successfully posted to Instagram!"
+```
 
 ## Getting Instagram Access Token
 
