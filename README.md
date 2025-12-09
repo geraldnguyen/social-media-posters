@@ -95,6 +95,42 @@ Post content to LinkedIn using the LinkedIn API v2.
 
 ## Example Workflow
 
+### For External Users
+
+If you're using these actions from another repository, reference them with the full repository path and version:
+
+```yaml
+name: Social Media Post
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  post-to-social-media:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to X
+        uses: geraldnguyen/social-media-posters/post-to-x@v1.9.0
+        with:
+          api-key: ${{ secrets.X_API_KEY }}
+          api-secret: ${{ secrets.X_API_SECRET }}
+          access-token: ${{ secrets.X_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          content: "🚀 New release deployed! Check out the latest features."
+      
+      - name: Post to Facebook Page
+        uses: geraldnguyen/social-media-posters/post-to-facebook@v1.9.0
+        with:
+          access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          page-id: ${{ secrets.FB_PAGE_ID }}
+          content: "We've just released a new version with exciting features!"
+          link: ${{ github.event.head_commit.url }}
+```
+
+### For Local Development
+
+If you're developing or testing within this repository, use relative paths:
+
 ```yaml
 name: Social Media Post
 on:
@@ -215,6 +251,67 @@ Summary: This is a captivating tale of ancient gods and mortals, exploring theme
 3. **Follow the principle of least privilege** for API permissions
 4. **Regularly rotate access tokens** and API keys
 5. **Monitor API usage** to detect unusual activity
+
+## GitHub Actions Best Practices
+
+When using these actions in your workflows:
+
+### Version Pinning
+- **Use specific version tags** (e.g., `@v1.9.0`) instead of branches for stability
+- **Review changelogs** before upgrading to new versions
+- **Test in non-production** environments before updating production workflows
+
+### Action References
+- **External repositories**: Use `geraldnguyen/social-media-posters/<action-folder>@<version>`
+- **Within this repository**: Use relative paths like `./post-to-x` (requires checkout step)
+
+### Security
+- **Store credentials as repository secrets**, never hardcode them
+- **Use environment-specific secrets** for different deployment stages
+- **Limit secret access** to only the workflows and jobs that need them
+- **Regularly audit** your secrets and rotate credentials
+
+### Workflow Optimization
+- **Use conditionals** to control when posts are made
+- **Implement dry-run mode** for testing before actual posting
+- **Add error handling** and notifications for failures
+- **Cache dependencies** when possible to speed up workflow execution
+
+### Example: Production Workflow with Best Practices
+
+```yaml
+name: Production Social Media Post
+on:
+  release:
+    types: [published]
+
+jobs:
+  post-to-social-media:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to X
+        uses: geraldnguyen/social-media-posters/post-to-x@v1.9.0
+        with:
+          api-key: ${{ secrets.X_API_KEY }}
+          api-secret: ${{ secrets.X_API_SECRET }}
+          access-token: ${{ secrets.X_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          content: "🚀 New release ${{ github.event.release.tag_name }} is now available!"
+          log-level: "INFO"
+        continue-on-error: true
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Social media posting failed',
+              body: 'The social media post workflow failed. Please check the logs.'
+            })
+```
 
 ## Prerequisites by Platform
 

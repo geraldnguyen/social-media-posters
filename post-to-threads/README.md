@@ -42,7 +42,30 @@ You need to have a Threads account and create a Threads App:
 
 ## Usage
 
+### For External Users
+
+If you're using this action from another repository, reference it with the full repository path and version:
+
 ```yaml
+- name: Post to Threads
+  uses: geraldnguyen/social-media-posters/post-to-threads@v1.9.0
+  with:
+    access-token: ${{ secrets.THREADS_ACCESS_TOKEN }}
+    user-id: ${{ secrets.THREADS_USER_ID }}
+    content: "Hello from GitHub Actions! 🚀 #automation"
+    media-file: "https://example.com/hosted-image.jpg"  # Optional
+    link: "https://example.com"  # Optional
+    log-level: "INFO"  # Optional
+```
+
+### For Local Development
+
+If you're developing within the social-media-posters repository:
+
+```yaml
+- name: Checkout repository
+  uses: actions/checkout@v3
+
 - name: Post to Threads
   uses: ./post-to-threads
   with:
@@ -76,7 +99,7 @@ You need to have a Threads account and create a Threads App:
 
 ```yaml
 - name: Post to Threads with media and link
-  uses: ./post-to-threads
+  uses: geraldnguyen/social-media-posters/post-to-threads@v1.9.0
   with:
     access-token: ${{ secrets.THREADS_ACCESS_TOKEN }}
     user-id: ${{ secrets.THREADS_USER_ID }}
@@ -115,6 +138,49 @@ You need to have a Threads account and create a Threads App:
 - Never commit access tokens to your repository
 - Use long-lived access tokens for production use
 
+## GitHub Actions Best Practices
+
+### Version Pinning
+- **Always use a specific version tag** (e.g., `@v1.9.0`) in production workflows for stability
+- **Test updates** in a non-production environment before upgrading
+- **Check the changelog** for breaking changes when updating versions
+
+### Action Reference Format
+- **External repositories**: `geraldnguyen/social-media-posters/post-to-threads@v1.9.0`
+- **Local/same repository**: `./post-to-threads` (requires checkout step first)
+
+### Workflow Tips
+- **Respect the 500-character limit** for Threads posts
+- **Media files must be publicly accessible URLs** (not local file paths)
+- **Use appropriate log levels** (`DEBUG` for troubleshooting, `INFO` for production)
+- **Implement error handling** with `continue-on-error` or conditional steps
+- **Use template variables** for dynamic, reusable content
+- **Store secrets securely** and never expose them in logs
+- **Monitor API rate limits** to avoid throttling
+
+### Example: Production-Ready Workflow
+
+```yaml
+name: Share Updates on Threads
+on:
+  release:
+    types: [published]
+
+jobs:
+  post-to-threads:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post release to Threads
+        uses: geraldnguyen/social-media-posters/post-to-threads@v1.9.0
+        with:
+          access-token: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          user-id: ${{ secrets.THREADS_USER_ID }}
+          content: "🎉 Just released version ${{ github.event.release.tag_name }}! Check it out 🚀"
+          link: ${{ github.event.release.html_url }}
+          log-level: "INFO"
+        continue-on-error: true
+```
+
 ## Getting Threads Access Token
 
 1. Follow the [Threads API documentation](https://developers.facebook.com/docs/threads)
@@ -138,7 +204,7 @@ jobs:
         uses: actions/checkout@v3
       
       - name: Post update to Threads
-        uses: ./post-to-threads
+        uses: geraldnguyen/social-media-posters/post-to-threads@v1.9.0
         with:
           access-token: ${{ secrets.THREADS_ACCESS_TOKEN }}
           user-id: ${{ secrets.THREADS_USER_ID }}

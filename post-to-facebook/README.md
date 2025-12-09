@@ -42,7 +42,30 @@ You need to have a Facebook Page and create a Facebook App to get the required a
 
 ## Usage
 
+### For External Users
+
+If you're using this action from another repository, reference it with the full repository path and version:
+
 ```yaml
+- name: Post to Facebook Page
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.9.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    page-id: ${{ secrets.FB_PAGE_ID }}
+    content: "Hello from GitHub Actions! 🚀"
+    media-files: "path/to/image.jpg,path/to/video.mp4"  # Optional
+    link: "https://example.com"  # Optional
+    log-level: "INFO"  # Optional
+```
+
+### For Local Development
+
+If you're developing within the social-media-posters repository:
+
+```yaml
+- name: Checkout repository
+  uses: actions/checkout@v3
+
 - name: Post to Facebook Page
   uses: ./post-to-facebook
   with:
@@ -76,7 +99,7 @@ You need to have a Facebook Page and create a Facebook App to get the required a
 
 ```yaml
 - name: Post to Facebook Page with media and link
-  uses: ./post-to-facebook
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.9.0
   with:
     access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
     page-id: ${{ secrets.FB_PAGE_ID }}
@@ -91,6 +114,47 @@ You need to have a Facebook Page and create a Facebook App to get the required a
 - Store your Page ID as a GitHub repository secret
 - Never commit access tokens to your repository
 - Use long-lived Page Access Tokens for production use
+
+## GitHub Actions Best Practices
+
+### Version Pinning
+- **Always use a specific version tag** (e.g., `@v1.9.0`) in production workflows for stability
+- **Test updates** in a non-production environment before upgrading
+- **Check the changelog** for breaking changes when updating versions
+
+### Action Reference Format
+- **External repositories**: `geraldnguyen/social-media-posters/post-to-facebook@v1.9.0`
+- **Local/same repository**: `./post-to-facebook` (requires checkout step first)
+
+### Workflow Tips
+- **Use appropriate log levels** (`DEBUG` for troubleshooting, `INFO` for production)
+- **Implement error handling** with `continue-on-error` or conditional steps
+- **Use template variables** for dynamic, reusable content
+- **Store secrets securely** and never expose them in logs
+- **Monitor API rate limits** to avoid throttling
+
+### Example: Production-Ready Workflow
+
+```yaml
+name: Share on Facebook
+on:
+  release:
+    types: [published]
+
+jobs:
+  post-to-facebook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post release to Facebook
+        uses: geraldnguyen/social-media-posters/post-to-facebook@v1.9.0
+        with:
+          access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          page-id: ${{ secrets.FB_PAGE_ID }}
+          content: "🎉 We've just released version ${{ github.event.release.tag_name }}! Check out what's new."
+          link: ${{ github.event.release.html_url }}
+          log-level: "INFO"
+        continue-on-error: true
+```
 
 ## Supported Media Types
 

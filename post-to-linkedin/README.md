@@ -67,7 +67,30 @@ The response will include your ID which you can format as `urn:li:person:{ID}`.
 
 ## Usage
 
+### For External Users
+
+If you're using this action from another repository, reference it with the full repository path and version:
+
 ```yaml
+- name: Post to LinkedIn
+  uses: geraldnguyen/social-media-posters/post-to-linkedin@v1.9.0
+  with:
+    access-token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+    author-id: ${{ secrets.LINKEDIN_AUTHOR_ID }}
+    content: "Excited to share our latest project! 🚀"
+    media-files: "path/to/image.jpg"  # Optional
+    link: "https://example.com/blog-post"  # Optional
+    log-level: "INFO"  # Optional
+```
+
+### For Local Development
+
+If you're developing within the social-media-posters repository:
+
+```yaml
+- name: Checkout repository
+  uses: actions/checkout@v3
+
 - name: Post to LinkedIn
   uses: ./post-to-linkedin
   with:
@@ -104,7 +127,7 @@ The response will include your ID which you can format as `urn:li:person:{ID}`.
 
 ```yaml
 - name: Post to LinkedIn with media
-  uses: ./post-to-linkedin
+  uses: geraldnguyen/social-media-posters/post-to-linkedin@v1.9.0
   with:
     access-token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
     author-id: ${{ secrets.LINKEDIN_AUTHOR_ID }}
@@ -116,7 +139,7 @@ The response will include your ID which you can format as `urn:li:person:{ID}`.
 
 ```yaml
 - name: Post to LinkedIn with link
-  uses: ./post-to-linkedin
+  uses: geraldnguyen/social-media-posters/post-to-linkedin@v1.9.0
   with:
     access-token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
     author-id: ${{ secrets.LINKEDIN_AUTHOR_ID }}
@@ -130,7 +153,7 @@ This action supports API-driven templated content using the `@{json...}` syntax.
 
 ```yaml
 - name: Post to LinkedIn with dynamic content
-  uses: ./post-to-linkedin
+  uses: geraldnguyen/social-media-posters/post-to-linkedin@v1.9.0
   with:
     access-token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
     author-id: ${{ secrets.LINKEDIN_AUTHOR_ID }}
@@ -227,7 +250,7 @@ Set the `dry-run` input to `true` to test your post without actually publishing 
 
 ```yaml
 - name: Test LinkedIn post
-  uses: ./post-to-linkedin
+  uses: geraldnguyen/social-media-posters/post-to-linkedin@v1.9.0
   with:
     access-token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
     author-id: ${{ secrets.LINKEDIN_AUTHOR_ID }}
@@ -248,6 +271,58 @@ In dry-run mode, the action will:
 - Use the principle of least privilege for your LinkedIn app permissions
 - Regularly rotate access tokens
 - LinkedIn access tokens typically expire after 60 days
+
+## GitHub Actions Best Practices
+
+### Version Pinning
+- **Always use a specific version tag** (e.g., `@v1.9.0`) in production workflows for stability
+- **Test updates** in a non-production environment before upgrading
+- **Check the changelog** for breaking changes when updating versions
+
+### Action Reference Format
+- **External repositories**: `geraldnguyen/social-media-posters/post-to-linkedin@v1.9.0`
+- **Local/same repository**: `./post-to-linkedin` (requires checkout step first)
+
+### Workflow Tips
+- **Use dry-run mode** to test posts before going live
+- **Set appropriate log levels** (`DEBUG` for troubleshooting, `INFO` for production)
+- **Implement error handling** with `continue-on-error` or conditional steps
+- **Use template variables** for dynamic, reusable content
+- **Store secrets securely** and never expose them in logs
+
+### Example: Production-Ready Workflow
+
+```yaml
+name: Share Blog Post on LinkedIn
+on:
+  workflow_dispatch:
+    inputs:
+      post_url:
+        description: 'Blog post URL'
+        required: true
+
+jobs:
+  post-to-linkedin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to LinkedIn
+        uses: geraldnguyen/social-media-posters/post-to-linkedin@v1.9.0
+        with:
+          access-token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          author-id: ${{ secrets.LINKEDIN_AUTHOR_ID }}
+          content: "📝 Just published a new blog post! Check it out and let me know your thoughts."
+          link: ${{ github.event.inputs.post_url }}
+          log-level: "INFO"
+        continue-on-error: false
+        
+      - name: Notify on success
+        if: success()
+        run: echo "Successfully posted to LinkedIn!"
+        
+      - name: Notify on failure
+        if: failure()
+        run: echo "Failed to post to LinkedIn. Check the logs for details."
+```
 
 ## Limitations
 
