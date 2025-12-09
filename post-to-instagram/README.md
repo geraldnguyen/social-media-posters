@@ -49,7 +49,9 @@ You need to have an Instagram Business or Creator account and create a Facebook 
 
 ## Usage
 
-### Single Media Post
+### For External Users
+
+**Single Media Post:**
 
 ```yaml
 - name: Post single image to Instagram
@@ -61,23 +63,7 @@ You need to have an Instagram Business or Creator account and create a Facebook 
     media-file: "https://example.com/hosted-image.jpg"  # Must be publicly accessible URL
 ```
 
-### Carousel Post (Multiple Images)
-
-For local development within the social-media-posters repository, use relative paths and include a checkout step:
-
-```yaml
-- name: Checkout repository
-  uses: actions/checkout@v3
-
-- name: Post carousel to Instagram
-  uses: ./post-to-instagram
-  with:
-    access-token: ${{ secrets.IG_ACCESS_TOKEN }}
-    user-id: ${{ secrets.IG_USER_ID }}
-    content: "My photo series! 📸"
-    media-files: "https://example.com/image1.jpg,https://example.com/image2.jpg,https://example.com/image3.jpg"
-```
-### Carousel Post Example
+**Carousel Post (Multiple Images):**
 
 ```yaml
 - name: Post carousel to Instagram
@@ -87,7 +73,23 @@ For local development within the social-media-posters repository, use relative p
     user-id: ${{ secrets.IG_USER_ID }}
     content: "My photo series! 📸 #carousel #photos"
     media-files: "https://example.com/image1.jpg,https://example.com/image2.jpg,https://example.com/image3.jpg"
-    log-level: "INFO"  # Optional
+```
+
+### For Local Development
+
+If you're developing within the social-media-posters repository:
+
+```yaml
+- name: Checkout repository
+  uses: actions/checkout@v3
+
+- name: Post to Instagram
+  uses: ./post-to-instagram
+  with:
+    access-token: ${{ secrets.IG_ACCESS_TOKEN }}
+    user-id: ${{ secrets.IG_USER_ID }}
+    content: "Check out this amazing photo! 📸"
+    media-file: "https://example.com/hosted-image.jpg"
 ```
 
 ## Inputs
