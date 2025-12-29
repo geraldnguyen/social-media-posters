@@ -238,7 +238,7 @@ Create a new post-to-youtube in the same-named folder
 The post-to-youtube action shall support all features common to other post-to actions.
 
 Additionally:
-- Support Post and Video
+- Support Post and Video. The video can be uploaded locally or from a publically accessible web address
 - Support scheduling by date and time
 - Support all required and optional metadata fields 
 
