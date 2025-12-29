@@ -231,3 +231,21 @@ Expectation:
 - Then run the tests
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes
 
+## v1.10.0 - post-to-youtube action
+
+Create a new post-to-youtube in the same-named folder
+
+The post-to-youtube action shall support all features common to other post-to actions.
+
+Additionally:
+- Support Post and Video
+- Support scheduling by date and time
+- Support all required and optional metadata fields 
+
+Detailed logging and dry-run mode must be available to faciliate troubleshooting.
+
+Expectation:
+- Implement the above requirements
+- Create unit tests for the changes
+- Then run the tests
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes
