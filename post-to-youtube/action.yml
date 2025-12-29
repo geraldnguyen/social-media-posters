@@ -1,0 +1,121 @@
+name: 'Post to YouTube'
+description: 'Upload videos and posts to YouTube using the YouTube Data API v3'
+author: 'Gerald Nguyen'
+branding:
+  icon: 'youtube'
+  color: 'red'
+
+inputs:
+  api-key:
+    description: 'YouTube Data API key or OAuth 2.0 credentials JSON (for service account)'
+    required: true
+  channel-id:
+    description: 'YouTube Channel ID'
+    required: false
+  content:
+    description: 'Content/caption to post (for community posts or video description)'
+    required: false
+  video-file:
+    description: 'Path to video file (local or URL)'
+    required: false
+  title:
+    description: 'Video title (required for video uploads)'
+    required: false
+  description:
+    description: 'Video description'
+    required: false
+  tags:
+    description: 'Comma-separated list of video tags'
+    required: false
+  category-id:
+    description: 'Video category ID (default: 22 - People & Blogs)'
+    required: false
+    default: '22'
+  privacy-status:
+    description: 'Video privacy status (public, private, unlisted)'
+    required: false
+    default: 'public'
+  publish-at:
+    description: 'Schedule video publication (ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ). Requires privacy-status to be "private"'
+    required: false
+  thumbnail:
+    description: 'Path to custom thumbnail image (local or URL)'
+    required: false
+  playlist-id:
+    description: 'Playlist ID to add the video to'
+    required: false
+  made-for-kids:
+    description: 'Whether the video is made for kids (true/false)'
+    required: false
+    default: 'false'
+  embeddable:
+    description: 'Whether the video is embeddable (true/false)'
+    required: false
+    default: 'true'
+  license:
+    description: 'Video license (youtube or creativeCommon)'
+    required: false
+    default: 'youtube'
+  public-stats-viewable:
+    description: 'Whether video statistics are publicly viewable (true/false)'
+    required: false
+    default: 'true'
+  log-level:
+    description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
+    required: false
+    default: 'INFO'
+  content-json:
+    description: 'JSON API URL and path for dynamic content templating (e.g. https://example.com/data.json | items[RANDOM])'
+    required: false
+  time-zone:
+    description: 'Time zone for date/time placeholders (e.g. UTC, UTC+7)'
+    required: false
+  dry-run:
+    description: 'Dry run mode. If true, the content will be printed but not posted.'
+    required: false
+    default: 'false'
+
+outputs:
+  video-id:
+    description: 'ID of the uploaded video'
+  video-url:
+    description: 'URL of the uploaded video'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r ${{ github.action_path }}/requirements.txt
+    
+    - name: Post to YouTube
+      shell: bash
+      env:
+        YOUTUBE_API_KEY: ${{ inputs.api-key }}
+        YOUTUBE_CHANNEL_ID: ${{ inputs.channel-id }}
+        POST_CONTENT: ${{ inputs.content }}
+        VIDEO_FILE: ${{ inputs.video-file }}
+        VIDEO_TITLE: ${{ inputs.title }}
+        VIDEO_DESCRIPTION: ${{ inputs.description }}
+        VIDEO_TAGS: ${{ inputs.tags }}
+        VIDEO_CATEGORY_ID: ${{ inputs.category-id }}
+        VIDEO_PRIVACY_STATUS: ${{ inputs.privacy-status }}
+        VIDEO_PUBLISH_AT: ${{ inputs.publish-at }}
+        VIDEO_THUMBNAIL: ${{ inputs.thumbnail }}
+        PLAYLIST_ID: ${{ inputs.playlist-id }}
+        VIDEO_MADE_FOR_KIDS: ${{ inputs.made-for-kids }}
+        VIDEO_EMBEDDABLE: ${{ inputs.embeddable }}
+        VIDEO_LICENSE: ${{ inputs.license }}
+        VIDEO_PUBLIC_STATS_VIEWABLE: ${{ inputs.public-stats-viewable }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+        CONTENT_JSON: ${{ inputs.content-json }}
+        TIME_ZONE: ${{ inputs.time-zone }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        python ${{ github.action_path }}/post_to_youtube.py
