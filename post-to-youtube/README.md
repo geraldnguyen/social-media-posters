@@ -42,24 +42,58 @@ You need to set up YouTube Data API v3 access:
 2. Create a new project or select an existing one
 3. Enable the YouTube Data API v3
 4. Create credentials:
-   - **Option A: Service Account** (Recommended for automation)
+   - **Option A: OAuth 2.0 Refresh Token** (Recommended for user-owned channels)
+     - Create OAuth 2.0 credentials (Client ID and Client Secret)
+     - Obtain a refresh token through OAuth 2.0 flow
+     - Use the refresh token to get access tokens automatically
+   - **Option B: Service Account** (For automated/bot accounts)
      - Create a service account
      - Download the JSON key file
      - Grant the service account access to your YouTube channel
-   - **Option B: API Key** (Limited functionality, read-only operations)
+   - **Option C: API Key** (Limited functionality, read-only operations)
      - Create an API key
-     - Note: API keys cannot be used for video uploads; use service account instead
+     - Note: API keys cannot be used for video uploads
 
-### Setting up Service Account for YouTube
+### Setting up OAuth 2.0 Refresh Token (Option A)
+
+1. Create OAuth 2.0 credentials in Google Cloud Console
+2. Configure OAuth consent screen
+3. Use OAuth 2.0 playground or implement OAuth flow to get refresh token:
+   - Go to https://developers.google.com/oauthplayground
+   - Click settings gear icon, check "Use your own OAuth credentials"
+   - Enter your Client ID and Client Secret
+   - Select YouTube Data API v3 scopes: `youtube.upload` and `youtube.force-ssl`
+   - Authorize and exchange authorization code for tokens
+   - Copy the refresh token
+4. Store the refresh token securely (GitHub Secrets recommended)
+
+### Setting up Service Account (Option B)
 
 1. Create a service account in Google Cloud Console
 2. Download the JSON credentials file
 3. The service account needs to be authorized to act on behalf of your YouTube channel
 4. This typically requires OAuth 2.0 consent and delegation of authority
 
-**Important**: YouTube Data API requires OAuth 2.0 for video uploads. Service accounts work best for automated workflows.
+**Important**: YouTube Data API requires OAuth 2.0 for video uploads. OAuth refresh tokens provide direct channel access, while service accounts work for delegated access.
 
 ## Usage
+
+### Basic Usage with OAuth Refresh Token
+
+```yaml
+- name: Upload video to YouTube
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  with:
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
+    video-file: "path/to/video.mp4"
+    title: "My Awesome Video Title"
+    description: "A detailed description of my video"
+    tags: "tutorial,github-actions,automation"
+    privacy-status: "public"
+    log-level: "INFO"
+```
 
 ### For External Users
 
@@ -102,7 +136,10 @@ If you're developing within the social-media-posters repository:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `api-key` | YouTube Data API service account JSON credentials | Yes | - |
+| `api-key` | YouTube Data API service account JSON credentials (not required if using OAuth) | No | - |
+| `oauth-client-id` | OAuth 2.0 Client ID (for refresh token authentication) | No | - |
+| `oauth-client-secret` | OAuth 2.0 Client Secret (for refresh token authentication) | No | - |
+| `oauth-refresh-token` | OAuth 2.0 Refresh Token (for refresh token authentication) | No | - |
 | `channel-id` | YouTube Channel ID | No | - |
 | `content` | Content/caption (for community posts, not yet fully supported) | No | - |
 | `video-file` | Path to video file (local or URL) | No* | - |
@@ -124,6 +161,10 @@ If you're developing within the social-media-posters repository:
 | `dry-run` | Dry run mode (true/false) | No | false |
 
 \* Either `video-file` and `title` must be provided for video uploads
+
+**Authentication Note**: You must provide either:
+- OAuth credentials (`oauth-client-id`, `oauth-client-secret`, `oauth-refresh-token`), OR
+- Service account credentials (`api-key`)
 
 ## Outputs
 
@@ -153,7 +194,24 @@ Common YouTube category IDs:
 
 ## Examples
 
-### Basic Video Upload
+### Basic Video Upload with OAuth
+
+```yaml
+- name: Upload video to YouTube
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  with:
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
+    video-file: "recordings/demo.mp4"
+    title: "Product Demo Video"
+    description: "See our latest product features in action!"
+    tags: "demo,product,tutorial"
+    category-id: "28"  # Science & Technology
+    privacy-status: "public"
+```
+
+### Basic Video Upload with Service Account
 
 ```yaml
 - name: Upload video to YouTube
@@ -174,7 +232,9 @@ Common YouTube category IDs:
 - name: Upload video from URL
   uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
   with:
-    api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
     video-file: "https://example.com/videos/demo.mp4"
     title: "Remote Video Upload"
     description: "Video uploaded from a remote URL"
@@ -187,7 +247,9 @@ Common YouTube category IDs:
 - name: Schedule video publication
   uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
   with:
-    api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
     video-file: "content/weekly-update.mp4"
     title: "Weekly Update - Episode 5"
     description: "This week's highlights and upcoming events"
@@ -204,7 +266,9 @@ Common YouTube category IDs:
 - name: Upload with thumbnail and add to playlist
   uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
   with:
-    api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
     video-file: "tutorials/lesson-01.mp4"
     title: "Tutorial Lesson 1: Getting Started"
     description: "Learn the basics in this first lesson"
@@ -220,7 +284,9 @@ Common YouTube category IDs:
 - name: Upload educational content for kids
   uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
   with:
-    api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
     video-file: "kids-content/abc-song.mp4"
     title: "ABC Song for Kids"
     description: "Fun educational song for learning the alphabet"
@@ -239,7 +305,9 @@ This action supports API-driven templated content using the `@{json...}` syntax.
 - name: Upload video with dynamic content
   uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
   with:
-    api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
     video-file: "generated/video.mp4"
     title: "@{json.title} - @{builtin.CURR_DATE}"
     description: "@{json.description}"
@@ -314,7 +382,9 @@ Set `dry-run` to `true` to test without actually uploading:
 - name: Test YouTube upload
   uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
   with:
-    api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
     video-file: "test-video.mp4"
     title: "Test Upload"
     description: "Testing the upload process"
@@ -329,10 +399,11 @@ In dry-run mode, the action will:
 
 ## Security Notes
 
-- Store API credentials as GitHub repository secrets
-- Never commit API keys or service account JSON to your repository
-- Use the principle of least privilege for service account permissions
+- Store API credentials (OAuth tokens or service account JSON) as GitHub repository secrets
+- Never commit API keys, OAuth tokens, or service account JSON to your repository
+- Use the principle of least privilege for service account/OAuth permissions
 - Regularly audit and rotate credentials
+- OAuth refresh tokens should be treated as sensitive as passwords
 - Be aware of YouTube API quotas and limits
 
 ## GitHub Actions Best Practices
@@ -373,7 +444,9 @@ jobs:
         id: youtube
         uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
         with:
-          api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
+          oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+          oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+          oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
           video-file: "weekly-content/latest.mp4"
           title: "Weekly Update - @{builtin.CURR_DATE}"
           description: "This week's highlights and updates"

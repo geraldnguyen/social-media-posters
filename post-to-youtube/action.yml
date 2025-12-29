@@ -7,8 +7,17 @@ branding:
 
 inputs:
   api-key:
-    description: 'YouTube Data API key or OAuth 2.0 credentials JSON (for service account)'
-    required: true
+    description: 'YouTube Data API key or OAuth 2.0 credentials JSON (for service account). Not required if using OAuth refresh token.'
+    required: false
+  oauth-client-id:
+    description: 'OAuth 2.0 Client ID (for refresh token authentication)'
+    required: false
+  oauth-client-secret:
+    description: 'OAuth 2.0 Client Secret (for refresh token authentication)'
+    required: false
+  oauth-refresh-token:
+    description: 'OAuth 2.0 Refresh Token (for refresh token authentication)'
+    required: false
   channel-id:
     description: 'YouTube Channel ID'
     required: false
@@ -98,6 +107,9 @@ runs:
       shell: bash
       env:
         YOUTUBE_API_KEY: ${{ inputs.api-key }}
+        YOUTUBE_OAUTH_CLIENT_ID: ${{ inputs.oauth-client-id }}
+        YOUTUBE_OAUTH_CLIENT_SECRET: ${{ inputs.oauth-client-secret }}
+        YOUTUBE_OAUTH_REFRESH_TOKEN: ${{ inputs.oauth-refresh-token }}
         YOUTUBE_CHANNEL_ID: ${{ inputs.channel-id }}
         POST_CONTENT: ${{ inputs.content }}
         VIDEO_FILE: ${{ inputs.video-file }}

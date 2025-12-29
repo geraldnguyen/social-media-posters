@@ -53,6 +53,44 @@ class TestYouTubeAPI(unittest.TestCase):
         self.assertEqual(api.youtube, mock_youtube)
     
     @patch('post_to_youtube.build')
+    @patch('post_to_youtube.Credentials')
+    @patch('post_to_youtube.Request')
+    def test_init_with_oauth_refresh_token(self, mock_request, mock_credentials_class, mock_build):
+        """Test YouTubeAPI initialization with OAuth refresh token."""
+        # Mock the Credentials object
+        mock_credentials = MagicMock()
+        mock_credentials_class.return_value = mock_credentials
+        
+        # Mock the build function
+        mock_youtube = MagicMock()
+        mock_build.return_value = mock_youtube
+        
+        # Create API with OAuth refresh token
+        api = YouTubeAPI(
+            oauth_client_id="test_client_id",
+            oauth_client_secret="test_client_secret",
+            oauth_refresh_token="test_refresh_token"
+        )
+        
+        # Verify Credentials was created with correct parameters
+        mock_credentials_class.assert_called_once_with(
+            token=None,
+            refresh_token="test_refresh_token",
+            token_uri='https://oauth2.googleapis.com/token',
+            client_id="test_client_id",
+            client_secret="test_client_secret",
+            scopes=['https://www.googleapis.com/auth/youtube.upload',
+                    'https://www.googleapis.com/auth/youtube.force-ssl']
+        )
+        
+        # Verify refresh was called
+        mock_credentials.refresh.assert_called_once()
+        
+        # Verify YouTube API was built
+        mock_build.assert_called_once_with('youtube', 'v3', credentials=mock_credentials)
+        self.assertEqual(api.youtube, mock_youtube)
+    
+    @patch('post_to_youtube.build')
     def test_init_with_api_key(self, mock_build):
         """Test YouTubeAPI initialization with API key."""
         mock_youtube = MagicMock()

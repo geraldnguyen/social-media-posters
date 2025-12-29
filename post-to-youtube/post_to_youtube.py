@@ -39,6 +39,7 @@ from social_media_utils import (
 
 # Google API imports
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -49,17 +50,45 @@ import requests
 class YouTubeAPI:
     """YouTube Data API v3 client."""
     
-    def __init__(self, credentials_json: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, credentials_json: Optional[str] = None, api_key: Optional[str] = None,
+                 oauth_client_id: Optional[str] = None, oauth_client_secret: Optional[str] = None,
+                 oauth_refresh_token: Optional[str] = None):
         """
         Initialize YouTube API client.
         
         Args:
             credentials_json: Path to service account credentials JSON file or JSON string
             api_key: YouTube Data API key (alternative to service account)
+            oauth_client_id: OAuth 2.0 Client ID (for refresh token authentication)
+            oauth_client_secret: OAuth 2.0 Client Secret (for refresh token authentication)
+            oauth_refresh_token: OAuth 2.0 Refresh Token (for refresh token authentication)
         """
         self.youtube = None
         
-        if credentials_json:
+        # Option 1: OAuth Refresh Token authentication (preferred for user-based access)
+        if oauth_refresh_token and oauth_client_id and oauth_client_secret:
+            logging.info("Authenticating with OAuth refresh token")
+            credentials = Credentials(
+                token=None,  # Will be obtained from refresh token
+                refresh_token=oauth_refresh_token,
+                token_uri='https://oauth2.googleapis.com/token',
+                client_id=oauth_client_id,
+                client_secret=oauth_client_secret,
+                scopes=['https://www.googleapis.com/auth/youtube.upload',
+                        'https://www.googleapis.com/auth/youtube.force-ssl']
+            )
+            
+            # Refresh the token to get a valid access token
+            try:
+                credentials.refresh(Request())
+                self.youtube = build('youtube', 'v3', credentials=credentials)
+                logging.info("Successfully authenticated with OAuth refresh token")
+            except Exception as e:
+                logging.error(f"Failed to refresh OAuth token: {e}")
+                raise ValueError(f"Failed to authenticate with OAuth refresh token: {e}")
+        
+        # Option 2: Service Account authentication
+        elif credentials_json:
             # Try to parse as JSON string first
             try:
                 creds_data = json.loads(credentials_json)
@@ -87,7 +116,12 @@ class YouTubeAPI:
             self.youtube = build('youtube', 'v3', developerKey=api_key)
             logging.info("Initialized YouTube API with API key (limited functionality)")
         else:
-            raise ValueError("Either credentials_json or api_key must be provided")
+            raise ValueError(
+                "Authentication required. Provide one of:\n"
+                "  - OAuth refresh token (oauth_refresh_token + oauth_client_id + oauth_client_secret)\n"
+                "  - Service account credentials (credentials_json)\n"
+                "  - API key (api_key, limited functionality)"
+            )
     
     def upload_video(self,
                     video_file: str,
@@ -253,8 +287,11 @@ def post_to_youtube():
     logger = setup_logging(log_level)
     
     try:
-        # Get API credentials
+        # Get API credentials - multiple options supported
         credentials_json = get_optional_env_var("YOUTUBE_API_KEY", "")
+        oauth_client_id = get_optional_env_var("YOUTUBE_OAUTH_CLIENT_ID", "")
+        oauth_client_secret = get_optional_env_var("YOUTUBE_OAUTH_CLIENT_SECRET", "")
+        oauth_refresh_token = get_optional_env_var("YOUTUBE_OAUTH_REFRESH_TOKEN", "")
         
         # Determine what we're doing - video upload or community post
         video_file = get_optional_env_var("VIDEO_FILE", "")
@@ -343,8 +380,13 @@ def post_to_youtube():
             # DRY RUN GUARD
             dry_run_guard("YouTube", f"Video: {title}", [local_video_file], dry_run_request)
             
-            # Create YouTube API client
-            api = YouTubeAPI(credentials_json=credentials_json if credentials_json else None)
+            # Create YouTube API client with appropriate authentication
+            api = YouTubeAPI(
+                credentials_json=credentials_json if credentials_json else None,
+                oauth_client_id=oauth_client_id if oauth_client_id else None,
+                oauth_client_secret=oauth_client_secret if oauth_client_secret else None,
+                oauth_refresh_token=oauth_refresh_token if oauth_refresh_token else None
+            )
             
             # Upload the video
             result = api.upload_video(
