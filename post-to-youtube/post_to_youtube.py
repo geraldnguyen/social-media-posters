@@ -382,10 +382,10 @@ def post_to_youtube():
             
             # Create YouTube API client with appropriate authentication
             api = YouTubeAPI(
-                credentials_json=credentials_json if credentials_json else None,
-                oauth_client_id=oauth_client_id if oauth_client_id else None,
-                oauth_client_secret=oauth_client_secret if oauth_client_secret else None,
-                oauth_refresh_token=oauth_refresh_token if oauth_refresh_token else None
+                credentials_json=credentials_json or None,
+                oauth_client_id=oauth_client_id or None,
+                oauth_client_secret=oauth_client_secret or None,
+                oauth_refresh_token=oauth_refresh_token or None
             )
             
             # Upload the video
