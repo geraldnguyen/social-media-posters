@@ -254,7 +254,7 @@ def post_to_youtube():
     
     try:
         # Get API credentials
-        api_key = get_optional_env_var("YOUTUBE_API_KEY", "")
+        credentials_json = get_optional_env_var("YOUTUBE_API_KEY", "")
         
         # Determine what we're doing - video upload or community post
         video_file = get_optional_env_var("VIDEO_FILE", "")
@@ -303,6 +303,11 @@ def post_to_youtube():
             thumbnail_file = get_optional_env_var("VIDEO_THUMBNAIL", "")
             playlist_id = get_optional_env_var("PLAYLIST_ID", "")
             
+            # Download thumbnail if provided (do this once to reuse later)
+            thumbnail_local = None
+            if thumbnail_file:
+                thumbnail_local = download_file_if_url(thumbnail_file, max_download_size_mb=2)
+            
             # Prepare dry run data
             video_size = os.path.getsize(local_video_file)
             dry_run_request = {
@@ -327,12 +332,10 @@ def post_to_youtube():
             if publish_at:
                 dry_run_request['scheduled_publish_at'] = publish_at
             
-            if thumbnail_file:
-                thumbnail_local = download_file_if_url(thumbnail_file, max_download_size_mb=2)
-                if os.path.exists(thumbnail_local):
-                    thumbnail_size = os.path.getsize(thumbnail_local)
-                    dry_run_request['thumbnail_file'] = thumbnail_local
-                    dry_run_request['thumbnail_size_kb'] = round(thumbnail_size / 1024, 2)
+            if thumbnail_local and os.path.exists(thumbnail_local):
+                thumbnail_size = os.path.getsize(thumbnail_local)
+                dry_run_request['thumbnail_file'] = thumbnail_local
+                dry_run_request['thumbnail_size_kb'] = round(thumbnail_size / 1024, 2)
             
             if playlist_id:
                 dry_run_request['playlist_id'] = playlist_id
@@ -341,7 +344,7 @@ def post_to_youtube():
             dry_run_guard("YouTube", f"Video: {title}", [local_video_file], dry_run_request)
             
             # Create YouTube API client
-            api = YouTubeAPI(credentials_json=api_key if api_key else None)
+            api = YouTubeAPI(credentials_json=credentials_json if credentials_json else None)
             
             # Upload the video
             result = api.upload_video(
@@ -361,14 +364,12 @@ def post_to_youtube():
             video_id = result['id']
             video_url = result['url']
             
-            # Upload thumbnail if provided
-            if thumbnail_file:
-                thumbnail_local = download_file_if_url(thumbnail_file, max_download_size_mb=2)
-                if os.path.exists(thumbnail_local):
-                    try:
-                        api.upload_thumbnail(video_id, thumbnail_local)
-                    except Exception as e:
-                        logging.warning(f"Failed to upload thumbnail: {e}")
+            # Upload thumbnail if provided (reuse already downloaded file)
+            if thumbnail_local and os.path.exists(thumbnail_local):
+                try:
+                    api.upload_thumbnail(video_id, thumbnail_local)
+                except Exception as e:
+                    logging.warning(f"Failed to upload thumbnail: {e}")
             
             # Add to playlist if provided
             if playlist_id:

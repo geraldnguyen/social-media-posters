@@ -348,8 +348,6 @@ Each platform has different rate limits:
 - **Threads**: Subject to Meta's API rate limits
 - **LinkedIn**: Subject to LinkedIn API throttling limits
 - **YouTube**: 10,000 API quota units per day (default), upload quotas vary by account
-- **Threads**: Subject to Meta's API rate limits
-- **LinkedIn**: Subject to LinkedIn API throttling limits
 
 ## Contributing
 
