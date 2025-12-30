@@ -316,7 +316,7 @@ Common YouTube category IDs:
     privacy-status: "public"
 ```
 
-**Note**: The `contains-synthetic-media` flag is important for transparency when uploading videos that contain AI-generated, deepfake, or other synthetic content. YouTube requires creators to disclose altered or synthetic media.
+**Note**: The `contains-synthetic-media` flag is important for transparency when uploading videos that contain AI-generated, deepfake, or other synthetic content. YouTube requires creators to disclose altered or synthetic media. See [YouTube's policy on altered or synthetic content](https://support.google.com/youtube/answer/2801895) for more information.
 
 ### Custom OAuth Scopes
 

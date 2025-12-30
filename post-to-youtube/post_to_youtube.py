@@ -70,10 +70,12 @@ class YouTubeAPI:
         if oauth_scopes is None:
             oauth_scopes = ['https://www.googleapis.com/auth/youtube']
         
+        # Log the scopes being used
+        logging.info(f"Using OAuth scopes: {oauth_scopes}")
+        
         # Option 1: OAuth Refresh Token authentication (preferred for user-based access)
         if oauth_refresh_token and oauth_client_id and oauth_client_secret:
             logging.info("Authenticating with OAuth refresh token")
-            logging.info(f"Using OAuth scopes: {oauth_scopes}")
             credentials = Credentials(
                 token=None,  # Will be obtained from refresh token
                 refresh_token=oauth_refresh_token,
@@ -94,7 +96,6 @@ class YouTubeAPI:
         
         # Option 2: Service Account authentication
         elif credentials_json:
-            logging.info(f"Using OAuth scopes: {oauth_scopes}")
             # Try to parse as JSON string first
             try:
                 creds_data = json.loads(credentials_json)
