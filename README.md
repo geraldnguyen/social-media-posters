@@ -86,6 +86,13 @@ Post content to LinkedIn using the LinkedIn API v2.
 - Supports text posts with media and links
 - Media support: Images (videos not currently supported)
 
+### 📹 [Post to YouTube](./post-to-youtube)
+Upload videos to YouTube using the YouTube Data API v3.
+- Supports video uploads with full metadata
+- Schedule video publishing
+- Custom thumbnails and playlist integration
+- Media support: Video files (local or remote URLs)
+
 ## Quick Start
 
 1. Choose the social media platform(s) you want to post to
@@ -191,6 +198,13 @@ social-media-posters/
 │   ├── post_to_linkedin.py
 │   ├── requirements.txt
 │   ├── test_post_to_linkedin.py
+│   └── README.md
+├── post-to-youtube/        # YouTube video upload action
+│   ├── action.yml
+│   ├── post_to_youtube.py
+│   ├── requirements.txt
+│   ├── test_post_to_youtube.py
+│   └── README.md
 │   └── README.md
 ├── common/                 # Shared utilities
 │   ├── __init__.py
@@ -322,6 +336,7 @@ jobs:
 | Instagram | Business/Creator account, Facebook App, Graph API access |
 | Threads | Threads account, approved Threads App |
 | LinkedIn | LinkedIn Developer Account, App with Share on LinkedIn product |
+| YouTube | Google Cloud Project, YouTube Data API v3, Service Account or OAuth 2.0 |
 
 ## Rate Limits
 
@@ -332,6 +347,7 @@ Each platform has different rate limits:
 - **Instagram**: Limited by Graph API quotas
 - **Threads**: Subject to Meta's API rate limits
 - **LinkedIn**: Subject to LinkedIn API throttling limits
+- **YouTube**: 10,000 API quota units per day (default), upload quotas vary by account
 
 ## Contributing
 

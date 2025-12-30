@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2025-12-29
+
+### Added
+
+- **Post to YouTube Action** (`post-to-youtube/`)
+  - Complete YouTube video upload support using YouTube Data API v3
+  - Support for video uploads from local files or remote URLs
+  - Full video metadata support (title, description, tags, category)
+  - Privacy settings (public, private, unlisted)
+  - Scheduled video publishing with ISO 8601 format
+  - Custom thumbnail upload support
+  - Automatic playlist addition
+  - Video settings support:
+    - Made for kids flag
+    - Embeddable flag
+    - License type (YouTube or Creative Commons)
+    - Public stats viewable flag
+  - Full templating engine support for dynamic content
+  - Dry-run mode for testing without uploading
+  - Detailed logging with configurable log levels
+  - Service account and API key authentication
+  - Unit tests covering YouTube API integration (`test_post_to_youtube.py`)
+  - Comprehensive documentation with setup instructions and examples
+  - Compatible with all common features:
+    - Remote media file download (videos up to 500MB)
+    - Environment variable templating
+    - JSON API templating with pipe operations
+    - Built-in date/time placeholders
+    - Case transformation operations
+    - Length operations
+    - List operations (prefix, join, random, attr)
+
+### Updated
+
+- Root README.md to include YouTube action in:
+  - Available Actions section
+  - Repository Structure
+  - Prerequisites by Platform table
+  - Rate Limits section
+- 00-PROMPTS.MD to mark v1.10.0 requirement as completed
+
+### Dependencies
+
+- **YouTube Action**: python-dotenv, requests>=2.31.0, jsonpath-ng, google-api-python-client>=2.100.0, google-auth>=2.23.0, google-auth-oauthlib>=1.1.0, google-auth-httplib2>=0.1.1
+
 ## [1.9.0] - 2025-12-07
 
 ### Added
