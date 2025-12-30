@@ -69,6 +69,12 @@ inputs:
     description: 'Whether video statistics are publicly viewable (true/false)'
     required: false
     default: 'true'
+  contains-synthetic-media:
+    description: 'Whether the video contains synthetic/altered media such as AI-generated content or deepfakes (true/false)'
+    required: false
+  oauth-scopes:
+    description: 'Comma-separated list of OAuth 2.0 scopes (defaults to https://www.googleapis.com/auth/youtube)'
+    required: false
   log-level:
     description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
     required: false
@@ -125,6 +131,8 @@ runs:
         VIDEO_EMBEDDABLE: ${{ inputs.embeddable }}
         VIDEO_LICENSE: ${{ inputs.license }}
         VIDEO_PUBLIC_STATS_VIEWABLE: ${{ inputs.public-stats-viewable }}
+        VIDEO_CONTAINS_SYNTHETIC_MEDIA: ${{ inputs.contains-synthetic-media }}
+        YOUTUBE_OAUTH_SCOPES: ${{ inputs.oauth-scopes }}
         LOG_LEVEL: ${{ inputs.log-level }}
         CONTENT_JSON: ${{ inputs.content-json }}
         TIME_ZONE: ${{ inputs.time-zone }}

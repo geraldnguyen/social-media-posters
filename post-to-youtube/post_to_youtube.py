@@ -52,7 +52,7 @@ class YouTubeAPI:
     
     def __init__(self, credentials_json: Optional[str] = None, api_key: Optional[str] = None,
                  oauth_client_id: Optional[str] = None, oauth_client_secret: Optional[str] = None,
-                 oauth_refresh_token: Optional[str] = None):
+                 oauth_refresh_token: Optional[str] = None, oauth_scopes: Optional[list] = None):
         """
         Initialize YouTube API client.
         
@@ -62,20 +62,25 @@ class YouTubeAPI:
             oauth_client_id: OAuth 2.0 Client ID (for refresh token authentication)
             oauth_client_secret: OAuth 2.0 Client Secret (for refresh token authentication)
             oauth_refresh_token: OAuth 2.0 Refresh Token (for refresh token authentication)
+            oauth_scopes: OAuth 2.0 scopes (defaults to ['https://www.googleapis.com/auth/youtube'])
         """
         self.youtube = None
+        
+        # Default OAuth scopes if not provided
+        if oauth_scopes is None:
+            oauth_scopes = ['https://www.googleapis.com/auth/youtube']
         
         # Option 1: OAuth Refresh Token authentication (preferred for user-based access)
         if oauth_refresh_token and oauth_client_id and oauth_client_secret:
             logging.info("Authenticating with OAuth refresh token")
+            logging.info(f"Using OAuth scopes: {oauth_scopes}")
             credentials = Credentials(
                 token=None,  # Will be obtained from refresh token
                 refresh_token=oauth_refresh_token,
                 token_uri='https://oauth2.googleapis.com/token',
                 client_id=oauth_client_id,
                 client_secret=oauth_client_secret,
-                scopes=['https://www.googleapis.com/auth/youtube.upload',
-                        'https://www.googleapis.com/auth/youtube.force-ssl']
+                scopes=oauth_scopes
             )
             
             # Refresh the token to get a valid access token
@@ -89,13 +94,13 @@ class YouTubeAPI:
         
         # Option 2: Service Account authentication
         elif credentials_json:
+            logging.info(f"Using OAuth scopes: {oauth_scopes}")
             # Try to parse as JSON string first
             try:
                 creds_data = json.loads(credentials_json)
                 credentials = service_account.Credentials.from_service_account_info(
                     creds_data,
-                    scopes=['https://www.googleapis.com/auth/youtube.upload',
-                            'https://www.googleapis.com/auth/youtube.force-ssl']
+                    scopes=oauth_scopes
                 )
                 self.youtube = build('youtube', 'v3', credentials=credentials)
                 logging.info("Initialized YouTube API with service account credentials")
@@ -104,8 +109,7 @@ class YouTubeAPI:
                 if os.path.exists(credentials_json):
                     credentials = service_account.Credentials.from_service_account_file(
                         credentials_json,
-                        scopes=['https://www.googleapis.com/auth/youtube.upload',
-                                'https://www.googleapis.com/auth/youtube.force-ssl']
+                        scopes=oauth_scopes
                     )
                     self.youtube = build('youtube', 'v3', credentials=credentials)
                     logging.info("Initialized YouTube API with service account credentials from file")
@@ -134,7 +138,8 @@ class YouTubeAPI:
                     made_for_kids: bool = False,
                     embeddable: bool = True,
                     license_type: str = "youtube",
-                    public_stats_viewable: bool = True) -> Dict[str, Any]:
+                    public_stats_viewable: bool = True,
+                    contains_synthetic_media: Optional[bool] = None) -> Dict[str, Any]:
         """
         Upload a video to YouTube.
         
@@ -150,6 +155,7 @@ class YouTubeAPI:
             embeddable: Whether video is embeddable
             license_type: Video license (youtube or creativeCommon)
             public_stats_viewable: Whether stats are publicly viewable
+            contains_synthetic_media: Whether video contains synthetic/altered media (AI-generated, deepfakes, etc.)
             
         Returns:
             Dict with video information including ID and URL
@@ -171,6 +177,11 @@ class YouTubeAPI:
                 'publicStatsViewable': public_stats_viewable
             }
         }
+        
+        # Add containsSyntheticMedia if specified
+        if contains_synthetic_media is not None:
+            body['status']['containsSyntheticMedia'] = contains_synthetic_media
+            logging.info(f"Set containsSyntheticMedia to {contains_synthetic_media}")
         
         # Add tags if provided
         if tags:
@@ -293,6 +304,13 @@ def post_to_youtube():
         oauth_client_secret = get_optional_env_var("YOUTUBE_OAUTH_CLIENT_SECRET", "")
         oauth_refresh_token = get_optional_env_var("YOUTUBE_OAUTH_REFRESH_TOKEN", "")
         
+        # Get OAuth scopes (optional, defaults to youtube scope)
+        oauth_scopes_str = get_optional_env_var("YOUTUBE_OAUTH_SCOPES", "")
+        oauth_scopes = None
+        if oauth_scopes_str:
+            oauth_scopes = [scope.strip() for scope in oauth_scopes_str.split(',') if scope.strip()]
+            logging.info(f"Using custom OAuth scopes: {oauth_scopes}")
+        
         # Determine what we're doing - video upload or community post
         video_file = get_optional_env_var("VIDEO_FILE", "")
         content = get_optional_env_var("POST_CONTENT", "")
@@ -335,6 +353,12 @@ def post_to_youtube():
             embeddable = get_optional_env_var("VIDEO_EMBEDDABLE", "true").lower() in ('true', '1', 'yes')
             license_type = get_optional_env_var("VIDEO_LICENSE", "youtube")
             public_stats_viewable = get_optional_env_var("VIDEO_PUBLIC_STATS_VIEWABLE", "true").lower() in ('true', '1', 'yes')
+            
+            # Get contains_synthetic_media setting (optional)
+            contains_synthetic_media_str = get_optional_env_var("VIDEO_CONTAINS_SYNTHETIC_MEDIA", "")
+            contains_synthetic_media = None
+            if contains_synthetic_media_str:
+                contains_synthetic_media = contains_synthetic_media_str.lower() in ('true', '1', 'yes')
             
             # Get optional parameters
             thumbnail_file = get_optional_env_var("VIDEO_THUMBNAIL", "")
@@ -385,7 +409,8 @@ def post_to_youtube():
                 credentials_json=credentials_json or None,
                 oauth_client_id=oauth_client_id or None,
                 oauth_client_secret=oauth_client_secret or None,
-                oauth_refresh_token=oauth_refresh_token or None
+                oauth_refresh_token=oauth_refresh_token or None,
+                oauth_scopes=oauth_scopes
             )
             
             # Upload the video
@@ -400,7 +425,8 @@ def post_to_youtube():
                 made_for_kids=made_for_kids,
                 embeddable=embeddable,
                 license_type=license_type,
-                public_stats_viewable=public_stats_viewable
+                public_stats_viewable=public_stats_viewable,
+                contains_synthetic_media=contains_synthetic_media
             )
             
             video_id = result['id']

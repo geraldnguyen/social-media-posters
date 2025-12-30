@@ -155,6 +155,8 @@ If you're developing within the social-media-posters repository:
 | `embeddable` | Whether video is embeddable (true/false) | No | true |
 | `license` | Video license (youtube or creativeCommon) | No | youtube |
 | `public-stats-viewable` | Whether stats are publicly viewable (true/false) | No | true |
+| `contains-synthetic-media` | Whether video contains AI-generated/synthetic media (true/false) | No | - |
+| `oauth-scopes` | Comma-separated OAuth 2.0 scopes | No | https://www.googleapis.com/auth/youtube |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
 | `content-json` | JSON API URL and path for dynamic templating | No | - |
 | `time-zone` | Time zone for date/time placeholders | No | UTC |
@@ -295,6 +297,42 @@ Common YouTube category IDs:
     made-for-kids: "true"
     license: "creativeCommon"
     privacy-status: "public"
+```
+
+### AI-Generated Video with Synthetic Media Flag
+
+```yaml
+- name: Upload AI-generated video
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  with:
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
+    video-file: "ai-generated/demo.mp4"
+    title: "AI-Generated Product Demo"
+    description: "This video was created using AI technology"
+    tags: "ai,artificial-intelligence,demo"
+    contains-synthetic-media: "true"
+    privacy-status: "public"
+```
+
+**Note**: The `contains-synthetic-media` flag is important for transparency when uploading videos that contain AI-generated, deepfake, or other synthetic content. YouTube requires creators to disclose altered or synthetic media.
+
+### Custom OAuth Scopes
+
+By default, the action uses the `https://www.googleapis.com/auth/youtube` scope, which provides full YouTube API access. You can customize the scopes if needed:
+
+```yaml
+- name: Upload video with custom scopes
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  with:
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
+    oauth-scopes: "https://www.googleapis.com/auth/youtube.upload,https://www.googleapis.com/auth/youtube.force-ssl"
+    video-file: "content/video.mp4"
+    title: "My Video"
+    description: "Video uploaded with custom scopes"
 ```
 
 ## Templated Content: JSON Source

@@ -72,15 +72,54 @@ class TestYouTubeAPI(unittest.TestCase):
             oauth_refresh_token="test_refresh_token"
         )
         
-        # Verify Credentials was created with correct parameters
+        # Verify Credentials was created with correct parameters (default scopes)
         mock_credentials_class.assert_called_once_with(
             token=None,
             refresh_token="test_refresh_token",
             token_uri='https://oauth2.googleapis.com/token',
             client_id="test_client_id",
             client_secret="test_client_secret",
-            scopes=['https://www.googleapis.com/auth/youtube.upload',
-                    'https://www.googleapis.com/auth/youtube.force-ssl']
+            scopes=['https://www.googleapis.com/auth/youtube']
+        )
+        
+        # Verify refresh was called
+        mock_credentials.refresh.assert_called_once()
+        
+        # Verify YouTube API was built
+        mock_build.assert_called_once_with('youtube', 'v3', credentials=mock_credentials)
+        self.assertEqual(api.youtube, mock_youtube)
+    
+    @patch('post_to_youtube.build')
+    @patch('post_to_youtube.Credentials')
+    @patch('post_to_youtube.Request')
+    def test_init_with_custom_scopes(self, mock_request, mock_credentials_class, mock_build):
+        """Test YouTubeAPI initialization with custom OAuth scopes."""
+        # Mock the Credentials object
+        mock_credentials = MagicMock()
+        mock_credentials_class.return_value = mock_credentials
+        
+        # Mock the build function
+        mock_youtube = MagicMock()
+        mock_build.return_value = mock_youtube
+        
+        # Create API with custom scopes
+        custom_scopes = ['https://www.googleapis.com/auth/youtube.upload', 
+                        'https://www.googleapis.com/auth/youtube.force-ssl']
+        api = YouTubeAPI(
+            oauth_client_id="test_client_id",
+            oauth_client_secret="test_client_secret",
+            oauth_refresh_token="test_refresh_token",
+            oauth_scopes=custom_scopes
+        )
+        
+        # Verify Credentials was created with custom scopes
+        mock_credentials_class.assert_called_once_with(
+            token=None,
+            refresh_token="test_refresh_token",
+            token_uri='https://oauth2.googleapis.com/token',
+            client_id="test_client_id",
+            client_secret="test_client_secret",
+            scopes=custom_scopes
         )
         
         # Verify refresh was called
@@ -228,6 +267,44 @@ class TestYouTubeAPI(unittest.TestCase):
         call_args = mock_youtube.videos().insert.call_args
         body = call_args[1]['body']
         self.assertEqual(body['snippet']['tags'], tags)
+    
+    @patch('post_to_youtube.MediaFileUpload')
+    @patch('post_to_youtube.build')
+    @patch('post_to_youtube.service_account.Credentials.from_service_account_info')
+    def test_upload_video_with_synthetic_media(self, mock_creds, mock_build, mock_media_upload):
+        """Test video upload with containsSyntheticMedia flag."""
+        # Mock credentials and build
+        mock_credentials = MagicMock()
+        mock_creds.return_value = mock_credentials
+        
+        # Mock YouTube API
+        mock_youtube = MagicMock()
+        mock_build.return_value = mock_youtube
+        
+        # Mock the upload response
+        mock_request = MagicMock()
+        mock_request.next_chunk.return_value = (None, {'id': 'synthetic_video_id'})
+        
+        mock_youtube.videos().insert.return_value = mock_request
+        
+        # Mock MediaFileUpload
+        mock_media = MagicMock()
+        mock_media_upload.return_value = mock_media
+        
+        # Create API and upload with containsSyntheticMedia
+        api = YouTubeAPI(credentials_json=json.dumps(self.test_creds))
+        
+        result = api.upload_video(
+            video_file='/tmp/test_video.mp4',
+            title='AI Generated Video',
+            description='This video contains AI-generated content',
+            contains_synthetic_media=True
+        )
+        
+        # Verify containsSyntheticMedia was included
+        call_args = mock_youtube.videos().insert.call_args
+        body = call_args[1]['body']
+        self.assertEqual(body['status']['containsSyntheticMedia'], True)
     
     @patch('post_to_youtube.MediaFileUpload')
     @patch('post_to_youtube.build')
