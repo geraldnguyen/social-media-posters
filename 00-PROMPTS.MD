@@ -249,3 +249,19 @@ Expectation:
 - Create unit tests for the changes ✅
 - Then run the tests ✅
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes ✅
+
+
+
+## v1.11.0 - Support loading parameters from a JSON file
+
+Currently, all post-to-XYZ scripts support loading parameters through environment variables and `.env` file
+
+Expectation, **all** post-to-XYZ scripts must support environment variables, `.env` file and an JSON file (file's path can be either absolute or relative, specified via `INPUT_FILE` environment variable or entry in `.env` file, or `input.json` if not provided)
+
+Detailed logging and dry-run mode must be available to faciliate troubleshooting. ✅
+
+Expectation:
+- Implement the above requirements ✅
+- Create unit tests for the changes ✅
+- Then run the tests ✅
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes ✅
