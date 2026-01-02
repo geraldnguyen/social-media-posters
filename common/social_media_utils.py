@@ -78,6 +78,58 @@ def dry_run_guard(platform: str, content: str, media_files: list, request_body: 
         
         sys.exit(0)
 
+# Global cache for JSON config
+_json_config_cache: Optional[Dict[str, Any]] = None
+_json_config_loaded = False
+
+
+def load_json_config() -> Optional[Dict[str, Any]]:
+    """
+    Load configuration from a JSON file if available.
+    
+    The JSON file path is determined by:
+    1. INPUT_FILE environment variable
+    2. input.json in the current directory (default)
+    
+    Returns:
+        Dictionary containing the JSON config, or None if file doesn't exist or is invalid
+    """
+    global _json_config_cache, _json_config_loaded
+    
+    # Return cached config if already loaded
+    if _json_config_loaded:
+        return _json_config_cache
+    
+    _json_config_loaded = True
+    
+    # Determine the input file path
+    input_file = os.getenv('INPUT_FILE', 'input.json')
+    
+    # Convert relative path to absolute path based on current working directory
+    if not os.path.isabs(input_file):
+        input_file = os.path.join(os.getcwd(), input_file)
+    
+    # Check if file exists
+    if not os.path.exists(input_file):
+        logging.debug(f"JSON config file not found: {input_file}")
+        return None
+    
+    # Load and parse JSON file
+    try:
+        with open(input_file, 'r') as f:
+            config = json.load(f)
+        logging.info(f"Loaded configuration from JSON file: {input_file}")
+        logging.debug(f"JSON config keys: {list(config.keys()) if isinstance(config, dict) else 'not a dict'}")
+        _json_config_cache = config
+        return config
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to parse JSON config file {input_file}: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Error reading JSON config file {input_file}: {e}")
+        return None
+
+
 def setup_logging(level: str = "INFO") -> logging.Logger:
     """Setup logging configuration for social media actions."""
     log_level = getattr(logging, level.upper(), logging.INFO)
@@ -90,19 +142,46 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
 
 
 def get_required_env_var(var_name: str) -> str:
-    """Get a required environment variable or exit with error."""
+    """
+    Get a required environment variable or exit with error.
+    
+    Falls back to JSON config if environment variable is not set.
+    """
     value = os.getenv(var_name)
     if not value:
-        logging.error(f"Required environment variable {var_name} not found")
-        sys.exit(1)
+        # Try to get from JSON config
+        json_config = load_json_config()
+        if json_config and isinstance(json_config, dict):
+            value = json_config.get(var_name)
+        
+        if not value:
+            logging.error(f"Required parameter {var_name} not found in environment or JSON config")
+            sys.exit(1)
+        else:
+            logging.debug(f"Parameter {var_name} loaded from JSON config")
     return value
 
 
 
 
 def get_optional_env_var(var_name: str, default: str = "") -> str:
-    """Get an optional environment variable with default value."""
-    return os.getenv(var_name, default)
+    """
+    Get an optional environment variable with default value.
+    
+    Falls back to JSON config if environment variable is not set.
+    """
+    value = os.getenv(var_name)
+    if not value:
+        # Try to get from JSON config
+        json_config = load_json_config()
+        if json_config and isinstance(json_config, dict):
+            value = json_config.get(var_name)
+        
+        if value:
+            logging.debug(f"Parameter {var_name} loaded from JSON config")
+        else:
+            value = default
+    return value
 
 
 def validate_post_content(content: str, max_length: Optional[int] = None) -> bool:
