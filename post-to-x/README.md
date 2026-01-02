@@ -201,21 +201,106 @@ POST_CONTENT=Random story: @{json | random() | attr(title)}
 
 This will randomly select a story object from the `stories` array and extract its `title` attribute.
 
+## JSON Configuration File
+
+Starting from v1.11.0, you can provide all parameters via a JSON configuration file instead of environment variables. This is particularly useful for:
+- Local development and testing
+- Managing multiple configurations
+- Organizing complex parameter sets
+
+### Usage
+
+1. **Create a JSON config file** (default: `input.json` in your working directory):
+
+```json
+{
+  "X_API_KEY": "your_api_key_here",
+  "X_API_SECRET": "your_api_secret_here",
+  "X_ACCESS_TOKEN": "your_access_token_here",
+  "X_ACCESS_TOKEN_SECRET": "your_access_token_secret_here",
+  "POST_CONTENT": "Your tweet content here",
+  "MEDIA_FILES": "",
+  "LOG_LEVEL": "INFO",
+  "DRY_RUN": "false"
+}
+```
+
+2. **Run the script**:
+
+```bash
+# Uses input.json by default
+python post_to_x.py
+
+# Or specify a custom config file
+INPUT_FILE=my_config.json python post_to_x.py
+```
+
+3. **Or set INPUT_FILE in your `.env` file**:
+
+```
+INPUT_FILE=my_custom_config.json
+```
+
+### Configuration Priority
+
+Parameters are loaded in the following order (highest to lowest priority):
+1. Environment variables
+2. JSON configuration file
+3. `.env` file
+4. Default values
+
+This means environment variables will always override values from the JSON config file.
+
+### Example: Mixed Configuration
+
+You can combine JSON config with environment variables. For example, store non-sensitive parameters in JSON and sensitive credentials in environment variables:
+
+```json
+// config.json
+{
+  "POST_CONTENT": "Test post with mixed config",
+  "LOG_LEVEL": "DEBUG",
+  "DRY_RUN": "true"
+}
+```
+
+```bash
+# Provide credentials via environment
+X_API_KEY="secret_key" \
+X_API_SECRET="secret_secret" \
+X_ACCESS_TOKEN="secret_token" \
+X_ACCESS_TOKEN_SECRET="secret_token_secret" \
+INPUT_FILE=config.json \
+python post_to_x.py
+```
+
+### Example Template
+
+A template JSON config file (`input.json.example`) is provided in the action folder. Copy and customize it for your needs:
+
+```bash
+cp input.json.example input.json
+# Edit input.json with your values
+```
+
+**Important**: The `input.json` file is ignored by git to prevent accidentally committing sensitive credentials.
+
 ## Security Notes
 
 - Store all API credentials as GitHub repository secrets
 - Never commit API keys or tokens to your repository
 - Use the principle of least privilege for your X app permissions
+- The `input.json` file is automatically ignored by git to prevent credential leaks
 
 ## GitHub Actions Best Practices
 
 ### Version Pinning
-- **Always use a specific version tag** (e.g., `@v1.9.0`) in production workflows for stability
+- **Always use a specific version tag** (e.g., `@v1.11.0`) in production workflows for stability
 - **Test updates** in a non-production environment before upgrading
 - **Check the changelog** for breaking changes when updating versions
 
 ### Action Reference Format
-- **External repositories**: `geraldnguyen/social-media-posters/post-to-x@v1.9.0`
+- **External repositories**: `geraldnguyen/social-media-posters/post-to-x@v1.11.0`
 - **Local/same repository**: `./post-to-x` (requires checkout step first)
 
 ### Workflow Tips
@@ -239,7 +324,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post release announcement to X
-        uses: geraldnguyen/social-media-posters/post-to-x@v1.9.0
+        uses: geraldnguyen/social-media-posters/post-to-x@v1.11.0
         with:
           api-key: ${{ secrets.X_API_KEY }}
           api-secret: ${{ secrets.X_API_SECRET }}

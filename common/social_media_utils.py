@@ -16,8 +16,9 @@ from datetime import datetime, timezone, timedelta
 def dry_run_guard(platform: str, content: str, media_files: list, request_body: dict):
     """
     If DRY_RUN env var is set to true, print info and exit instead of posting.
+    Note: This must be called after get_optional_env_var is available (after imports).
     """
-    dry_run = os.getenv('DRY_RUN', '').lower() in ('1', 'true', 'yes')
+    dry_run = get_optional_env_var('DRY_RUN', '').lower() in ('1', 'true', 'yes')
     if dry_run:
         print("=" * 80)
         print(f"[DRY RUN MODE] Would post to {platform}")

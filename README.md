@@ -223,6 +223,85 @@ All actions share these common features:
 - **Outputs**: Returns post ID and URL for further processing
 - **Security**: Secure handling of API credentials via GitHub secrets
 
+### Configuration Options
+
+All actions support three methods for loading configuration parameters, with the following precedence (highest to lowest):
+
+1. **Environment Variables**: Set directly in the environment or workflow
+2. **JSON Configuration File**: Load parameters from a JSON file
+3. **.env File**: Load parameters from a `.env` file (for local development)
+
+#### JSON Configuration File
+
+You can provide all required and optional parameters in a JSON configuration file instead of setting them as environment variables. This is particularly useful for:
+- Managing multiple configurations for different environments
+- Simplifying local testing and development
+- Organizing complex parameter sets
+
+**How to use:**
+
+1. Create a JSON file (default: `input.json` in the current directory) containing your configuration:
+
+```json
+{
+  "X_API_KEY": "your_api_key",
+  "X_API_SECRET": "your_api_secret",
+  "X_ACCESS_TOKEN": "your_access_token",
+  "X_ACCESS_TOKEN_SECRET": "your_access_token_secret",
+  "POST_CONTENT": "Hello from JSON config!",
+  "LOG_LEVEL": "INFO",
+  "DRY_RUN": "true"
+}
+```
+
+2. Optionally specify a custom file path using the `INPUT_FILE` environment variable:
+
+```bash
+INPUT_FILE=/path/to/my_config.json python post_to_x.py
+```
+
+3. Or set it in your `.env` file:
+
+```
+INPUT_FILE=my_custom_config.json
+```
+
+**Key features:**
+- Environment variables always take precedence over JSON config values
+- The JSON file path can be absolute or relative to the current working directory
+- If `INPUT_FILE` is not specified, the script looks for `input.json` in the current directory
+- If the JSON file doesn't exist, the script continues without error (falling back to environment variables)
+
+**Example workflow with JSON config:**
+
+```yaml
+jobs:
+  post-with-json-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Create config file
+        run: |
+          cat > config.json << EOF
+          {
+            "POST_CONTENT": "Automated post from JSON config",
+            "LOG_LEVEL": "DEBUG"
+          }
+          EOF
+      
+      - name: Post to X
+        uses: ./post-to-x
+        env:
+          INPUT_FILE: config.json
+          # Sensitive values still from secrets
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+```
+
 ### Templated Content Helpers
 
 All actions include a flexible templating engine that can pull values from environment variables, built-in timestamps, or remote JSON payloads referenced by `CONTENT_JSON`. In addition to basic lookups, you can apply pipe operations to transform list results:
