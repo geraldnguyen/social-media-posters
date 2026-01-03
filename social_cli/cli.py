@@ -57,6 +57,26 @@ def add_common_options(func):
     return func
 
 
+def import_and_run_post_script(script_folder, script_name, function_name):
+    """
+    Helper function to import and run a post script from its folder.
+    
+    Args:
+        script_folder: Name of the folder containing the script (e.g., 'post-to-x')
+        script_name: Name of the script module (e.g., 'post_to_x')
+        function_name: Name of the function to call (e.g., 'post_to_x')
+    """
+    # Import from the specific post-to-* folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / script_folder))
+    module = __import__(script_name)
+    post_func = getattr(module, function_name)
+    
+    try:
+        post_func()
+    except SystemExit as e:
+        sys.exit(e.code)
+
+
 @click.group()
 @click.version_option(version=__version__, prog_name='social')
 def main():
@@ -80,13 +100,7 @@ def main():
               help='X access token secret')
 def x(**kwargs):
     """Post to X (formerly Twitter)."""
-    # Import from post-to-x folder
-    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-x'))
-    from post_to_x import post_to_x as post_func
-    try:
-        post_func()
-    except SystemExit as e:
-        sys.exit(e.code)
+    import_and_run_post_script('post-to-x', 'post_to_x', 'post_to_x')
 
 
 @main.command()
@@ -101,13 +115,7 @@ def x(**kwargs):
               help='Post privacy (public or private)')
 def facebook(**kwargs):
     """Post to Facebook Page."""
-    # Import from post-to-facebook folder
-    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-facebook'))
-    from post_to_facebook import post_to_facebook as post_func
-    try:
-        post_func()
-    except SystemExit as e:
-        sys.exit(e.code)
+    import_and_run_post_script('post-to-facebook', 'post_to_facebook', 'post_to_facebook')
 
 
 @main.command()
@@ -120,13 +128,7 @@ def facebook(**kwargs):
               help='Single media file URL (deprecated, use --media-files)')
 def instagram(**kwargs):
     """Post to Instagram."""
-    # Import from post-to-instagram folder
-    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-instagram'))
-    from post_to_instagram import post_to_instagram as post_func
-    try:
-        post_func()
-    except SystemExit as e:
-        sys.exit(e.code)
+    import_and_run_post_script('post-to-instagram', 'post_to_instagram', 'post_to_instagram')
 
 
 @main.command()
@@ -141,13 +143,7 @@ def instagram(**kwargs):
               help='Single media file URL (deprecated, use --media-files)')
 def threads(**kwargs):
     """Post to Threads."""
-    # Import from post-to-threads folder
-    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-threads'))
-    from post_to_threads import post_to_threads as post_func
-    try:
-        post_func()
-    except SystemExit as e:
-        sys.exit(e.code)
+    import_and_run_post_script('post-to-threads', 'post_to_threads', 'post_to_threads')
 
 
 @main.command()
@@ -160,13 +156,7 @@ def threads(**kwargs):
               help='Link to attach to the post')
 def linkedin(**kwargs):
     """Post to LinkedIn."""
-    # Import from post-to-linkedin folder
-    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-linkedin'))
-    from post_to_linkedin import post_to_linkedin as post_func
-    try:
-        post_func()
-    except SystemExit as e:
-        sys.exit(e.code)
+    import_and_run_post_script('post-to-linkedin', 'post_to_linkedin', 'post_to_linkedin')
 
 
 @main.command()
@@ -179,13 +169,7 @@ def linkedin(**kwargs):
               help='Link to attach to the post')
 def bluesky(**kwargs):
     """Post to Bluesky."""
-    # Import from post-to-bluesky folder
-    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-bluesky'))
-    from post_to_bluesky import post_to_bluesky as post_func
-    try:
-        post_func()
-    except SystemExit as e:
-        sys.exit(e.code)
+    import_and_run_post_script('post-to-bluesky', 'post_to_bluesky', 'post_to_bluesky')
 
 
 @main.command()
@@ -230,13 +214,7 @@ def bluesky(**kwargs):
               help='Playlist ID to add video to')
 def youtube(**kwargs):
     """Upload video to YouTube."""
-    # Import from post-to-youtube folder
-    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-youtube'))
-    from post_to_youtube import post_to_youtube as post_func
-    try:
-        post_func()
-    except SystemExit as e:
-        sys.exit(e.code)
+    import_and_run_post_script('post-to-youtube', 'post_to_youtube', 'post_to_youtube')
 
 
 if __name__ == '__main__':
