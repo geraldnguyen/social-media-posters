@@ -12,6 +12,9 @@ from pathlib import Path
 
 from datetime import datetime, timezone, timedelta
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 # Global cache for JSON config
 _json_config_cache: Optional[Dict[str, Any]] = None
 _json_config_loaded = False
@@ -45,22 +48,22 @@ def load_json_config() -> Optional[Dict[str, Any]]:
     
     # Check if file exists
     if not os.path.exists(input_file):
-        logging.debug(f"JSON config file not found: {input_file}")
+        logger.debug(f"JSON config file not found: {input_file}")
         return None
     
     # Load and parse JSON file
     try:
         with open(input_file, 'r') as f:
             config = json.load(f)
-        logging.info(f"Loaded configuration from JSON file: {input_file}")
-        logging.debug(f"JSON config keys: {list(config.keys()) if isinstance(config, dict) else 'not a dict'}")
+        logger.info(f"Loaded configuration from JSON file: {input_file}")
+        logger.debug(f"JSON config keys: {list(config.keys()) if isinstance(config, dict) else 'not a dict'}")
         _json_config_cache = config
         return config
     except json.JSONDecodeError as e:
-        logging.error(f"Failed to parse JSON config file {input_file}: {e}")
+        logger.error(f"Failed to parse JSON config file {input_file}: {e}")
         return None
     except Exception as e:
-        logging.error(f"Error reading JSON config file {input_file}: {e}")
+        logger.error(f"Error reading JSON config file {input_file}: {e}")
         return None
 
 
@@ -119,10 +122,10 @@ def get_required_env_var(var_name: str) -> str:
             json_value = json_config.get(var_name)
             if json_value is not None:
                 value = _convert_json_value_to_string(json_value)
-                logging.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
+                logger.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
         
         if not value:
-            logging.error(f"Required parameter {var_name} not found in environment or JSON config")
+            logger.error(f"Required parameter {var_name} not found in environment or JSON config")
             sys.exit(1)
     return value
 
@@ -144,7 +147,7 @@ def get_optional_env_var(var_name: str, default: str = "") -> str:
             json_value = json_config.get(var_name)
             if json_value is not None:
                 value = _convert_json_value_to_string(json_value)
-                logging.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
+                logger.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
         
         if not value:
             value = default
@@ -211,9 +214,9 @@ def dry_run_guard(platform: str, content: str, media_files: list, request_body: 
         print("=" * 80)
         
         # Also log for consistency
-        logging.info(f"[DRY RUN] Would post to {platform}.")
-        logging.info(f"[DRY RUN] Content: {content}")
-        logging.info(f"[DRY RUN] Media files: {media_files}")
+        logger.info(f"[DRY RUN] Would post to {platform}.")
+        logger.info(f"[DRY RUN] Content: {content}")
+        logger.info(f"[DRY RUN] Media files: {media_files}")
         
         sys.exit(0)
 
@@ -221,12 +224,12 @@ def dry_run_guard(platform: str, content: str, media_files: list, request_body: 
 def validate_post_content(content: str, max_length: Optional[int] = None) -> bool:
     """Validate post content length and format."""
     if not content or not content.strip():
-        logging.error("Post content cannot be empty")
+        logger.error("Post content cannot be empty")
         return False
     
-    logging.info(f"Validating post content of length {len(content)}: {content!r}")
+    logger.info(f"Validating post content of length {len(content)}: {content!r}")
     if max_length and len(content) > max_length:
-        logging.error(f"Post content exceeds maximum length of {max_length} characters")
+        logger.error(f"Post content exceeds maximum length of {max_length} characters")
         return False
     
     return True
@@ -234,16 +237,16 @@ def validate_post_content(content: str, max_length: Optional[int] = None) -> boo
 
 def handle_api_error(error: Exception, platform: str) -> None:
     """Handle API errors consistently across platforms."""
-    logging.error(f"Error posting to {platform}: {str(error)}")
+    logger.error(f"Error posting to {platform}: {str(error)}")
     sys.exit(1)
 
 
 def log_success(platform: str, post_id: Optional[str] = None) -> None:
     """Log successful post creation."""
     if post_id:
-        logging.info(f"Successfully posted to {platform}. Post ID: {post_id}")
+        logger.info(f"Successfully posted to {platform}. Post ID: {post_id}")
     else:
-        logging.info(f"Successfully posted to {platform}")
+        logger.info(f"Successfully posted to {platform}")
 
 
 def download_file_if_url(file_path, max_download_size_mb=5):
@@ -274,7 +277,7 @@ def download_file_if_url(file_path, max_download_size_mb=5):
                     f.write(chunk)
             local_path = str(temp)
         except Exception as e:
-            logging.error(f"Failed to download media from {file_path}: {str(e)}")
+            logger.error(f"Failed to download media from {file_path}: {str(e)}")
             raise
     return local_path
 
@@ -292,7 +295,7 @@ def parse_media_files(media_input: str, max_download_size_mb: int = 5):
     for file_path in media_files:
         local_path = download_file_if_url(file_path, max_download_size_mb)
         if not os.path.exists(local_path):
-            logging.error(f"Media file not found: {file_path}")
+            logger.error(f"Media file not found: {file_path}")
             sys.exit(1)
         local_files.append(local_path)
     return local_files

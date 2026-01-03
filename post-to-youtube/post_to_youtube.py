@@ -47,6 +47,9 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseUpload
 import requests
 
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 class YouTubeAPI:
     """YouTube Data API v3 client."""
     
@@ -71,11 +74,11 @@ class YouTubeAPI:
             oauth_scopes = ['https://www.googleapis.com/auth/youtube']
         
         # Log the scopes being used
-        logging.info(f"Using OAuth scopes: {oauth_scopes}")
+        logger.info(f"Using OAuth scopes: {oauth_scopes}")
         
         # Option 1: OAuth Refresh Token authentication (preferred for user-based access)
         if oauth_refresh_token and oauth_client_id and oauth_client_secret:
-            logging.info("Authenticating with OAuth refresh token")
+            logger.info("Authenticating with OAuth refresh token")
             credentials = Credentials(
                 token=None,  # Will be obtained from refresh token
                 refresh_token=oauth_refresh_token,
@@ -89,9 +92,9 @@ class YouTubeAPI:
             try:
                 credentials.refresh(Request())
                 self.youtube = build('youtube', 'v3', credentials=credentials)
-                logging.info("Successfully authenticated with OAuth refresh token")
+                logger.info("Successfully authenticated with OAuth refresh token")
             except Exception as e:
-                logging.error(f"Failed to refresh OAuth token: {e}")
+                logger.error(f"Failed to refresh OAuth token: {e}")
                 raise ValueError(f"Failed to authenticate with OAuth refresh token: {e}")
         
         # Option 2: Service Account authentication
@@ -104,7 +107,7 @@ class YouTubeAPI:
                     scopes=oauth_scopes
                 )
                 self.youtube = build('youtube', 'v3', credentials=credentials)
-                logging.info("Initialized YouTube API with service account credentials")
+                logger.info("Initialized YouTube API with service account credentials")
             except json.JSONDecodeError:
                 # Treat as file path
                 if os.path.exists(credentials_json):
@@ -113,13 +116,13 @@ class YouTubeAPI:
                         scopes=oauth_scopes
                     )
                     self.youtube = build('youtube', 'v3', credentials=credentials)
-                    logging.info("Initialized YouTube API with service account credentials from file")
+                    logger.info("Initialized YouTube API with service account credentials from file")
                 else:
                     raise ValueError("credentials_json is not valid JSON or file path")
         elif api_key:
             # Use API key (limited functionality)
             self.youtube = build('youtube', 'v3', developerKey=api_key)
-            logging.info("Initialized YouTube API with API key (limited functionality)")
+            logger.info("Initialized YouTube API with API key (limited functionality)")
         else:
             raise ValueError(
                 "Authentication required. Provide one of:\n"
@@ -161,7 +164,7 @@ class YouTubeAPI:
         Returns:
             Dict with video information including ID and URL
         """
-        logging.info(f"Uploading video: {video_file}")
+        logger.info(f"Uploading video: {video_file}")
         
         # Build the request body
         body = {
@@ -182,7 +185,7 @@ class YouTubeAPI:
         # Add containsSyntheticMedia if specified
         if contains_synthetic_media is not None:
             body['status']['containsSyntheticMedia'] = contains_synthetic_media
-            logging.info(f"Set containsSyntheticMedia to {contains_synthetic_media}")
+            logger.info(f"Set containsSyntheticMedia to {contains_synthetic_media}")
         
         # Add tags if provided
         if tags:
@@ -192,12 +195,12 @@ class YouTubeAPI:
         if publish_at:
             # Validate that privacy_status is 'private' for scheduling
             if privacy_status != 'private':
-                logging.warning("Scheduled publishing requires privacy_status to be 'private'. Setting to 'private'.")
+                logger.warning("Scheduled publishing requires privacy_status to be 'private'. Setting to 'private'.")
                 body['status']['privacyStatus'] = 'private'
             body['status']['publishAt'] = publish_at
-            logging.info(f"Video scheduled to publish at: {publish_at}")
+            logger.info(f"Video scheduled to publish at: {publish_at}")
         
-        logging.debug(f"Request body: {json.dumps(body, indent=2)}")
+        logger.debug(f"Request body: {json.dumps(body, indent=2)}")
         
         # Prepare media upload
         media = MediaFileUpload(video_file, chunksize=-1, resumable=True)
@@ -210,19 +213,19 @@ class YouTubeAPI:
                 media_body=media
             )
             
-            logging.info("Starting video upload...")
+            logger.info("Starting video upload...")
             response = None
             while response is None:
                 status, response = request.next_chunk()
                 if status:
                     progress = int(status.progress() * 100)
-                    logging.info(f"Upload progress: {progress}%")
+                    logger.info(f"Upload progress: {progress}%")
             
             video_id = response['id']
             video_url = f"https://www.youtube.com/watch?v={video_id}"
             
-            logging.info(f"Video uploaded successfully. ID: {video_id}")
-            logging.info(f"Video URL: {video_url}")
+            logger.info(f"Video uploaded successfully. ID: {video_id}")
+            logger.info(f"Video URL: {video_url}")
             
             return {
                 'id': video_id,
@@ -232,8 +235,8 @@ class YouTubeAPI:
             }
             
         except HttpError as e:
-            logging.error(f"An HTTP error {e.resp.status} occurred:")
-            logging.error(f"Error details: {e.content}")
+            logger.error(f"An HTTP error {e.resp.status} occurred:")
+            logger.error(f"Error details: {e.content}")
             raise
     
     def upload_thumbnail(self, video_id: str, thumbnail_file: str) -> None:
@@ -244,7 +247,7 @@ class YouTubeAPI:
             video_id: Video ID
             thumbnail_file: Path to thumbnail image file
         """
-        logging.info(f"Uploading thumbnail for video {video_id}: {thumbnail_file}")
+        logger.info(f"Uploading thumbnail for video {video_id}: {thumbnail_file}")
         
         try:
             media = MediaFileUpload(thumbnail_file)
@@ -253,11 +256,11 @@ class YouTubeAPI:
                 media_body=media
             )
             response = request.execute()
-            logging.info(f"Thumbnail uploaded successfully")
-            logging.debug(f"Response: {json.dumps(response, indent=2)}")
+            logger.info(f"Thumbnail uploaded successfully")
+            logger.debug(f"Response: {json.dumps(response, indent=2)}")
         except HttpError as e:
-            logging.error(f"An HTTP error {e.resp.status} occurred while uploading thumbnail:")
-            logging.error(f"Error details: {e.content}")
+            logger.error(f"An HTTP error {e.resp.status} occurred while uploading thumbnail:")
+            logger.error(f"Error details: {e.content}")
             raise
     
     def add_video_to_playlist(self, video_id: str, playlist_id: str) -> None:
@@ -268,7 +271,7 @@ class YouTubeAPI:
             video_id: Video ID
             playlist_id: Playlist ID
         """
-        logging.info(f"Adding video {video_id} to playlist {playlist_id}")
+        logger.info(f"Adding video {video_id} to playlist {playlist_id}")
         
         try:
             request = self.youtube.playlistItems().insert(
@@ -284,11 +287,11 @@ class YouTubeAPI:
                 }
             )
             response = request.execute()
-            logging.info(f"Video added to playlist successfully")
-            logging.debug(f"Response: {json.dumps(response, indent=2)}")
+            logger.info(f"Video added to playlist successfully")
+            logger.debug(f"Response: {json.dumps(response, indent=2)}")
         except HttpError as e:
-            logging.error(f"An HTTP error {e.resp.status} occurred while adding to playlist:")
-            logging.error(f"Error details: {e.content}")
+            logger.error(f"An HTTP error {e.resp.status} occurred while adding to playlist:")
+            logger.error(f"Error details: {e.content}")
             raise
 
 
@@ -311,14 +314,14 @@ def post_to_youtube():
         oauth_scopes = None
         if oauth_scopes_str:
             oauth_scopes = [scope.strip() for scope in oauth_scopes_str.split(',') if scope.strip()]
-            logging.info(f"Using custom OAuth scopes: {oauth_scopes}")
+            logger.info(f"Using custom OAuth scopes: {oauth_scopes}")
         
         # Determine what we're doing - video upload or community post
         video_file = get_optional_env_var("VIDEO_FILE", "")
         content = get_optional_env_var("POST_CONTENT", "")
         
         if not video_file and not content:
-            logging.error("Either VIDEO_FILE or POST_CONTENT must be provided")
+            logger.error("Either VIDEO_FILE or POST_CONTENT must be provided")
             sys.exit(1)
         
         # Process templated content
@@ -331,15 +334,15 @@ def post_to_youtube():
         if video_file:
             # VIDEO UPLOAD MODE
             if not title:
-                logging.error("VIDEO_TITLE is required for video uploads")
+                logger.error("VIDEO_TITLE is required for video uploads")
                 sys.exit(1)
             
             # Download video if it's a URL
-            logging.info(f"Preparing video file: {video_file}")
+            logger.info(f"Preparing video file: {video_file}")
             local_video_file = download_file_if_url(video_file, max_download_size_mb=500)  # Allow larger downloads for videos
             
             if not os.path.exists(local_video_file):
-                logging.error(f"Video file not found: {video_file}")
+                logger.error(f"Video file not found: {video_file}")
                 sys.exit(1)
             
             # Get video metadata
@@ -439,14 +442,14 @@ def post_to_youtube():
                 try:
                     api.upload_thumbnail(video_id, thumbnail_local)
                 except Exception as e:
-                    logging.warning(f"Failed to upload thumbnail: {e}")
+                    logger.warning(f"Failed to upload thumbnail: {e}")
             
             # Add to playlist if provided
             if playlist_id:
                 try:
                     api.add_video_to_playlist(video_id, playlist_id)
                 except Exception as e:
-                    logging.warning(f"Failed to add video to playlist: {e}")
+                    logger.warning(f"Failed to add video to playlist: {e}")
             
             # Output for GitHub Actions
             if 'GITHUB_OUTPUT' in os.environ:
@@ -459,8 +462,8 @@ def post_to_youtube():
             
         else:
             # COMMUNITY POST MODE (Note: Community posts via API are limited)
-            logging.warning("Community posts are not fully supported via YouTube Data API v3")
-            logging.warning("Please use the YouTube Studio interface for community posts")
+            logger.warning("Community posts are not fully supported via YouTube Data API v3")
+            logger.warning("Please use the YouTube Studio interface for community posts")
             sys.exit(1)
         
     except Exception as e:

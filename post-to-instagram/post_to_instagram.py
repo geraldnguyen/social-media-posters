@@ -36,6 +36,9 @@ from social_media_utils import (
 from templating_utils import process_templated_contents
 
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 class InstagramAPI:
     """Instagram Graph API client."""
     
@@ -120,7 +123,7 @@ def validate_image(file_path):
             
             return True
     except Exception as e:
-        logging.error(f"Image validation failed: {str(e)}")
+        logger.error(f"Image validation failed: {str(e)}")
         return False
 
 
@@ -139,7 +142,7 @@ def upload_media_to_hosting(file_path):
     if file_path.startswith(('http://', 'https://')):
         return file_path
     else:
-        logging.error("Media file must be a publicly accessible URL for Instagram posting: %s", file_path)
+        logger.error("Media file must be a publicly accessible URL for Instagram posting: %s", file_path)
         raise ValueError(
             "Media file must be a publicly accessible URL. "
             "Please upload your media to a hosting service and provide the URL."
@@ -163,10 +166,10 @@ def post_to_instagram():
         
         # Validate that exactly one media input is provided
         if not media_file and not media_files_input:
-            logging.error("Either MEDIA_FILE or MEDIA_FILES must be provided")
+            logger.error("Either MEDIA_FILE or MEDIA_FILES must be provided")
             sys.exit(1)
         if media_file and media_files_input:
-            logging.error("Cannot specify both MEDIA_FILE and MEDIA_FILES. Use one or the other.")
+            logger.error("Cannot specify both MEDIA_FILE and MEDIA_FILES. Use one or the other.")
             sys.exit(1)
         
                 
@@ -183,7 +186,7 @@ def post_to_instagram():
         
         # Validate media files count
         if len(media_files) > 10:
-            logging.error("Instagram carousel posts support maximum 10 media files")
+            logger.error("Instagram carousel posts support maximum 10 media files")
             sys.exit(1)
 
         
@@ -206,7 +209,7 @@ def post_to_instagram():
         # Validate media files are URLs (required for Instagram API)
         for media_file in media_files:
             if not media_file.startswith(('http://', 'https://')):
-                logging.error(f"Instagram requires publicly accessible URLs. Invalid media file: {media_file}")
+                logger.error(f"Instagram requires publicly accessible URLs. Invalid media file: {media_file}")
                 sys.exit(1)
         
         logger.info(f"Using media URLs: {media_files}")

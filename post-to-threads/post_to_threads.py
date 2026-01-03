@@ -35,6 +35,9 @@ from social_media_utils import (
 )
 
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 class ThreadsAPI:
     """Threads API client."""
     
@@ -63,23 +66,23 @@ class ThreadsAPI:
         if link_attachment:
             data["link_attachment"] = link_attachment
         
-        logging.info(f"Making API request to create media container: POST {url}")
-        logging.debug(f"Request data: media_type={data.get('media_type')}, text_length={len(text)}, has_media={bool(media_url)}, has_link={bool(link_attachment)}")
+        logger.info(f"Making API request to create media container: POST {url}")
+        logger.debug(f"Request data: media_type={data.get('media_type')}, text_length={len(text)}, has_media={bool(media_url)}, has_link={bool(link_attachment)}")
         response = requests.post(url, data=data)
-        logging.info(f"API response status: {response.status_code}")
+        logger.info(f"API response status: {response.status_code}")
         
         try:
             response.raise_for_status()
             result = response.json()
-            logging.info(f"Media container created successfully: {result.get('id')}")
+            logger.info(f"Media container created successfully: {result.get('id')}")
             return result["id"]
         except requests.HTTPError as http_err:
-            logging.error(f"HTTP error creating media container: {http_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"HTTP error creating media container: {http_err}")
+            logger.error(f"Response content: {response.text}")
             raise
         except ValueError as json_err:
-            logging.error(f"Invalid JSON response: {json_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"Invalid JSON response: {json_err}")
+            logger.error(f"Response content: {response.text}")
             raise
     
     def publish_media(self, user_id, creation_id):
@@ -91,23 +94,23 @@ class ThreadsAPI:
             "access_token": self.access_token
         }
         
-        logging.info(f"Making API request to publish media: POST {url}")
-        logging.info(f"Publishing creation_id: {creation_id}")
+        logger.info(f"Making API request to publish media: POST {url}")
+        logger.info(f"Publishing creation_id: {creation_id}")
         response = requests.post(url, data=data)
-        logging.info(f"API response status: {response.status_code}")
+        logger.info(f"API response status: {response.status_code}")
         
         try:
             response.raise_for_status()
             result = response.json()
-            logging.info(f"Media published successfully: {result.get('id')}")
+            logger.info(f"Media published successfully: {result.get('id')}")
             return result["id"]
         except requests.HTTPError as http_err:
-            logging.error(f"HTTP error publishing media: {http_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"HTTP error publishing media: {http_err}")
+            logger.error(f"Response content: {response.text}")
             raise
         except ValueError as json_err:
-            logging.error(f"Invalid JSON response: {json_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"Invalid JSON response: {json_err}")
+            logger.error(f"Response content: {response.text}")
             raise
     
     def get_thread_info(self, thread_id):
@@ -119,23 +122,23 @@ class ThreadsAPI:
             "access_token": self.access_token
         }
         
-        logging.info(f"Making API request to get thread info: GET {url}")
-        logging.info(f"Retrieving info for thread_id: {thread_id}")
+        logger.info(f"Making API request to get thread info: GET {url}")
+        logger.info(f"Retrieving info for thread_id: {thread_id}")
         response = requests.get(url, params=params)
-        logging.info(f"API response status: {response.status_code}")
+        logger.info(f"API response status: {response.status_code}")
         
         try:
             response.raise_for_status()
             result = response.json()
-            logging.info(f"Thread info retrieved successfully: has_permalink={bool(result.get('permalink'))}")
+            logger.info(f"Thread info retrieved successfully: has_permalink={bool(result.get('permalink'))}")
             return result
         except requests.HTTPError as http_err:
-            logging.error(f"HTTP error getting thread info: {http_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"HTTP error getting thread info: {http_err}")
+            logger.error(f"Response content: {response.text}")
             raise
         except ValueError as json_err:
-            logging.error(f"Invalid JSON response: {json_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"Invalid JSON response: {json_err}")
+            logger.error(f"Response content: {response.text}")
             raise
 
 

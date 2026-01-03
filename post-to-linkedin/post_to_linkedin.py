@@ -36,6 +36,9 @@ from social_media_utils import (
 )
 
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 class LinkedInAPI:
     """LinkedIn API client."""
     
@@ -50,7 +53,7 @@ class LinkedInAPI:
     
     def upload_image(self, author_id, image_path):
         """Upload an image to LinkedIn and return the asset URN."""
-        logging.info(f"Uploading image: {image_path}")
+        logger.info(f"Uploading image: {image_path}")
         
         # Step 1: Register the upload
         register_url = f"{self.base_url}/assets?action=registerUpload"
@@ -67,41 +70,41 @@ class LinkedInAPI:
             }
         }
         
-        logging.debug(f"Registering upload: POST {register_url}")
+        logger.debug(f"Registering upload: POST {register_url}")
         response = requests.post(register_url, headers=self.headers, json=register_data)
-        logging.debug(f"Register response status: {response.status_code}")
+        logger.debug(f"Register response status: {response.status_code}")
         
         try:
             response.raise_for_status()
             register_result = response.json()
-            logging.debug(f"Register result: {json.dumps(register_result, indent=2)}")
+            logger.debug(f"Register result: {json.dumps(register_result, indent=2)}")
         except requests.HTTPError as http_err:
-            logging.error(f"HTTP error registering upload: {http_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"HTTP error registering upload: {http_err}")
+            logger.error(f"Response content: {response.text}")
             raise
         except ValueError as json_err:
-            logging.error(f"Invalid JSON response: {json_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"Invalid JSON response: {json_err}")
+            logger.error(f"Response content: {response.text}")
             raise
         
         upload_url = register_result['value']['uploadMechanism']['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']['uploadUrl']
         asset_urn = register_result['value']['asset']
         
         # Step 2: Upload the image binary
-        logging.debug(f"Uploading image binary to: {upload_url}")
+        logger.debug(f"Uploading image binary to: {upload_url}")
         with open(image_path, 'rb') as image_file:
             upload_headers = {
                 "Authorization": f"Bearer {self.access_token}"
             }
             upload_response = requests.put(upload_url, headers=upload_headers, data=image_file)
-            logging.debug(f"Upload response status: {upload_response.status_code}")
+            logger.debug(f"Upload response status: {upload_response.status_code}")
             
             try:
                 upload_response.raise_for_status()
-                logging.info(f"Image uploaded successfully: {asset_urn}")
+                logger.info(f"Image uploaded successfully: {asset_urn}")
             except requests.HTTPError as http_err:
-                logging.error(f"HTTP error uploading image: {http_err}")
-                logging.error(f"Response content: {upload_response.text}")
+                logger.error(f"HTTP error uploading image: {http_err}")
+                logger.error(f"Response content: {upload_response.text}")
                 raise
         
         return asset_urn
@@ -147,25 +150,25 @@ class LinkedInAPI:
                 }
             ]
         
-        logging.info(f"Making API request to create post: POST {url}")
-        logging.debug(f"Request data: {json.dumps(post_data, indent=2)}")
+        logger.info(f"Making API request to create post: POST {url}")
+        logger.debug(f"Request data: {json.dumps(post_data, indent=2)}")
         
         response = requests.post(url, headers=self.headers, json=post_data)
-        logging.info(f"API response status: {response.status_code}")
+        logger.info(f"API response status: {response.status_code}")
         
         try:
             response.raise_for_status()
             result = response.json()
-            logging.info(f"Post created successfully")
-            logging.debug(f"Response: {json.dumps(result, indent=2)}")
+            logger.info(f"Post created successfully")
+            logger.debug(f"Response: {json.dumps(result, indent=2)}")
             return result.get("id")
         except requests.HTTPError as http_err:
-            logging.error(f"HTTP error creating post: {http_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"HTTP error creating post: {http_err}")
+            logger.error(f"Response content: {response.text}")
             raise
         except ValueError as json_err:
-            logging.error(f"Invalid JSON response: {json_err}")
-            logging.error(f"Response content: {response.text}")
+            logger.error(f"Invalid JSON response: {json_err}")
+            logger.error(f"Response content: {response.text}")
             raise
 
 
@@ -235,7 +238,7 @@ def post_to_linkedin():
                     # Upload image
                     asset_urn = api.upload_image(author_id, media_file)
                     media_assets.append(asset_urn)
-                    logging.info(f"Uploaded media: {media_file} (URN: {asset_urn})")
+                    logger.info(f"Uploaded media: {media_file} (URN: {asset_urn})")
                 else:
                     logger.warning(f"Unsupported media type for LinkedIn: {file_ext}")
         
