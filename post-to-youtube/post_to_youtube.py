@@ -297,6 +297,7 @@ def post_to_youtube():
     # Setup logging
     log_level = get_optional_env_var("LOG_LEVEL", "INFO")
     logger = setup_logging(log_level)
+    logger.info("Starting YouTube post process")
     
     try:
         # Get API credentials - multiple options supported

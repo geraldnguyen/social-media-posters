@@ -70,9 +70,12 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
     logging.basicConfig(
         level=log_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[logging.StreamHandler(sys.stdout)]
+        handlers=[logging.StreamHandler(sys.stdout)],
+        force=True,  # overwrite any existing logging configuration
     )
-    return logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(log_level)
+    return logger
 
 
 def _convert_json_value_to_string(value: Any) -> str:
