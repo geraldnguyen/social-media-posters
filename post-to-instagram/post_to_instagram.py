@@ -9,7 +9,7 @@ from pathlib import Path
 # Load environment variables from a local .env file if present (for local development)
 try:
     from dotenv import load_dotenv
-    env_path = Path(__file__).parent / '.env'
+    env_path = Path.cwd() / '.env'
     if env_path.exists():
         load_dotenv(dotenv_path=env_path)
 except ImportError:
