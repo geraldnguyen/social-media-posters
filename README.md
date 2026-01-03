@@ -52,7 +52,36 @@ This ensures the script works when run directly.
 By following these steps, you can avoid import errors and keep your code modular and reusable across all post-to-* actions.
 # Social Media Posters
 
-A collection of GitHub Actions for posting content to various social media platforms. These actions provide a simple and automated way to share content across multiple social networks from your GitHub workflows.
+A collection of GitHub Actions and a unified CLI tool for posting content to various social media platforms. Post to X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, and Bluesky from the command line or automate with GitHub Actions.
+
+## 🚀 CLI Tool (NEW in v1.12.0)
+
+Install and use the `social` CLI for quick posting from your terminal:
+
+```bash
+# Install from source
+pip install -e ".[all]"
+
+# Post to X (Twitter)
+social x --post-content "Hello World! 🌍" --dry-run
+
+# Post to Facebook
+social facebook --post-content "Check this out!" --post-link "https://example.com"
+
+# Upload to YouTube
+social youtube --video-file "video.mp4" --video-title "My Video"
+
+# Get help
+social --help
+```
+
+📖 **[Complete CLI Guide](./social_cli/GUIDE.md)** - Installation, setup, examples, and troubleshooting
+
+## 🎯 Use Cases
+
+- **CLI**: Post to social media from your terminal or scripts
+- **GitHub Actions**: Automate social media posts in CI/CD workflows
+- **Python Scripts**: Direct Python API for custom integrations
 
 ## Available Actions
 

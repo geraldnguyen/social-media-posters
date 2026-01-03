@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-01-03
+
+### Added
+
+- **CLI Wrapper (`social` command)** - A unified command-line interface for all post-to-XYZ scripts
+  - Single `social` command with subcommands for each platform (x, facebook, instagram, threads, linkedin, youtube, bluesky)
+  - Common options across all commands: `--dry-run`, `--input-file`, `--content-json`, `--log-level`, `--post-content`, `--media-files`, `--max-download-size-mb`
+  - Platform-specific options for API credentials and posting parameters
+  - Version and help commands built-in
+  - Seamless integration with existing post-to-XYZ Python scripts
+  - Environment variable support through command-line options
+  - Compatible with all templating engine features
+  
+- **Package Configuration** (`pyproject.toml`)
+  - Installable Python package: `pip install social-media-posters`
+  - Optional dependencies for each platform: `pip install -e ".[x]"`, `pip install -e ".[all]"`, etc.
+  - Entry point: `social` command available after installation
+  
+- **Comprehensive CLI Guide** (`social_cli/GUIDE.md`)
+  - Installation instructions for all platforms
+  - Platform setup guides with credential requirements
+  - 2+ usage examples for each platform (x, facebook, instagram, linkedin, youtube, bluesky, threads)
+  - Configuration methods documentation (CLI options, environment variables, JSON config, .env files)
+  - Templating engine usage examples
+  - Troubleshooting section for common issues
+  - Advanced usage patterns (batch processing, cron jobs, CI/CD integration, multi-platform posting)
+  - Best practices and security guidelines
+  
+- **Unit Tests** (`social_cli/test_cli.py`)
+  - Tests for all CLI commands (help, version, platform commands)
+  - Tests for option-to-environment-variable mapping
+  - Tests for common options across all commands
+  - Integration tests with mocked API calls
+
+### Updated
+
+- Root README.md to feature the new CLI tool prominently at the top
+- Repository now serves as both GitHub Actions and a CLI tool package
+
+### Benefits
+
+- **Unified Interface**: Single `social` command for all platforms
+- **Ease of Use**: Post from terminal with simple commands
+- **Automation Ready**: Use in shell scripts, cron jobs, or CI/CD pipelines
+- **Consistent Experience**: Same options and patterns across all platforms
+- **No GitHub Required**: Use locally without GitHub Actions
+- **Flexible Configuration**: Multiple ways to provide credentials and parameters
+- **Full Feature Support**: All templating, dry-run, and media features available
+
 ## [1.11.0] - 2026-01-02
 
 ### Added

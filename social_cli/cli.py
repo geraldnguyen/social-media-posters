@@ -80,6 +80,8 @@ def main():
               help='X access token secret')
 def x(**kwargs):
     """Post to X (formerly Twitter)."""
+    # Import from post-to-x folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-x'))
     from post_to_x import post_to_x as post_func
     try:
         post_func()
@@ -99,6 +101,8 @@ def x(**kwargs):
               help='Post privacy (public or private)')
 def facebook(**kwargs):
     """Post to Facebook Page."""
+    # Import from post-to-facebook folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-facebook'))
     from post_to_facebook import post_to_facebook as post_func
     try:
         post_func()
@@ -116,6 +120,8 @@ def facebook(**kwargs):
               help='Single media file URL (deprecated, use --media-files)')
 def instagram(**kwargs):
     """Post to Instagram."""
+    # Import from post-to-instagram folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-instagram'))
     from post_to_instagram import post_to_instagram as post_func
     try:
         post_func()
@@ -135,6 +141,8 @@ def instagram(**kwargs):
               help='Single media file URL (deprecated, use --media-files)')
 def threads(**kwargs):
     """Post to Threads."""
+    # Import from post-to-threads folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-threads'))
     from post_to_threads import post_to_threads as post_func
     try:
         post_func()
@@ -152,6 +160,8 @@ def threads(**kwargs):
               help='Link to attach to the post')
 def linkedin(**kwargs):
     """Post to LinkedIn."""
+    # Import from post-to-linkedin folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-linkedin'))
     from post_to_linkedin import post_to_linkedin as post_func
     try:
         post_func()
@@ -169,6 +179,8 @@ def linkedin(**kwargs):
               help='Link to attach to the post')
 def bluesky(**kwargs):
     """Post to Bluesky."""
+    # Import from post-to-bluesky folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-bluesky'))
     from post_to_bluesky import post_to_bluesky as post_func
     try:
         post_func()
@@ -218,6 +230,8 @@ def bluesky(**kwargs):
               help='Playlist ID to add video to')
 def youtube(**kwargs):
     """Upload video to YouTube."""
+    # Import from post-to-youtube folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'post-to-youtube'))
     from post_to_youtube import post_to_youtube as post_func
     try:
         post_func()
