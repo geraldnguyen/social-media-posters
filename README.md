@@ -271,6 +271,24 @@ INPUT_FILE=my_custom_config.json
 - The JSON file path can be absolute or relative to the current working directory
 - If `INPUT_FILE` is not specified, the script looks for `input.json` in the current directory
 - If the JSON file doesn't exist, the script continues without error (falling back to environment variables)
+- **Automatic type conversion**: JSON values are automatically converted to strings to match environment variable behavior:
+  - Lists/Arrays: `["tag1", "tag2"]` → `"tag1,tag2"`
+  - Booleans: `true` → `"true"`, `false` → `"false"`
+  - Numbers: `42` → `"42"`
+  - Null: `null` → `""`
+
+**Example with automatic type conversion:**
+
+```json
+{
+  "VIDEO_TAGS": ["classic", "moral", "fable"],
+  "VIDEO_MADE_FOR_KIDS": false,
+  "VIDEO_CATEGORY_ID": 24,
+  "VIDEO_CONTAINS_SYNTHETIC_MEDIA": true
+}
+```
+
+These values are automatically converted to strings that work with the scripts' string processing logic (e.g., `split()`, `lower()`).
 
 **Example workflow with JSON config:**
 

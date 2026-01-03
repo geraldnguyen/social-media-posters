@@ -5,16 +5,16 @@
   "VIDEO_FILE": "/path/to/video.mp4",
   "VIDEO_TITLE": "Your video title",
   "VIDEO_DESCRIPTION": "Your video description",
-  "VIDEO_TAGS": "tag1,tag2,tag3",
-  "VIDEO_CATEGORY_ID": "22",
+  "VIDEO_TAGS": ["tag1", "tag2", "tag3"],
+  "VIDEO_CATEGORY_ID": 22,
   "VIDEO_PRIVACY_STATUS": "public",
-  "VIDEO_MADE_FOR_KIDS": "false",
-  "VIDEO_EMBEDDABLE": "true",
+  "VIDEO_MADE_FOR_KIDS": false,
+  "VIDEO_EMBEDDABLE": true,
   "VIDEO_LICENSE": "youtube",
-  "VIDEO_PUBLIC_STATS_VIEWABLE": "true",
+  "VIDEO_PUBLIC_STATS_VIEWABLE": true,
   "VIDEO_THUMBNAIL": "",
   "VIDEO_PUBLISH_AT": "",
   "PLAYLIST_ID": "",
   "LOG_LEVEL": "INFO",
-  "DRY_RUN": "false"
+  "DRY_RUN": false
 }

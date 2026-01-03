@@ -75,24 +75,52 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
     return logging.getLogger(__name__)
 
 
+def _convert_json_value_to_string(value: Any) -> str:
+    """
+    Convert a JSON value to a string format compatible with environment variables.
+    
+    Args:
+        value: Value from JSON config (can be list, bool, int, float, str, None, or dict)
+    
+    Returns:
+        String representation suitable for environment variable usage
+    """
+    if value is None:
+        return ""
+    elif isinstance(value, bool):
+        # Convert boolean to lowercase string (true/false)
+        return str(value).lower()
+    elif isinstance(value, list):
+        # Join list elements with commas, converting each element to string
+        return ",".join(str(item) for item in value)
+    elif isinstance(value, dict):
+        # Convert dict to JSON string for complex structures
+        return json.dumps(value)
+    else:
+        # For numbers and strings, convert to string
+        return str(value)
+
+
 def get_required_env_var(var_name: str) -> str:
     """
     Get a required environment variable or exit with error.
     
     Falls back to JSON config if environment variable is not set.
+    JSON values are automatically converted to strings to match environment variable behavior.
     """
     value = os.getenv(var_name)
     if not value:
         # Try to get from JSON config
         json_config = load_json_config()
         if json_config and isinstance(json_config, dict):
-            value = json_config.get(var_name)
+            json_value = json_config.get(var_name)
+            if json_value is not None:
+                value = _convert_json_value_to_string(json_value)
+                logging.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
         
         if not value:
             logging.error(f"Required parameter {var_name} not found in environment or JSON config")
             sys.exit(1)
-        else:
-            logging.debug(f"Parameter {var_name} loaded from JSON config")
     return value
 
 
@@ -103,17 +131,19 @@ def get_optional_env_var(var_name: str, default: str = "") -> str:
     Get an optional environment variable with default value.
     
     Falls back to JSON config if environment variable is not set.
+    JSON values are automatically converted to strings to match environment variable behavior.
     """
     value = os.getenv(var_name)
     if not value:
         # Try to get from JSON config
         json_config = load_json_config()
         if json_config and isinstance(json_config, dict):
-            value = json_config.get(var_name)
+            json_value = json_config.get(var_name)
+            if json_value is not None:
+                value = _convert_json_value_to_string(json_value)
+                logging.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
         
-        if value:
-            logging.debug(f"Parameter {var_name} loaded from JSON config")
-        else:
+        if not value:
             value = default
     return value
 
