@@ -1,0 +1,10 @@
+{
+  "FB_PAGE_ID": "your_page_id_here",
+  "FB_ACCESS_TOKEN": "your_access_token_here",
+  "POST_CONTENT": "Your Facebook post content here",
+  "POST_LINK": "",
+  "POST_PRIVACY": "public",
+  "MEDIA_FILES": "",
+  "LOG_LEVEL": "INFO",
+  "DRY_RUN": "false"
+}

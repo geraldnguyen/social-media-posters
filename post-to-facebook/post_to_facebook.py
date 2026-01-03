@@ -38,6 +38,9 @@ GRAPH_API_VERSION = "v23.0"
 GRAPH_API_BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 def _graph_api_post(path: str, access_token: str, *, data=None, files=None, params=None, action: str):
     """Make a POST request to the Facebook Graph API and return the JSON payload."""
     params = dict(params or {})
@@ -47,18 +50,18 @@ def _graph_api_post(path: str, access_token: str, *, data=None, files=None, para
     try:
         response = requests.post(url, params=params, data=data, files=files, timeout=60)
     except requests.RequestException as exc:
-        logging.error(f"Facebook Graph API {action} request failed: {exc}")
+        logger.error(f"Facebook Graph API {action} request failed: {exc}")
         raise
 
     try:
         payload = response.json()
     except ValueError:
-        logging.error(f"Facebook Graph API {action} returned non-JSON response: {response.text}")
+        logger.error(f"Facebook Graph API {action} returned non-JSON response: {response.text}")
         raise
 
     if not response.ok or 'error' in payload:
         error_info = payload.get('error', {}) if isinstance(payload, dict) else payload
-        logging.error(
+        logger.error(
             f"Facebook Graph API {action} failed (status {response.status_code}): {error_info}"
         )
         raise RuntimeError(f"Facebook Graph API {action} failed")
@@ -82,7 +85,7 @@ def upload_photo(page_id: str, photo_path: str, message: str, published: bool, a
                 action="photo upload"
             )
     except Exception as exc:
-        logging.error(f"Failed to upload photo {photo_path}: {exc}")
+        logger.error(f"Failed to upload photo {photo_path}: {exc}")
         raise
 
     return payload.get('post_id') or payload.get('id')
@@ -104,7 +107,7 @@ def upload_video(page_id: str, video_path: str, description: str, published: boo
                 action="video upload"
             )
     except Exception as exc:
-        logging.error(f"Failed to upload video {video_path}: {exc}")
+        logger.error(f"Failed to upload video {video_path}: {exc}")
         raise
 
     return payload.get('id')
@@ -125,7 +128,7 @@ def post_to_facebook():
         # Determine privacy mode
         privacy_mode = get_optional_env_var("POST_PRIVACY", "public").strip().lower()
         if privacy_mode not in {"public", "private"}:
-            logging.error("POST_PRIVACY must be either 'public' or 'private'")
+            logger.error("POST_PRIVACY must be either 'public' or 'private'")
             sys.exit(1)
         published = privacy_mode == "public"
 

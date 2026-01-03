@@ -12,12 +12,154 @@ from pathlib import Path
 
 from datetime import datetime, timezone, timedelta
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
+# Global cache for JSON config
+_json_config_cache: Optional[Dict[str, Any]] = None
+_json_config_loaded = False
+
+
+def load_json_config() -> Optional[Dict[str, Any]]:
+    """
+    Load configuration from a JSON file if available.
+    
+    The JSON file path is determined by:
+    1. INPUT_FILE environment variable
+    2. input.json in the current directory (default)
+    
+    Returns:
+        Dictionary containing the JSON config, or None if file doesn't exist or is invalid
+    """
+    global _json_config_cache, _json_config_loaded
+    
+    # Return cached config if already loaded
+    if _json_config_loaded:
+        return _json_config_cache
+    
+    _json_config_loaded = True
+    
+    # Determine the input file path
+    input_file = os.getenv('INPUT_FILE', 'input.json')
+    
+    # Convert relative path to absolute path based on current working directory
+    if not os.path.isabs(input_file):
+        input_file = os.path.join(os.getcwd(), input_file)
+    
+    # Check if file exists
+    if not os.path.exists(input_file):
+        logger.debug(f"JSON config file not found: {input_file}")
+        return None
+    
+    # Load and parse JSON file
+    try:
+        with open(input_file, 'r') as f:
+            config = json.load(f)
+        logger.info(f"Loaded configuration from JSON file: {input_file}")
+        logger.debug(f"JSON config keys: {list(config.keys()) if isinstance(config, dict) else 'not a dict'}")
+        _json_config_cache = config
+        return config
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON config file {input_file}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error reading JSON config file {input_file}: {e}")
+        return None
+
+
+def setup_logging(level: str = "INFO") -> logging.Logger:
+    """Setup logging configuration for social media actions."""
+    log_level = getattr(logging, level.upper(), logging.INFO)
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler(sys.stdout)],
+        force=True,  # overwrite any existing logging configuration
+    )
+    logger = logging.getLogger(__name__)
+    logger.setLevel(log_level)
+    return logger
+
+
+def _convert_json_value_to_string(value: Any) -> str:
+    """
+    Convert a JSON value to a string format compatible with environment variables.
+    
+    Args:
+        value: Value from JSON config (can be list, bool, int, float, str, None, or dict)
+    
+    Returns:
+        String representation suitable for environment variable usage
+    """
+    if value is None:
+        return ""
+    elif isinstance(value, bool):
+        # Convert boolean to lowercase string (true/false)
+        return str(value).lower()
+    elif isinstance(value, list):
+        # Join list elements with commas, converting each element to string
+        return ",".join(str(item) for item in value)
+    elif isinstance(value, dict):
+        # Convert dict to JSON string for complex structures
+        return json.dumps(value)
+    else:
+        # For numbers and strings, convert to string
+        return str(value)
+
+
+def get_required_env_var(var_name: str) -> str:
+    """
+    Get a required environment variable or exit with error.
+    
+    Falls back to JSON config if environment variable is not set.
+    JSON values are automatically converted to strings to match environment variable behavior.
+    """
+    value = os.getenv(var_name)
+    if not value:
+        # Try to get from JSON config
+        json_config = load_json_config()
+        if json_config and isinstance(json_config, dict):
+            json_value = json_config.get(var_name)
+            if json_value is not None:
+                value = _convert_json_value_to_string(json_value)
+                logger.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
+        
+        if not value:
+            logger.error(f"Required parameter {var_name} not found in environment or JSON config")
+            sys.exit(1)
+    return value
+
+
+
+
+def get_optional_env_var(var_name: str, default: str = "") -> str:
+    """
+    Get an optional environment variable with default value.
+    
+    Falls back to JSON config if environment variable is not set.
+    JSON values are automatically converted to strings to match environment variable behavior.
+    """
+    value = os.getenv(var_name)
+    if not value:
+        # Try to get from JSON config
+        json_config = load_json_config()
+        if json_config and isinstance(json_config, dict):
+            json_value = json_config.get(var_name)
+            if json_value is not None:
+                value = _convert_json_value_to_string(json_value)
+                logger.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
+        
+        if not value:
+            value = default
+    return value
+
+
 # --- DRY RUN GUARD ---
 def dry_run_guard(platform: str, content: str, media_files: list, request_body: dict):
     """
     If DRY_RUN env var is set to true, print info and exit instead of posting.
     """
-    dry_run = os.getenv('DRY_RUN', '').lower() in ('1', 'true', 'yes')
+    dry_run = get_optional_env_var('DRY_RUN', '').lower() in ('1', 'true', 'yes')
     if dry_run:
         print("=" * 80)
         print(f"[DRY RUN MODE] Would post to {platform}")
@@ -72,48 +214,22 @@ def dry_run_guard(platform: str, content: str, media_files: list, request_body: 
         print("=" * 80)
         
         # Also log for consistency
-        logging.info(f"[DRY RUN] Would post to {platform}.")
-        logging.info(f"[DRY RUN] Content: {content}")
-        logging.info(f"[DRY RUN] Media files: {media_files}")
+        logger.info(f"[DRY RUN] Would post to {platform}.")
+        logger.info(f"[DRY RUN] Content: {content}")
+        logger.info(f"[DRY RUN] Media files: {media_files}")
         
         sys.exit(0)
-
-def setup_logging(level: str = "INFO") -> logging.Logger:
-    """Setup logging configuration for social media actions."""
-    log_level = getattr(logging, level.upper(), logging.INFO)
-    logging.basicConfig(
-        level=log_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[logging.StreamHandler(sys.stdout)]
-    )
-    return logging.getLogger(__name__)
-
-
-def get_required_env_var(var_name: str) -> str:
-    """Get a required environment variable or exit with error."""
-    value = os.getenv(var_name)
-    if not value:
-        logging.error(f"Required environment variable {var_name} not found")
-        sys.exit(1)
-    return value
-
-
-
-
-def get_optional_env_var(var_name: str, default: str = "") -> str:
-    """Get an optional environment variable with default value."""
-    return os.getenv(var_name, default)
 
 
 def validate_post_content(content: str, max_length: Optional[int] = None) -> bool:
     """Validate post content length and format."""
     if not content or not content.strip():
-        logging.error("Post content cannot be empty")
+        logger.error("Post content cannot be empty")
         return False
     
-    logging.info(f"Validating post content of length {len(content)}: {content!r}")
+    logger.info(f"Validating post content of length {len(content)}: {content!r}")
     if max_length and len(content) > max_length:
-        logging.error(f"Post content exceeds maximum length of {max_length} characters")
+        logger.error(f"Post content exceeds maximum length of {max_length} characters")
         return False
     
     return True
@@ -121,16 +237,16 @@ def validate_post_content(content: str, max_length: Optional[int] = None) -> boo
 
 def handle_api_error(error: Exception, platform: str) -> None:
     """Handle API errors consistently across platforms."""
-    logging.error(f"Error posting to {platform}: {str(error)}")
+    logger.error(f"Error posting to {platform}: {str(error)}")
     sys.exit(1)
 
 
 def log_success(platform: str, post_id: Optional[str] = None) -> None:
     """Log successful post creation."""
     if post_id:
-        logging.info(f"Successfully posted to {platform}. Post ID: {post_id}")
+        logger.info(f"Successfully posted to {platform}. Post ID: {post_id}")
     else:
-        logging.info(f"Successfully posted to {platform}")
+        logger.info(f"Successfully posted to {platform}")
 
 
 def download_file_if_url(file_path, max_download_size_mb=5):
@@ -161,7 +277,7 @@ def download_file_if_url(file_path, max_download_size_mb=5):
                     f.write(chunk)
             local_path = str(temp)
         except Exception as e:
-            logging.error(f"Failed to download media from {file_path}: {str(e)}")
+            logger.error(f"Failed to download media from {file_path}: {str(e)}")
             raise
     return local_path
 
@@ -179,7 +295,7 @@ def parse_media_files(media_input: str, max_download_size_mb: int = 5):
     for file_path in media_files:
         local_path = download_file_if_url(file_path, max_download_size_mb)
         if not os.path.exists(local_path):
-            logging.error(f"Media file not found: {file_path}")
+            logger.error(f"Media file not found: {file_path}")
             sys.exit(1)
         local_files.append(local_path)
     return local_files

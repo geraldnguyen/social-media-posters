@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-01-02
+
+### Added
+
+- **JSON Configuration File Support** for all post-to-XYZ actions
+  - Load parameters from a JSON configuration file (`input.json` by default)
+  - Custom file path via `INPUT_FILE` environment variable
+  - Support for both absolute and relative file paths
+  - Automatic fallback if JSON file doesn't exist
+  - Environment variables take precedence over JSON config values
+  - Added `load_json_config()` function in `social_media_utils.py`
+  - Updated `get_required_env_var()` and `get_optional_env_var()` to check JSON config
+  - Updated `dry_run_guard()` to support JSON config for DRY_RUN parameter
+  - **Automatic type conversion** for JSON values to string format:
+    - Lists/Arrays converted to comma-separated strings (e.g., `["a", "b"]` → `"a,b"`)
+    - Booleans converted to lowercase strings (e.g., `true` → `"true"`, `false` → `"false"`)
+    - Numbers converted to strings (e.g., `42` → `"42"`)
+    - Null converted to empty string
+  - Comprehensive unit tests (`test_json_config_loading.py`, `test_json_value_conversion.py`)
+  - Integration tests for all post-to-XYZ scripts (`test_json_config_integration.py`)
+  - Documentation in README.md with examples and best practices
+
+### Benefits
+
+- Simplified local development and testing with JSON config files
+- Easier management of multiple configurations for different environments
+- Better organization of complex parameter sets
+- Natural JSON syntax support (use native types like arrays, booleans, numbers)
+- Maintains backward compatibility with environment variables and `.env` files
+- Clear precedence: Environment Variables > JSON Config > .env File > Defaults
+
+### Fixed
+
+- JSON values are now automatically converted to strings to match environment variable behavior
+- Resolves errors when using lists, booleans, or numbers in JSON config (e.g., `'list' object has no attribute 'split'`)
+
+### Updated
+
+- Root README.md to document JSON configuration feature and automatic type conversion
+- 00-PROMPTS.MD to mark v1.11.0 requirement as completed
+
 ## [1.10.0] - 2025-12-29
 
 ### Added

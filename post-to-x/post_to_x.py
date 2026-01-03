@@ -34,6 +34,9 @@ from social_media_utils import (
 )
 
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 def create_x_client():
     """Create and return an authenticated X API client."""
     api_key = get_required_env_var("X_API_KEY")
@@ -74,9 +77,9 @@ def upload_media(client, media_files):
         try:
             media = api.media_upload(filename=file_path)
             media_ids.append(media.media_id)
-            logging.info(f"Uploaded media: {file_path} (ID: {media.media_id})")
+            logger.info(f"Uploaded media: {file_path} (ID: {media.media_id})")
         except Exception as e:
-            logging.error(f"Failed to upload media {file_path}: {str(e)}")
+            logger.error(f"Failed to upload media {file_path}: {str(e)}")
             raise
     
     return media_ids

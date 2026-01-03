@@ -252,7 +252,7 @@ Expectation:
 
 
 
-## v1.11.0 - Support loading parameters from a JSON file
+## v1.11.0 - Support loading parameters from a JSON file ✅ COMPLETED
 
 Currently, all post-to-XYZ scripts support loading parameters through environment variables and `.env` file
 

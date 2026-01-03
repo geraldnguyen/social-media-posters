@@ -35,6 +35,9 @@ from social_media_utils import (
 )
 
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 def fetch_link_metadata(url: str) -> dict:
     """Fetch metadata (title, description, image) from a URL for a link card."""
     try:
@@ -54,7 +57,7 @@ def fetch_link_metadata(url: str) -> dict:
             'image_url': image_url_tag.get('content') if image_url_tag else None
         }
     except requests.RequestException as e:
-        logging.warning(f"Could not fetch metadata from link {url}: {e}")
+        logger.warning(f"Could not fetch metadata from link {url}: {e}")
         return None
 
 
@@ -132,9 +135,9 @@ def post_to_bluesky():
         client = Client()
         try:
             client.login(identifier, password)
-            logging.info("Successfully authenticated with Bluesky")
+            logger.info("Successfully authenticated with Bluesky")
         except Exception as exc:
-            logging.error(f"Bluesky authentication failed: {exc}")
+            logger.error(f"Bluesky authentication failed: {exc}")
             raise
         
         # Prepare images for embedding
@@ -152,9 +155,9 @@ def post_to_bluesky():
                         # Upload the image and get the blob reference
                         upload_result = client.upload_blob(img_data)
                         images.append(models.AppBskyEmbedImages.Image(alt="", image=upload_result.blob))
-                        logging.info(f"Successfully uploaded image: {media_file}")
+                        logger.info(f"Successfully uploaded image: {media_file}")
                     except Exception as exc:
-                        logging.error(f"Failed to upload image {media_file}: {exc}")
+                        logger.error(f"Failed to upload image {media_file}: {exc}")
                         raise
                 else:
                     logger.warning(f"Unsupported media type for Bluesky: {file_ext}")
@@ -177,9 +180,9 @@ def post_to_bluesky():
                         # Upload the thumbnail image
                         upload_result = client.upload_blob(img_response.content)
                         thumb_blob = upload_result.blob
-                        logging.info(f"Successfully uploaded link card thumbnail from {metadata['image_url']}")
+                        logger.info(f"Successfully uploaded link card thumbnail from {metadata['image_url']}")
                     except Exception as exc:
-                        logging.warning(f"Could not upload link card thumbnail: {exc}")
+                        logger.warning(f"Could not upload link card thumbnail: {exc}")
 
                 external = models.AppBskyEmbedExternal.External(
                     uri=metadata['url'],
@@ -191,9 +194,9 @@ def post_to_bluesky():
         
         try:
             response = client.send_post(text=content, embed=embed)
-            logging.info("Successfully created Bluesky post")
+            logger.info("Successfully created Bluesky post")
         except Exception as exc:
-            logging.error(f"Failed to create Bluesky post: {exc}")
+            logger.error(f"Failed to create Bluesky post: {exc}")
             raise
         
         # Extract post URI and construct URL

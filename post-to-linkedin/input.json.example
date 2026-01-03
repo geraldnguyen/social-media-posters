@@ -1,0 +1,9 @@
+{
+  "LINKEDIN_ACCESS_TOKEN": "your_access_token_here",
+  "LINKEDIN_AUTHOR_ID": "urn:li:person:your_person_id",
+  "POST_CONTENT": "Your LinkedIn post content here",
+  "POST_LINK": "",
+  "MEDIA_FILES": "",
+  "LOG_LEVEL": "INFO",
+  "DRY_RUN": "false"
+}
