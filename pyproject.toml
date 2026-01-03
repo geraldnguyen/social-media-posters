@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "social-media-posters"
+version = "1.12.0"
+description = "CLI and GitHub Actions for posting to various social media platforms"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Gerald Nguyen"}
+]
+keywords = ["social-media", "automation", "cli", "github-actions", "twitter", "facebook", "instagram", "threads", "linkedin", "youtube", "bluesky"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "requests>=2.31.0",
+    "python-dotenv",
+    "jsonpath-ng",
+    "click>=8.0.0",
+]
+
+[project.optional-dependencies]
+x = ["tweepy>=4.14.0"]
+facebook = ["facebook-sdk>=3.1.0"]
+instagram = ["pillow>=10.0.0"]
+threads = []
+linkedin = []
+bluesky = ["atproto>=0.0.38", "beautifulsoup4>=4.12.0", "lxml>=4.9.0"]
+youtube = [
+    "google-api-python-client>=2.100.0",
+    "google-auth>=2.23.0",
+    "google-auth-oauthlib>=1.1.0",
+    "google-auth-httplib2>=0.1.1",
+]
+all = [
+    "tweepy>=4.14.0",
+    "facebook-sdk>=3.1.0",
+    "pillow>=10.0.0",
+    "atproto>=0.0.38",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+    "google-api-python-client>=2.100.0",
+    "google-auth>=2.23.0",
+    "google-auth-oauthlib>=1.1.0",
+    "google-auth-httplib2>=0.1.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/geraldnguyen/social-media-posters"
+Repository = "https://github.com/geraldnguyen/social-media-posters"
+Issues = "https://github.com/geraldnguyen/social-media-posters/issues"
+
+[project.scripts]
+social = "social_cli.cli:main"
+
+[tool.setuptools]
+packages = ["social_cli", "common"]
