@@ -287,3 +287,17 @@ Expectation:
 - Create unit tests for the changes ✅
 - Then run the tests ✅
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes ✅
+
+## v1.13.0 - Update FB page video posting
+
+Refer to https://developers.facebook.com/docs/video-api/guides/publishing and update the FB video posting accordingly.
+
+Current upload using MEDIA_FILES parameter failed with `Error posting to Facebook Page: ('Connection aborted.', TimeoutError('The write operation timed out'))` error
+
+Detailed logging and dry-run mode must be available to faciliate troubleshooting. ✅
+
+Expectation:
+- Implement the above requirements ✅
+- Create unit tests for the changes ✅
+- Then run the tests ✅
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes ✅
