@@ -171,6 +171,7 @@ def _upload_video_resumable(page_id: str, video_path: str, description: str, pub
     
     # Step 2: Transfer video data in chunks
     logger.info("Step 2: Transferring video data in chunks...")
+    # Use 4MB chunks - this is Facebook's recommended chunk size for video uploads
     chunk_size = 1024 * 1024 * 4  # 4MB chunks
     start_offset = 0
     
@@ -181,6 +182,7 @@ def _upload_video_resumable(page_id: str, video_path: str, description: str, pub
                 video_file.seek(start_offset)
                 chunk = video_file.read(chunk_size)
                 
+                # Defensive check - should not happen given while condition, but prevents infinite loop
                 if not chunk:
                     break
                 
