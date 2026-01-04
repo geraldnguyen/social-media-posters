@@ -41,14 +41,14 @@ GRAPH_API_BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 # Module-level logger
 logger = logging.getLogger(__name__)
 
-def _graph_api_post(path: str, access_token: str, *, data=None, files=None, params=None, action: str):
+def _graph_api_post(path: str, access_token: str, *, data=None, files=None, params=None, action: str, timeout: int = 60):
     """Make a POST request to the Facebook Graph API and return the JSON payload."""
     params = dict(params or {})
     params['access_token'] = access_token
 
     url = f"{GRAPH_API_BASE_URL}/{path}"
     try:
-        response = requests.post(url, params=params, data=data, files=files, timeout=60)
+        response = requests.post(url, params=params, data=data, files=files, timeout=timeout)
     except requests.RequestException as exc:
         logger.error(f"Facebook Graph API {action} request failed: {exc}")
         raise
@@ -92,7 +92,33 @@ def upload_photo(page_id: str, photo_path: str, message: str, published: bool, a
 
 
 def upload_video(page_id: str, video_path: str, description: str, published: bool, access_token: str) -> str:
-    """Upload a video to Facebook Page."""
+    """
+    Upload a video to Facebook Page using resumable upload.
+    
+    Uses Facebook's resumable upload API for better reliability with large files:
+    1. Start upload session
+    2. Upload video in chunks
+    3. Finish upload
+    
+    For small videos (<5MB), falls back to simple upload.
+    """
+    video_size = os.path.getsize(video_path)
+    logger.info(f"Uploading video {video_path} (size: {video_size} bytes)")
+    
+    # Use resumable upload for videos larger than 5MB (configurable threshold)
+    threshold_mb = int(get_optional_env_var("VIDEO_UPLOAD_THRESHOLD_MB", "5"))
+    threshold_bytes = threshold_mb * 1024 * 1024
+    
+    if video_size < threshold_bytes:
+        logger.info(f"Video is smaller than {threshold_mb}MB, using simple upload")
+        return _upload_video_simple(page_id, video_path, description, published, access_token)
+    else:
+        logger.info(f"Video is larger than {threshold_mb}MB, using resumable upload")
+        return _upload_video_resumable(page_id, video_path, description, published, access_token)
+
+
+def _upload_video_simple(page_id: str, video_path: str, description: str, published: bool, access_token: str) -> str:
+    """Upload a small video using simple POST request."""
     data = {'published': str(published).lower()}
     if description:
         data['description'] = description
@@ -104,13 +130,119 @@ def upload_video(page_id: str, video_path: str, description: str, published: boo
                 access_token,
                 data=data,
                 files={'source': video_file},
-                action="video upload"
+                action="video upload (simple)"
             )
     except Exception as exc:
         logger.error(f"Failed to upload video {video_path}: {exc}")
         raise
 
     return payload.get('id')
+
+
+def _upload_video_resumable(page_id: str, video_path: str, description: str, published: bool, access_token: str) -> str:
+    """
+    Upload a large video using Facebook's resumable upload API.
+    
+    This approach uploads video in chunks to avoid timeout issues with large files.
+    See: https://developers.facebook.com/docs/video-api/guides/publishing
+    """
+    video_size = os.path.getsize(video_path)
+    
+    # Step 1: Start upload session
+    logger.info("Step 1: Starting upload session...")
+    start_data = {
+        'upload_phase': 'start',
+        'file_size': str(video_size)
+    }
+    start_payload = _graph_api_post(
+        f"{page_id}/videos",
+        access_token,
+        data=start_data,
+        action="start upload session"
+    )
+    
+    upload_session_id = start_payload.get('upload_session_id')
+    video_id = start_payload.get('video_id')
+    
+    if not upload_session_id:
+        raise RuntimeError("Failed to get upload_session_id from start phase")
+    
+    logger.info(f"Upload session started: session_id={upload_session_id}, video_id={video_id}")
+    
+    # Step 2: Transfer video data in chunks
+    logger.info("Step 2: Transferring video data in chunks...")
+    # Use 4MB chunks - this is Facebook's recommended chunk size for video uploads
+    chunk_size = 1024 * 1024 * 4  # 4MB chunks
+    start_offset = 0
+    
+    try:
+        with open(video_path, 'rb') as video_file:
+            while start_offset < video_size:
+                # Read chunk
+                video_file.seek(start_offset)
+                chunk = video_file.read(chunk_size)
+                
+                # Defensive check - should not happen given while condition, but prevents infinite loop
+                if not chunk:
+                    break
+                
+                # Upload chunk
+                chunk_end = min(start_offset + len(chunk), video_size)
+                logger.info(f"Uploading chunk: bytes {start_offset}-{chunk_end-1}/{video_size}")
+                
+                transfer_data = {
+                    'upload_phase': 'transfer',
+                    'upload_session_id': upload_session_id,
+                    'start_offset': str(start_offset)
+                }
+                
+                # Use files parameter for binary data
+                transfer_payload = _graph_api_post(
+                    f"{page_id}/videos",
+                    access_token,
+                    data=transfer_data,
+                    files={'video_file_chunk': chunk},
+                    action="transfer video chunk",
+                    timeout=300  # 5 minutes for chunk upload
+                )
+                
+                logger.debug(f"Chunk upload response: {transfer_payload}")
+                
+                start_offset += len(chunk)
+        
+        logger.info("Video data transfer complete")
+        
+    except Exception as exc:
+        logger.error(f"Failed to transfer video chunks: {exc}")
+        raise
+    
+    # Step 3: Finish upload
+    logger.info("Step 3: Finishing upload...")
+    finish_data = {
+        'upload_phase': 'finish',
+        'upload_session_id': upload_session_id
+    }
+    
+    if description:
+        finish_data['description'] = description
+    
+    finish_data['published'] = str(published).lower()
+    
+    finish_payload = _graph_api_post(
+        f"{page_id}/videos",
+        access_token,
+        data=finish_data,
+        action="finish upload"
+    )
+    
+    success = finish_payload.get('success', False)
+    
+    if not success:
+        raise RuntimeError(f"Upload finish phase failed: {finish_payload}")
+    
+    logger.info(f"Video upload completed successfully: video_id={video_id}")
+    
+    return video_id
 
 
 def post_to_facebook():
