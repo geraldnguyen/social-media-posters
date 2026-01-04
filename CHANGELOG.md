@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-01-04
+
+### Changed
+
+- **Facebook Video Upload API** - Updated video posting to use Facebook's resumable upload API
+  - Implemented chunked upload for large video files to prevent timeout errors
+  - Videos larger than 5MB (configurable via `VIDEO_UPLOAD_THRESHOLD_MB`) use resumable upload with 4MB chunks
+  - Videos smaller than the threshold use simple direct upload for efficiency
+  - Extended timeout to 5 minutes for each chunk upload
+  - Three-phase upload process: start session, transfer chunks, finish upload
+  - Detailed progress logging for each chunk transfer
+  - Proper error handling for session initialization and upload failures
+  - Maintains backward compatibility with existing functionality
+  - See: https://developers.facebook.com/docs/video-api/guides/publishing
+
+### Added
+
+- **Unit Tests** for Facebook video upload functionality (`post-to-facebook/test_post_to_facebook.py`)
+  - Tests for small video simple upload method
+  - Tests for large video resumable upload method
+  - Tests for upload session start, transfer, and finish phases
+  - Tests for chunked upload with multiple chunks and correct offsets
+  - Tests for error handling (missing session ID, finish phase failure)
+  - Tests for photo upload functionality
+
+### Updated
+
+- Documentation in `post-to-facebook/README.md` with new video upload improvements section
+- Environment variable `VIDEO_UPLOAD_THRESHOLD_MB` for customizing upload method selection
+- 00-PROMPTS.MD to mark v1.13.0 requirement as completed
+
+### Fixed
+
+- Facebook video upload timeout error: `('Connection aborted.', TimeoutError('The write operation timed out'))`
+- Large video files can now be uploaded reliably without connection timeouts
+
 ## [1.12.0] - 2026-01-03
 
 ### Added

@@ -161,6 +161,42 @@ jobs:
 - **Images**: .jpg, .jpeg, .png, .gif
 - **Videos**: .mp4, .mov, .avi
 
+## Video Upload Improvements (v1.13.0)
+
+This action now uses **Facebook's resumable upload API** for reliable video uploads, especially for large files:
+
+### Features
+- **Automatic upload method selection**: Small videos (<5MB by default) use simple upload, large videos use resumable upload
+- **Chunked upload**: Large videos are uploaded in 4MB chunks to avoid timeout issues
+- **Configurable threshold**: Set `VIDEO_UPLOAD_THRESHOLD_MB` environment variable to customize the size threshold (default: 5MB)
+- **Extended timeout**: Chunk uploads have a 5-minute timeout for better reliability
+- **Detailed logging**: Track upload progress with INFO level logging showing each chunk transfer
+
+### Configuration
+
+You can customize the video upload behavior with environment variables:
+
+```yaml
+- name: Post video to Facebook Page
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.13.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    page-id: ${{ secrets.FB_PAGE_ID }}
+    content: "Check out this video! 🎥"
+    media-files: "path/to/large-video.mp4"
+  env:
+    VIDEO_UPLOAD_THRESHOLD_MB: 10  # Use resumable upload for videos >10MB
+    LOG_LEVEL: DEBUG  # See detailed chunk upload progress
+```
+
+### How It Works
+
+1. **Start Phase**: Initiates an upload session with Facebook, providing the video file size
+2. **Transfer Phase**: Uploads the video in 4MB chunks with progress tracking
+3. **Finish Phase**: Finalizes the upload and publishes the video with metadata (description, privacy settings)
+
+This approach prevents timeout errors and provides better visibility into upload progress, especially for large video files.
+
 ## Limitations
 
 - Media files must be accessible from the GitHub Actions runner
