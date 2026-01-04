@@ -1,0 +1,33 @@
+# Include documentation and license
+include README.md
+include LICENSE
+include CHANGELOG.md
+
+# Include CLI guide
+include social_cli/GUIDE.md
+
+# Include common module
+recursive-include common *.py
+
+# Exclude unnecessary files
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *~
+global-exclude .DS_Store
+global-exclude .git*
+
+# Exclude test files
+exclude */test_*.py
+recursive-exclude * test_*.py
+
+# Exclude GitHub Actions specific files
+exclude .github
+recursive-exclude .github *
+
+# Exclude post-to-* folders (not needed for CLI package)
+recursive-exclude post-to-* *
+
+# Exclude development files
+exclude .vscode
+recursive-exclude .vscode *
+exclude 00-PROMPTS.MD
