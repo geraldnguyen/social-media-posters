@@ -266,19 +266,19 @@ Expectation:
 - Then run the tests ✅
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes ✅
 
-## v1.12.0 - Create a CLI wrapper around the available post-to-XYZ scripts
+## v1.12.0 - Create a CLI wrapper around the available post-to-XYZ scripts ✅ COMPLETED
 
 Create a publishable CLI module providing access to all post-to-XYZ scripts. Name this module `social`
 
-The CLI shall support each post-to-??? as a command, in addition to `version`, `help` 
+The CLI shall support each post-to-??? as a command, in addition to `version`, `help` ✅
 
 The CLI shapp suport options corresponding to each script's environment variables such as:
-- `--dry-run` for `DRY_RUN`
-- `--input-file` for `INPUT_FILE`
-- `--content-json` for `CONTENT_JSON`
-- etc (carefully extract the list of required and optional environment variables from each script to populate the list of supported option)
+- `--dry-run` for `DRY_RUN` ✅
+- `--input-file` for `INPUT_FILE` ✅
+- `--content-json` for `CONTENT_JSON` ✅
+- etc (carefully extract the list of required and optional environment variables from each script to populate the list of supported option) ✅
 
-The CLI's GUIDE.md must provide broad examples, at least 2 examples for each post-to-???. The guide should include as much setup and troubleshooting procedures as available to assist users.
+The CLI's GUIDE.md must provide broad examples, at least 2 examples for each post-to-???. The guide should include as much setup and troubleshooting procedures as available to assist users. ✅
 
 Detailed logging and dry-run mode must be available to faciliate troubleshooting. ✅
 

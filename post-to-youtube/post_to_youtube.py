@@ -7,16 +7,22 @@ import os
 import sys
 from pathlib import Path
 
+# Module-level logger
+import logging
+logger = logging.getLogger(__name__)
+
 # Load environment variables from a local .env file if present (for local development)
 try:
     from dotenv import load_dotenv
-    env_path = Path(__file__).parent / '.env'
+    env_path = Path.cwd() / '.env'
+    
     if env_path.exists():
+        logging.warning(f"Loading environment variables from {env_path}")
         load_dotenv(dotenv_path=env_path)
 except ImportError:
     pass  # python-dotenv is not installed; skip loading .env
 
-import logging
+
 import json
 import io
 from datetime import datetime
@@ -47,8 +53,7 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseUpload
 import requests
 
 
-# Module-level logger
-logger = logging.getLogger(__name__)
+
 
 class YouTubeAPI:
     """YouTube Data API v3 client."""
