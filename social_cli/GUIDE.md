@@ -714,7 +714,7 @@ Use it:
 
 ## Version Information
 
-Current version: 1.12.0
+Current version: 1.13.0
 
 Check your installed version:
 
