@@ -6,6 +6,7 @@ Provides unified command-line interface for all post-to-XYZ scripts.
 
 import sys
 import os
+import importlib
 from pathlib import Path
 import click
 
@@ -57,22 +58,27 @@ def add_common_options(func):
     return func
 
 
-def import_and_run_post_script(script_folder, script_name, function_name):
+def import_and_run_post_script(package_name, module_name, function_name):
     """
-    Helper function to import and run a post script from its folder.
+    Helper function to import and run a post script from its installed package.
     
     Args:
-        script_folder: Name of the folder containing the script (e.g., 'post-to-x')
-        script_name: Name of the script module (e.g., 'post_to_x')
+        package_name: Name of the package (e.g., 'post_to_x')
+        module_name: Name of the script module (e.g., 'post_to_x')
         function_name: Name of the function to call (e.g., 'post_to_x')
     """
-    # Import from the specific post-to-* folder
-    sys.path.insert(0, str(Path(__file__).parent.parent / script_folder))
-    module = __import__(script_name)
-    post_func = getattr(module, function_name)
-    
+    # Import from the installed package
+    full_module_name = f"{package_name}.{module_name}"
     try:
+        module = importlib.import_module(full_module_name)
+        post_func = getattr(module, function_name)
         post_func()
+    except ImportError as e:
+        click.echo(f"Error importing module {full_module_name}: {e}", err=True)
+        sys.exit(1)
+    except AttributeError as e:
+        click.echo(f"Error finding function {function_name} in {full_module_name}: {e}", err=True)
+        sys.exit(1)
     except SystemExit as e:
         sys.exit(e.code)
 
