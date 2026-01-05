@@ -68,23 +68,7 @@ Issues = "https://github.com/geraldnguyen/social-media-posters/issues"
 social = "social_cli.cli:main"
 
 [tool.setuptools]
-packages = [
-    "social_cli", 
-    "common",
-    "post_to_bluesky",
-    "post_to_facebook",
-    "post_to_instagram",
-    "post_to_linkedin",
-    "post_to_threads",
-    "post_to_x",
-    "post_to_youtube"
-]
+packages = ["social_cli", "common"]
 
-[tool.setuptools.package-dir]
-"post_to_bluesky" = "post-to-bluesky"
-"post_to_facebook" = "post-to-facebook"
-"post_to_instagram" = "post-to-instagram"
-"post_to_linkedin" = "post-to-linkedin"
-"post_to_threads" = "post-to-threads"
-"post_to_x" = "post-to-x"
-"post_to_youtube" = "post-to-youtube"
+[tool.setuptools.package-data]
+social_cli = ["../post-to-*/*.py"]

@@ -58,27 +58,22 @@ def add_common_options(func):
     return func
 
 
-def import_and_run_post_script(package_name, module_name, function_name):
+def import_and_run_post_script(script_folder, script_name, function_name):
     """
-    Helper function to import and run a post script from its installed package.
+    Helper function to import and run a post script from its folder.
     
     Args:
-        package_name: Name of the package (e.g., 'post_to_x')
-        module_name: Name of the script module (e.g., 'post_to_x')
+        script_folder: Name of the folder containing the script (e.g., 'post-to-x')
+        script_name: Name of the script module (e.g., 'post_to_x')
         function_name: Name of the function to call (e.g., 'post_to_x')
     """
-    # Import from the installed package
-    full_module_name = f"{package_name}.{module_name}"
+    # Import from the specific post-to-* folder
+    sys.path.insert(0, str(Path(__file__).parent.parent / script_folder))
+    module = __import__(script_name)
+    post_func = getattr(module, function_name)
+    
     try:
-        module = importlib.import_module(full_module_name)
-        post_func = getattr(module, function_name)
         post_func()
-    except ImportError as e:
-        click.echo(f"Error importing module {full_module_name}: {e}", err=True)
-        sys.exit(1)
-    except AttributeError as e:
-        click.echo(f"Error finding function {function_name} in {full_module_name}: {e}", err=True)
-        sys.exit(1)
     except SystemExit as e:
         sys.exit(e.code)
 
@@ -106,7 +101,7 @@ def main():
               help='X access token secret')
 def x(**kwargs):
     """Post to X (formerly Twitter)."""
-    import_and_run_post_script('post_to_x', 'post_to_x', 'post_to_x')
+    import_and_run_post_script('post-to-x', 'post_to_x', 'post_to_x')
 
 
 @main.command()
@@ -121,7 +116,7 @@ def x(**kwargs):
               help='Post privacy (public or private)')
 def facebook(**kwargs):
     """Post to Facebook Page."""
-    import_and_run_post_script('post_to_facebook', 'post_to_facebook', 'post_to_facebook')
+    import_and_run_post_script('post-to-facebook', 'post_to_facebook', 'post_to_facebook')
 
 
 @main.command()
@@ -134,7 +129,7 @@ def facebook(**kwargs):
               help='Single media file URL (deprecated, use --media-files)')
 def instagram(**kwargs):
     """Post to Instagram."""
-    import_and_run_post_script('post_to_instagram', 'post_to_instagram', 'post_to_instagram')
+    import_and_run_post_script('post-to-instagram', 'post_to_instagram', 'post_to_instagram')
 
 
 @main.command()
@@ -149,7 +144,7 @@ def instagram(**kwargs):
               help='Single media file URL (deprecated, use --media-files)')
 def threads(**kwargs):
     """Post to Threads."""
-    import_and_run_post_script('post_to_threads', 'post_to_threads', 'post_to_threads')
+    import_and_run_post_script('post-to-threads', 'post_to_threads', 'post_to_threads')
 
 
 @main.command()
@@ -162,7 +157,7 @@ def threads(**kwargs):
               help='Link to attach to the post')
 def linkedin(**kwargs):
     """Post to LinkedIn."""
-    import_and_run_post_script('post_to_linkedin', 'post_to_linkedin', 'post_to_linkedin')
+    import_and_run_post_script('post-to-linkedin', 'post_to_linkedin', 'post_to_linkedin')
 
 
 @main.command()
@@ -175,7 +170,7 @@ def linkedin(**kwargs):
               help='Link to attach to the post')
 def bluesky(**kwargs):
     """Post to Bluesky."""
-    import_and_run_post_script('post_to_bluesky', 'post_to_bluesky', 'post_to_bluesky')
+    import_and_run_post_script('post-to-bluesky', 'post_to_bluesky', 'post_to_bluesky')
 
 
 @main.command()
@@ -220,7 +215,7 @@ def bluesky(**kwargs):
               help='Playlist ID to add video to')
 def youtube(**kwargs):
     """Upload video to YouTube."""
-    import_and_run_post_script('post_to_youtube', 'post_to_youtube', 'post_to_youtube')
+    import_and_run_post_script('post-to-youtube', 'post_to_youtube', 'post_to_youtube')
 
 
 if __name__ == '__main__':
