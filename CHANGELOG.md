@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-01-06
+
+### Fixed
+
+- **Package Build Configuration** - Resolved module import errors and build failures
+  - Fixed `ModuleNotFoundError: No module named 'post_to_youtube'` when using the CLI
+  - Fixed `error: package directory 'post-to-bluesky' does not exist` during `python -m build`
+  - Created `__init__.py` files in all `post-to-*` directories to make them valid Python packages
+  - Updated `MANIFEST.in` to properly include `post-to-*` directories with only `.py` and `.yml` files
+  - Removed incorrect package configuration from `pyproject.toml` that referenced non-existent package directories
+  - CLI now uses dynamic path-based imports instead of treating `post-to-*` folders as installed packages
+  - Package can now be successfully built with `python -m build` and uploaded to PyPI
+  - Both source distribution (sdist) and wheel builds now work correctly in isolated environments
+
+### Changed
+
+- **Package Structure** - Simplified packaging approach
+  - `post-to-*` directories are now included as data files rather than separate packages
+  - Scripts are loaded dynamically at runtime using `sys.path` manipulation
+  - Maintains backward compatibility with existing functionality
+
 ## [1.13.0] - 2026-01-04
 
 ### Changed
