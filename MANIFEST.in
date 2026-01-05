@@ -9,6 +9,15 @@ include social_cli/GUIDE.md
 # Include common module
 recursive-include common *.py
 
+# Include post modules
+recursive-include post-to-bluesky *
+recursive-include post-to-facebook *
+recursive-include post-to-instagram *
+recursive-include post-to-linkedin *
+recursive-include post-to-threads *
+recursive-include post-to-x *
+recursive-include post-to-youtube *
+
 # Exclude unnecessary files
 global-exclude __pycache__
 global-exclude *.py[cod]

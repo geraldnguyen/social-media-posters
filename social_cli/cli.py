@@ -100,7 +100,7 @@ def main():
               help='X access token secret')
 def x(**kwargs):
     """Post to X (formerly Twitter)."""
-    import_and_run_post_script('post-to-x', 'post_to_x', 'post_to_x')
+    import_and_run_post_script('post_to_x', 'post_to_x', 'post_to_x')
 
 
 @main.command()
@@ -115,7 +115,7 @@ def x(**kwargs):
               help='Post privacy (public or private)')
 def facebook(**kwargs):
     """Post to Facebook Page."""
-    import_and_run_post_script('post-to-facebook', 'post_to_facebook', 'post_to_facebook')
+    import_and_run_post_script('post_to_facebook', 'post_to_facebook', 'post_to_facebook')
 
 
 @main.command()
@@ -128,7 +128,7 @@ def facebook(**kwargs):
               help='Single media file URL (deprecated, use --media-files)')
 def instagram(**kwargs):
     """Post to Instagram."""
-    import_and_run_post_script('post-to-instagram', 'post_to_instagram', 'post_to_instagram')
+    import_and_run_post_script('post_to_instagram', 'post_to_instagram', 'post_to_instagram')
 
 
 @main.command()
@@ -143,7 +143,7 @@ def instagram(**kwargs):
               help='Single media file URL (deprecated, use --media-files)')
 def threads(**kwargs):
     """Post to Threads."""
-    import_and_run_post_script('post-to-threads', 'post_to_threads', 'post_to_threads')
+    import_and_run_post_script('post_to_threads', 'post_to_threads', 'post_to_threads')
 
 
 @main.command()
@@ -156,7 +156,7 @@ def threads(**kwargs):
               help='Link to attach to the post')
 def linkedin(**kwargs):
     """Post to LinkedIn."""
-    import_and_run_post_script('post-to-linkedin', 'post_to_linkedin', 'post_to_linkedin')
+    import_and_run_post_script('post_to_linkedin', 'post_to_linkedin', 'post_to_linkedin')
 
 
 @main.command()
@@ -169,7 +169,7 @@ def linkedin(**kwargs):
               help='Link to attach to the post')
 def bluesky(**kwargs):
     """Post to Bluesky."""
-    import_and_run_post_script('post-to-bluesky', 'post_to_bluesky', 'post_to_bluesky')
+    import_and_run_post_script('post_to_bluesky', 'post_to_bluesky', 'post_to_bluesky')
 
 
 @main.command()
@@ -214,7 +214,7 @@ def bluesky(**kwargs):
               help='Playlist ID to add video to')
 def youtube(**kwargs):
     """Upload video to YouTube."""
-    import_and_run_post_script('post-to-youtube', 'post_to_youtube', 'post_to_youtube')
+    import_and_run_post_script('post_to_youtube', 'post_to_youtube', 'post_to_youtube')
 
 
 if __name__ == '__main__':
