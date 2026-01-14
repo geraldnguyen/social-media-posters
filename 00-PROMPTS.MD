@@ -301,3 +301,20 @@ Expectation:
 - Create unit tests for the changes ✅
 - Then run the tests ✅
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes ✅
+
+## v1.14.0 - Create an Update Youtube script in the same post-to-youtube folder
+
+Create an update_youtube.py in the post-to-youtube folder. It performs the following:
+- Require a youtube video id
+- Update Video description if a description is provided
+- Update video tags if tags are provided
+- Update video title if title is provided
+- Update any metadata if the corresponding metadata is provided
+
+Update the CLI correspondingly to surface the new feature
+
+Expectation:
+- Implement the above requirements 
+- Create unit tests for the changes 
+- Then run the tests 
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
