@@ -116,8 +116,9 @@ Post content to LinkedIn using the LinkedIn API v2.
 - Media support: Images (videos not currently supported)
 
 ### 📹 [Post to YouTube](./post-to-youtube)
-Upload videos to YouTube using the YouTube Data API v3.
+Upload videos and update video metadata on YouTube using the YouTube Data API v3.
 - Supports video uploads with full metadata
+- Update existing videos (title, description, tags, privacy, etc.)
 - Schedule video publishing
 - Custom thumbnails and playlist integration
 - Media support: Video files (local or remote URLs)

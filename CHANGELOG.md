@@ -5,11 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.14.0] - 2026-01-06
+## [1.14.0] - 2026-01-14
+
+### Added
+
+- **YouTube Video Update Script** - New `update_youtube.py` script in the post-to-youtube folder
+  - Update video metadata for existing YouTube videos
+  - Support for updating title, description, tags, and category
+  - Support for updating privacy status, embeddable, license, and stats visibility settings
+  - Support for updating made-for-kids and synthetic media flags
+  - Full templating support for dynamic content updates
+  - Dry-run mode for testing updates before applying them
+  - Proper error handling and detailed logging
+  - Fetches current video details before updating to preserve unchanged fields
+
+- **CLI Command for Video Updates** - New `update-youtube` command in the social CLI
+  - Exposes all video update functionality via command-line interface
+  - Supports all authentication methods (OAuth refresh token, service account)
+  - Consistent with other CLI commands in the project
+  - Examples: `social update-youtube --video-id VIDEO_ID --video-title "New Title"`
+
+- **Comprehensive Unit Tests** - New test suite for update_youtube functionality
+  - Tests for YouTubeUpdateAPI class initialization with various auth methods
+  - Tests for get_video functionality
+  - Tests for updating individual fields (title, description, tags, etc.)
+  - Tests for updating multiple fields simultaneously
+  - Tests for error handling (missing video ID, video not found, etc.)
+  - All 16 tests pass successfully
+
+### Changed
+
+- **Documentation Updates**
+  - Updated post-to-youtube/README.md with update video functionality
+  - Added examples for using the update script via CLI and Python
+  - Added environment variable reference for video updates
+  - Added dry-run mode examples for updates
+  - Updated features list to highlight update capability
 
 ### Fixed
 
-- **Package Build Configuration** - Resolved module import errors and build failures
+- **Package Build Configuration** - Resolved module import errors and build failures (January 6, 2026)
   - Fixed `ModuleNotFoundError: No module named 'post_to_youtube'` when using the CLI
   - Fixed `error: package directory 'post-to-bluesky' does not exist` during `python -m build`
   - Created `__init__.py` files in all `post-to-*` directories to make them valid Python packages
@@ -18,10 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CLI now uses dynamic path-based imports instead of treating `post-to-*` folders as installed packages
   - Package can now be successfully built with `python -m build` and uploaded to PyPI
   - Both source distribution (sdist) and wheel builds now work correctly in isolated environments
-
-### Changed
-
-- **Package Structure** - Simplified packaging approach
   - `post-to-*` directories are now included as data files rather than separate packages
   - Scripts are loaded dynamically at runtime using `sys.path` manipulation
   - Maintains backward compatibility with existing functionality
