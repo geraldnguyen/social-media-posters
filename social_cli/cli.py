@@ -230,7 +230,7 @@ def youtube(**kwargs):
               help='YouTube OAuth refresh token')
 @click.option('--youtube-oauth-scopes', callback=set_env_from_option, 
               help='YouTube OAuth scopes (comma-separated)')
-@click.option('--video-id', callback=set_env_from_option, required=True,
+@click.option('--video-id', callback=set_env_from_option,
               help='YouTube video ID to update (required)')
 @click.option('--video-title', callback=set_env_from_option, 
               help='New video title')
