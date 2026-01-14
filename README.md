@@ -116,8 +116,9 @@ Post content to LinkedIn using the LinkedIn API v2.
 - Media support: Images (videos not currently supported)
 
 ### 📹 [Post to YouTube](./post-to-youtube)
-Upload videos to YouTube using the YouTube Data API v3.
+Upload videos and update video metadata on YouTube using the YouTube Data API v3.
 - Supports video uploads with full metadata
+- Update existing videos (title, description, tags, privacy, etc.)
 - Schedule video publishing
 - Custom thumbnails and playlist integration
 - Media support: Video files (local or remote URLs)
@@ -146,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post to X
-        uses: geraldnguyen/social-media-posters/post-to-x@v1.14.0
+        uses: geraldnguyen/social-media-posters/post-to-x@v1.15.0
         with:
           api-key: ${{ secrets.X_API_KEY }}
           api-secret: ${{ secrets.X_API_SECRET }}
@@ -155,7 +156,7 @@ jobs:
           content: "🚀 New release deployed! Check out the latest features."
       
       - name: Post to Facebook Page
-        uses: geraldnguyen/social-media-posters/post-to-facebook@v1.14.0
+        uses: geraldnguyen/social-media-posters/post-to-facebook@v1.15.0
         with:
           access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           page-id: ${{ secrets.FB_PAGE_ID }}
@@ -397,7 +398,7 @@ Summary: This is a captivating tale of ancient gods and mortals, exploring theme
 When using these actions in your workflows:
 
 ### Version Pinning
-- **Use specific version tags** (e.g., `@v1.14.0`) instead of branches for stability
+- **Use specific version tags** (e.g., `@v1.15.0`) instead of branches for stability
 - **Review changelogs** before upgrading to new versions
 - **Test in non-production** environments before updating production workflows
 
@@ -430,7 +431,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post to X
-        uses: geraldnguyen/social-media-posters/post-to-x@v1.14.0
+        uses: geraldnguyen/social-media-posters/post-to-x@v1.15.0
         with:
           api-key: ${{ secrets.X_API_KEY }}
           api-secret: ${{ secrets.X_API_SECRET }}

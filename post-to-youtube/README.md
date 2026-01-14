@@ -1,10 +1,11 @@
 # Post to YouTube Action
 
-This GitHub Action allows you to upload videos to YouTube using the YouTube Data API v3.
+This GitHub Action allows you to upload videos and update video metadata on YouTube using the YouTube Data API v3.
 
 ## Features
 
-- Upload videos to YouTube with full metadata support
+- **Upload videos** to YouTube with full metadata support
+- **Update existing videos** with new metadata (title, description, tags, privacy status, etc.)
 - Support for both local video files and remote URLs
 - Schedule video publishing for future dates/times
 - Custom thumbnail upload
@@ -82,7 +83,7 @@ You need to set up YouTube Data API v3 access:
 
 ```yaml
 - name: Upload video to YouTube
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -101,7 +102,7 @@ If you're using this action from another repository, reference it with the full 
 
 ```yaml
 - name: Upload video to YouTube
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
     video-file: "path/to/video.mp4"
@@ -200,7 +201,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload video to YouTube
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -217,7 +218,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload video to YouTube
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
     video-file: "recordings/demo.mp4"
@@ -232,7 +233,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload video from URL
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -247,7 +248,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Schedule video publication
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -266,7 +267,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload with thumbnail and add to playlist
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -284,7 +285,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload educational content for kids
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -303,7 +304,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload AI-generated video
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -324,7 +325,7 @@ By default, the action uses the `https://www.googleapis.com/auth/youtube` scope,
 
 ```yaml
 - name: Upload video with custom scopes
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -335,13 +336,91 @@ By default, the action uses the `https://www.googleapis.com/auth/youtube` scope,
     description: "Video uploaded with custom scopes"
 ```
 
+## Updating Existing Videos
+
+The `update_youtube.py` script allows you to update metadata for existing YouTube videos. This is useful for:
+- Updating video titles, descriptions, or tags
+- Changing privacy settings
+- Updating video metadata after publication
+
+### Using the CLI
+
+```bash
+# Update video title
+social update-youtube \
+  --video-id "VIDEO_ID_HERE" \
+  --video-title "New Video Title" \
+  --youtube-oauth-client-id "YOUR_CLIENT_ID" \
+  --youtube-oauth-client-secret "YOUR_CLIENT_SECRET" \
+  --youtube-oauth-refresh-token "YOUR_REFRESH_TOKEN"
+
+# Update multiple fields
+social update-youtube \
+  --video-id "VIDEO_ID_HERE" \
+  --video-title "Updated Title" \
+  --video-description "Updated description with more details" \
+  --video-tags "new,tags,here" \
+  --video-privacy-status "unlisted"
+
+# Update with templating
+social update-youtube \
+  --video-id "VIDEO_ID_HERE" \
+  --video-description "Updated on @{builtin.CURR_DATE}" \
+  --content-json "https://api.example.com/video-data.json"
+```
+
+### Using as a Python Script
+
+```python
+import os
+os.environ['VIDEO_ID'] = 'your_video_id'
+os.environ['VIDEO_TITLE'] = 'New Title'
+os.environ['VIDEO_DESCRIPTION'] = 'New Description'
+os.environ['YOUTUBE_OAUTH_CLIENT_ID'] = 'your_client_id'
+os.environ['YOUTUBE_OAUTH_CLIENT_SECRET'] = 'your_client_secret'
+os.environ['YOUTUBE_OAUTH_REFRESH_TOKEN'] = 'your_refresh_token'
+
+from post-to-youtube.update_youtube import update_youtube
+update_youtube()
+```
+
+### Environment Variables for Update
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `VIDEO_ID` | YouTube video ID to update | Yes |
+| `VIDEO_TITLE` | New video title | No |
+| `VIDEO_DESCRIPTION` | New video description | No |
+| `VIDEO_TAGS` | New video tags (comma-separated) | No |
+| `VIDEO_CATEGORY_ID` | New video category ID | No |
+| `VIDEO_PRIVACY_STATUS` | New privacy status (public, private, unlisted) | No |
+| `VIDEO_EMBEDDABLE` | Whether video can be embedded (true/false) | No |
+| `VIDEO_LICENSE` | Video license (youtube or creativeCommon) | No |
+| `VIDEO_PUBLIC_STATS_VIEWABLE` | Whether stats are public (true/false) | No |
+| `VIDEO_MADE_FOR_KIDS` | Whether video is for kids (true/false) | No |
+| `VIDEO_CONTAINS_SYNTHETIC_MEDIA` | Whether video has AI/synthetic content (true/false) | No |
+
+**Note**: At least one field besides `VIDEO_ID` must be provided for the update to proceed.
+
+### Dry Run Mode for Updates
+
+Test your updates without actually modifying the video:
+
+```bash
+social update-youtube \
+  --dry-run \
+  --video-id "VIDEO_ID_HERE" \
+  --video-title "Test Update" \
+  --video-description "Testing the update process"
+```
+
 ## Templated Content: JSON Source
 
 This action supports API-driven templated content using the `@{json...}` syntax. Example:
 
 ```yaml
 - name: Upload video with dynamic content
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -418,7 +497,7 @@ Set `dry-run` to `true` to test without actually uploading:
 
 ```yaml
 - name: Test YouTube upload
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -447,12 +526,12 @@ In dry-run mode, the action will:
 ## GitHub Actions Best Practices
 
 ### Version Pinning
-- **Use specific version tags** (e.g., `@v1.10.0`) for stability
+- **Use specific version tags** (e.g., `@v1.15.0`) for stability
 - **Test updates** before deploying to production
 - **Check changelog** for breaking changes
 
 ### Action References
-- **External**: `geraldnguyen/social-media-posters/post-to-youtube@v1.10.0`
+- **External**: `geraldnguyen/social-media-posters/post-to-youtube@v1.15.0`
 - **Local**: `./post-to-youtube` (requires checkout step)
 
 ### Workflow Tips
@@ -480,7 +559,7 @@ jobs:
       
       - name: Upload to YouTube
         id: youtube
-        uses: geraldnguyen/social-media-posters/post-to-youtube@v1.10.0
+        uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.0
         with:
           oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
           oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}

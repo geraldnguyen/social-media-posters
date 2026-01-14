@@ -218,5 +218,44 @@ def youtube(**kwargs):
     import_and_run_post_script('post-to-youtube', 'post_to_youtube', 'post_to_youtube')
 
 
+@main.command()
+@add_common_options
+@click.option('--youtube-api-key', callback=set_env_from_option, 
+              help='YouTube API key (credentials JSON)')
+@click.option('--youtube-oauth-client-id', callback=set_env_from_option, 
+              help='YouTube OAuth client ID')
+@click.option('--youtube-oauth-client-secret', callback=set_env_from_option, 
+              help='YouTube OAuth client secret')
+@click.option('--youtube-oauth-refresh-token', callback=set_env_from_option, 
+              help='YouTube OAuth refresh token')
+@click.option('--youtube-oauth-scopes', callback=set_env_from_option, 
+              help='YouTube OAuth scopes (comma-separated)')
+@click.option('--video-id', callback=set_env_from_option, required=True,
+              help='YouTube video ID to update (required)')
+@click.option('--video-title', callback=set_env_from_option, 
+              help='New video title')
+@click.option('--video-description', callback=set_env_from_option, 
+              help='New video description')
+@click.option('--video-tags', callback=set_env_from_option, 
+              help='New video tags (comma-separated)')
+@click.option('--video-category-id', callback=set_env_from_option, 
+              help='New video category ID')
+@click.option('--video-privacy-status', callback=set_env_from_option, 
+              help='New video privacy status (public, private, unlisted)')
+@click.option('--video-made-for-kids', callback=set_env_from_option, 
+              help='Video is made for kids (true/false)')
+@click.option('--video-embeddable', callback=set_env_from_option, 
+              help='Video is embeddable (true/false)')
+@click.option('--video-license', callback=set_env_from_option, 
+              help='Video license (youtube or creativeCommon)')
+@click.option('--video-public-stats-viewable', callback=set_env_from_option, 
+              help='Public stats viewable (true/false)')
+@click.option('--video-contains-synthetic-media', callback=set_env_from_option, 
+              help='Video contains synthetic media (true/false)')
+def update_youtube(**kwargs):
+    """Update YouTube video metadata."""
+    import_and_run_post_script('post-to-youtube', 'update_youtube', 'update_youtube')
+
+
 if __name__ == '__main__':
     main()
