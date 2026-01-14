@@ -302,7 +302,7 @@ Expectation:
 - Then run the tests ✅
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes ✅
 
-## v1.14.0 - Create an Update Youtube script in the same post-to-youtube folder
+## v1.15.0 - Create an Update Youtube script in the same post-to-youtube folder
 
 Create an update_youtube.py in the post-to-youtube folder. It performs the following:
 - Require a youtube video id
