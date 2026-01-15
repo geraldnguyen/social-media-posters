@@ -318,3 +318,24 @@ Expectation:
 - Create unit tests for the changes 
 - Then run the tests 
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
+
+
+## v1.16.0 - Support scheduling of Facebook post (text, image or video) + suport youtube scheduling with offset format
+
+Update the relevant scripts and files in post-to-facebook folder to support scheduling of facebook content
+Support the following scheduling mechanism:
+- Specific date and time 
+- Offset format: `+<offset><time-unit>` where `+` means present time PLUS the offset period, `<offset>` is an positive integer, `<time-unit>` can be "d" for days, "h" for hours, "m" for minutes.
+
+When not specified, the facebook content shall publish immediately.
+
+Update relevant files in post-to-youtube folder to suport youtube scheduling with offset format described above
+
+Update the CLI correspondingly to surface the new feature. Update the Python package-related files to match the new version.
+
+Expectation:
+- Implement the above requirements 
+- Create unit tests for the changes 
+- Then run the tests 
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
+
