@@ -5,6 +5,7 @@ Post content to a Facebook Page using the Facebook Graph API (v20.0) via direct 
 
 import os
 from pathlib import Path
+from datetime import datetime
 
 # Load environment variables from a local .env file if present (for local development)
 try:
@@ -30,7 +31,8 @@ from social_media_utils import (
     validate_post_content,
     handle_api_error,
     log_success,
-    parse_media_files
+    parse_media_files,
+    parse_scheduled_time
 )
 
 
@@ -69,11 +71,16 @@ def _graph_api_post(path: str, access_token: str, *, data=None, files=None, para
     return payload
 
 
-def upload_photo(page_id: str, photo_path: str, message: str, published: bool, access_token: str) -> str:
+def upload_photo(page_id: str, photo_path: str, message: str, published: bool, access_token: str, scheduled_publish_time: int = None) -> str:
     """Upload a photo to Facebook Page."""
     data = {'published': str(published).lower()}
     if message:
         data['message'] = message
+    
+    # Add scheduled publish time if provided
+    if scheduled_publish_time:
+        data['scheduled_publish_time'] = str(scheduled_publish_time)
+        logger.info(f"Photo will be scheduled for: {scheduled_publish_time}")
 
     try:
         with open(photo_path, 'rb') as photo_file:
@@ -91,7 +98,7 @@ def upload_photo(page_id: str, photo_path: str, message: str, published: bool, a
     return payload.get('post_id') or payload.get('id')
 
 
-def upload_video(page_id: str, video_path: str, description: str, published: bool, access_token: str) -> str:
+def upload_video(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None) -> str:
     """
     Upload a video to Facebook Page using resumable upload.
     
@@ -111,17 +118,22 @@ def upload_video(page_id: str, video_path: str, description: str, published: boo
     
     if video_size < threshold_bytes:
         logger.info(f"Video is smaller than {threshold_mb}MB, using simple upload")
-        return _upload_video_simple(page_id, video_path, description, published, access_token)
+        return _upload_video_simple(page_id, video_path, description, published, access_token, scheduled_publish_time)
     else:
         logger.info(f"Video is larger than {threshold_mb}MB, using resumable upload")
-        return _upload_video_resumable(page_id, video_path, description, published, access_token)
+        return _upload_video_resumable(page_id, video_path, description, published, access_token, scheduled_publish_time)
 
 
-def _upload_video_simple(page_id: str, video_path: str, description: str, published: bool, access_token: str) -> str:
+def _upload_video_simple(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None) -> str:
     """Upload a small video using simple POST request."""
     data = {'published': str(published).lower()}
     if description:
         data['description'] = description
+    
+    # Add scheduled publish time if provided
+    if scheduled_publish_time:
+        data['scheduled_publish_time'] = str(scheduled_publish_time)
+        logger.info(f"Video will be scheduled for: {scheduled_publish_time}")
 
     try:
         with open(video_path, 'rb') as video_file:
@@ -139,7 +151,7 @@ def _upload_video_simple(page_id: str, video_path: str, description: str, publis
     return payload.get('id')
 
 
-def _upload_video_resumable(page_id: str, video_path: str, description: str, published: bool, access_token: str) -> str:
+def _upload_video_resumable(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None) -> str:
     """
     Upload a large video using Facebook's resumable upload API.
     
@@ -228,6 +240,11 @@ def _upload_video_resumable(page_id: str, video_path: str, description: str, pub
     
     finish_data['published'] = str(published).lower()
     
+    # Add scheduled publish time if provided
+    if scheduled_publish_time:
+        finish_data['scheduled_publish_time'] = str(scheduled_publish_time)
+        logger.info(f"Video will be scheduled for: {scheduled_publish_time}")
+    
     finish_payload = _graph_api_post(
         f"{page_id}/videos",
         access_token,
@@ -275,6 +292,24 @@ def post_to_facebook():
         media_input = get_optional_env_var("MEDIA_FILES", "")
         media_files = parse_media_files(media_input)
         
+        # Get scheduling parameters
+        scheduled_time_str = get_optional_env_var("SCHEDULED_PUBLISH_TIME", "")
+        scheduled_publish_time = None
+        
+        if scheduled_time_str:
+            # Parse the scheduled time (supports ISO 8601 and offset format)
+            scheduled_time_iso = parse_scheduled_time(scheduled_time_str)
+            if scheduled_time_iso:
+                # Facebook API requires Unix timestamp (seconds since epoch)
+                dt = datetime.fromisoformat(scheduled_time_iso.replace('Z', '+00:00'))
+                scheduled_publish_time = int(dt.timestamp())
+                logger.info(f"Post will be scheduled for: {scheduled_time_iso} (Unix timestamp: {scheduled_publish_time})")
+                
+                # When scheduling, the post must be unpublished initially
+                if published:
+                    logger.info("Scheduling requires post to be initially unpublished. Setting published=False.")
+                    published = False
+        
         # Prepare post data
         post_data = {
             'message': content
@@ -284,13 +319,19 @@ def post_to_facebook():
             post_data['link'] = link
         if not published:
             post_data['published'] = 'false'
+        
+        # Add scheduled publish time to post data if provided
+        if scheduled_publish_time:
+            post_data['scheduled_publish_time'] = str(scheduled_publish_time)
 
         # DRY RUN GUARD
         from social_media_utils import dry_run_guard
         dry_run_request = dict(post_data)
         if media_files:
             dry_run_request['media_files'] = ', '.join(media_files)
-        dry_run_request['privacy'] = privacy_mode
+        dry_run_request['privacy'] = 'scheduled' if scheduled_publish_time else privacy_mode
+        if scheduled_publish_time:
+            dry_run_request['scheduled_for'] = scheduled_time_str
         dry_run_guard("Facebook Page", content, media_files, dry_run_request)
 
         # Handle media files
@@ -302,10 +343,10 @@ def post_to_facebook():
                 
                 if file_ext in ['.jpg', '.jpeg', '.png', '.gif']:
                     # Upload photo
-                    post_id = upload_photo(page_id, media_file, content, published, access_token)
+                    post_id = upload_photo(page_id, media_file, content, published, access_token, scheduled_publish_time)
                 elif file_ext in ['.mp4', '.mov', '.avi']:
                     # Upload video
-                    post_id = upload_video(page_id, media_file, content, published, access_token)
+                    post_id = upload_video(page_id, media_file, content, published, access_token, scheduled_publish_time)
                 else:
                     logger.warning(f"Unsupported media type: {file_ext}")
                     # Create text post with link if media type not supported
@@ -322,9 +363,9 @@ def post_to_facebook():
                 for media_file in media_files:
                     file_ext = Path(media_file).suffix.lower()
                     if file_ext in ['.jpg', '.jpeg', '.png', '.gif']:
-                        upload_photo(page_id, media_file, "", published, access_token)
+                        upload_photo(page_id, media_file, "", published, access_token, scheduled_publish_time)
                     elif file_ext in ['.mp4', '.mov', '.avi']:
-                        upload_video(page_id, media_file, "", published, access_token)
+                        upload_video(page_id, media_file, "", published, access_token, scheduled_publish_time)
                 
                 # Create the main text post
                 payload = _graph_api_post(
@@ -344,16 +385,20 @@ def post_to_facebook():
             )
             post_id = payload.get('id')
         
-        post_url = f"https://www.facebook.com/{post_id}" if published else "(Unpublished post - no public URL)"
+        post_url = f"https://www.facebook.com/{post_id}" if (published and not scheduled_publish_time) else "(Scheduled/Unpublished post - no public URL yet)"
         
         # Output for GitHub Actions
         if 'GITHUB_OUTPUT' in os.environ:
             with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                 f.write(f"post-id={post_id}\n")
                 f.write(f"post-url={post_url}\n")
+                if scheduled_publish_time:
+                    f.write(f"scheduled-time={scheduled_time_str}\n")
         
         log_success("Facebook Page", post_id)
         logger.info(f"Post URL: {post_url}")
+        if scheduled_publish_time:
+            logger.info(f"Post scheduled for: {scheduled_time_str}")
         
     except Exception as e:
         handle_api_error(e, "Facebook Page")

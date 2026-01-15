@@ -114,6 +114,8 @@ def x(**kwargs):
               help='Link to attach to the post')
 @click.option('--post-privacy', callback=set_env_from_option, 
               help='Post privacy (public or private)')
+@click.option('--scheduled-publish-time', callback=set_env_from_option,
+              help='Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
 def facebook(**kwargs):
     """Post to Facebook Page."""
     import_and_run_post_script('post-to-facebook', 'post_to_facebook', 'post_to_facebook')
@@ -198,7 +200,7 @@ def bluesky(**kwargs):
 @click.option('--video-privacy-status', callback=set_env_from_option, 
               help='Video privacy status (public, private, unlisted)')
 @click.option('--video-publish-at', callback=set_env_from_option, 
-              help='Schedule publish date/time (ISO 8601 format)')
+              help='Schedule publish date/time. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
 @click.option('--video-made-for-kids', callback=set_env_from_option, 
               help='Video is made for kids (true/false)')
 @click.option('--video-embeddable', callback=set_env_from_option, 

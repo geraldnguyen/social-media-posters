@@ -35,12 +35,17 @@ inputs:
     description: 'Dry run mode. If true, the content will be printed but not posted.'
     required: false
     default: 'false'
+  scheduled-publish-time:
+    description: 'Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")'
+    required: false
 
 outputs:
   post-id:
     description: 'ID of the created post'
   post-url:
     description: 'URL of the created post'
+  scheduled-time:
+    description: 'Scheduled publish time (if scheduling was used)'
 
 runs:
   using: 'composite'
@@ -67,5 +72,6 @@ runs:
         CONTENT_JSON: ${{ inputs.content-json }}
         TIME_ZONE: ${{ inputs.time-zone }}
         DRY_RUN: ${{ inputs.dry-run }}
+        SCHEDULED_PUBLISH_TIME: ${{ inputs.scheduled-publish-time }}
       run: |
         python ${{ github.action_path }}/post_to_facebook.py

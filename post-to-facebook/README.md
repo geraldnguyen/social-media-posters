@@ -24,8 +24,34 @@ This GitHub Action allows you to post content to a Facebook Page using the Faceb
 - Post text content to Facebook Pages
 - Attach media files (images, videos)
 - Include links in posts
+- **Schedule posts for future publication** with flexible time formats
 - Configurable logging levels
 - Returns post ID and URL for further processing
+
+## Scheduling Posts
+
+This action supports scheduling posts for future publication. You can specify when you want your post to go live using two formats:
+
+### ISO 8601 Format
+Specify an exact date and time:
+```yaml
+scheduled-publish-time: "2024-12-31T23:59:59Z"
+```
+
+### Offset Format
+Schedule relative to the current time using `+<offset><time-unit>`:
+- `d` for days
+- `h` for hours  
+- `m` for minutes
+
+Examples:
+```yaml
+scheduled-publish-time: "+1d"   # 1 day from now
+scheduled-publish-time: "+2h"   # 2 hours from now
+scheduled-publish-time: "+30m"  # 30 minutes from now
+```
+
+**Note**: When scheduling is enabled, the post will initially be unpublished and will automatically publish at the scheduled time. The post privacy will be managed by Facebook's scheduling system.
 
 ## Prerequisites
 
@@ -48,7 +74,7 @@ If you're using this action from another repository, reference it with the full 
 
 ```yaml
 - name: Post to Facebook Page
-  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.9.0
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.16.0
   with:
     access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
     page-id: ${{ secrets.FB_PAGE_ID }}
@@ -86,6 +112,7 @@ If you're developing within the social-media-posters repository:
 | `content` | Content to post to Facebook Page | Yes | - |
 | `media-files` | Comma-separated list of media file paths | No | - |
 | `link` | Link to attach to the post | No | - |
+| `scheduled-publish-time` | Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
 
 ## Outputs
@@ -94,18 +121,42 @@ If you're developing within the social-media-posters repository:
 |--------|-------------|
 | `post-id` | ID of the created post |
 | `post-url` | URL of the created post |
+| `scheduled-time` | Scheduled publish time (if scheduling was used) |
 
 ## Example with Media and Link
 
 ```yaml
 - name: Post to Facebook Page with media and link
-  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.9.0
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.16.0
   with:
     access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
     page-id: ${{ secrets.FB_PAGE_ID }}
     content: "Check out our latest blog post! 📖"
     media-files: "blog-images/featured.jpg"
     link: "https://blog.example.com/latest-post"
+```
+
+## Example with Scheduling
+
+```yaml
+- name: Schedule Facebook post for tomorrow
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.16.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    page-id: ${{ secrets.FB_PAGE_ID }}
+    content: "Join us for our webinar tomorrow! 🎓"
+    scheduled-publish-time: "+1d"
+    link: "https://example.com/webinar"
+```
+
+```yaml
+- name: Schedule Facebook post for specific date
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.16.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    page-id: ${{ secrets.FB_PAGE_ID }}
+    content: "Happy New Year! 🎉"
+    scheduled-publish-time: "2025-01-01T00:00:00Z"
 ```
 
 ## Security Notes
@@ -118,12 +169,12 @@ If you're developing within the social-media-posters repository:
 ## GitHub Actions Best Practices
 
 ### Version Pinning
-- **Always use a specific version tag** (e.g., `@v1.9.0`) in production workflows for stability
+- **Always use a specific version tag** (e.g., `@v1.16.0`) in production workflows for stability
 - **Test updates** in a non-production environment before upgrading
 - **Check the changelog** for breaking changes when updating versions
 
 ### Action Reference Format
-- **External repositories**: `geraldnguyen/social-media-posters/post-to-facebook@v1.9.0`
+- **External repositories**: `geraldnguyen/social-media-posters/post-to-facebook@v1.16.0`
 - **Local/same repository**: `./post-to-facebook` (requires checkout step first)
 
 ### Workflow Tips
@@ -146,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post release to Facebook
-        uses: geraldnguyen/social-media-posters/post-to-facebook@v1.9.0
+        uses: geraldnguyen/social-media-posters/post-to-facebook@v1.16.0
         with:
           access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           page-id: ${{ secrets.FB_PAGE_ID }}

@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-01-15
+
+### Added
+
+- **Facebook Post Scheduling** - New scheduling support for Facebook posts
+  - Schedule posts for future publication with `SCHEDULED_PUBLISH_TIME` parameter
+  - Support for ISO 8601 datetime format (e.g., "2024-12-31T23:59:59Z")
+  - Support for offset format: `+<offset><time-unit>` (e.g., "+1d", "+2h", "+30m")
+    - `d` for days
+    - `h` for hours
+    - `m` for minutes
+  - Applies to text posts, photo uploads, and video uploads
+  - Automatically sets post to unpublished when scheduling is enabled
+  - Returns `scheduled-time` output for GitHub Actions workflows
+
+- **YouTube Scheduling Offset Format** - Enhanced YouTube scheduling capabilities
+  - Extended existing `VIDEO_PUBLISH_AT` parameter to support offset format
+  - Backward compatible with existing ISO 8601 format
+  - Same offset format as Facebook: `+<offset><time-unit>`
+  - Examples: "+1d" (1 day), "+2h" (2 hours), "+30m" (30 minutes)
+
+- **Scheduling Utilities** - New common utilities for time parsing
+  - `parse_scheduled_time()` function in `social_media_utils.py`
+  - Handles both ISO 8601 and offset formats
+  - Converts all times to UTC
+  - Comprehensive error handling for invalid formats
+  - 21 unit tests covering all edge cases
+
+- **CLI Enhancements**
+  - Added `--scheduled-publish-time` option for Facebook command
+  - Updated `--video-publish-at` help text for YouTube command
+  - Clear documentation of offset format in CLI help
+
+### Changed
+
+- **Documentation Updates**
+  - Updated post-to-facebook/README.md with scheduling examples
+  - Updated post-to-youtube/README.md with offset format examples
+  - Added scheduling section to Facebook README explaining both formats
+  - Updated version references from v1.15.1 to v1.16.0
+  - Added comprehensive examples for both ISO 8601 and offset formats
+
+- **API Changes**
+  - `upload_photo()` now accepts optional `scheduled_publish_time` parameter
+  - `upload_video()` now accepts optional `scheduled_publish_time` parameter
+  - `_upload_video_simple()` now accepts optional `scheduled_publish_time` parameter
+  - `_upload_video_resumable()` now accepts optional `scheduled_publish_time` parameter
+
+### Testing
+
+- Created `test_scheduling_utils.py` with 21 comprehensive tests
+  - Tests for ISO 8601 parsing (with/without timezone, various formats)
+  - Tests for offset format parsing (days, hours, minutes)
+  - Tests for error handling (invalid formats, negative values, bad units)
+  - Tests for edge cases (empty strings, whitespace, zero offsets)
+- Updated existing Facebook tests to accommodate new scheduling parameter
+- All tests pass successfully
+
 ## [1.15.1] - 2026-01-14
 
 ### Added

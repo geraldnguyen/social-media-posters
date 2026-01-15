@@ -45,7 +45,7 @@ inputs:
     required: false
     default: 'public'
   publish-at:
-    description: 'Schedule video publication (ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ). Requires privacy-status to be "private"'
+    description: 'Schedule video publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m"). Requires privacy-status to be "private"'
     required: false
   thumbnail:
     description: 'Path to custom thumbnail image (local or URL)'
