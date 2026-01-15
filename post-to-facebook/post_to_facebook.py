@@ -5,6 +5,7 @@ Post content to a Facebook Page using the Facebook Graph API (v20.0) via direct 
 
 import os
 from pathlib import Path
+from datetime import datetime
 
 # Load environment variables from a local .env file if present (for local development)
 try:
@@ -300,7 +301,6 @@ def post_to_facebook():
             scheduled_time_iso = parse_scheduled_time(scheduled_time_str)
             if scheduled_time_iso:
                 # Facebook API requires Unix timestamp (seconds since epoch)
-                from datetime import datetime
                 dt = datetime.fromisoformat(scheduled_time_iso.replace('Z', '+00:00'))
                 scheduled_publish_time = int(dt.timestamp())
                 logger.info(f"Post will be scheduled for: {scheduled_time_iso} (Unix timestamp: {scheduled_publish_time})")

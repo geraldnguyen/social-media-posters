@@ -6,6 +6,7 @@ import os
 import sys
 import logging
 import json
+import re
 from typing import Optional, Dict, Any
 import requests
 from pathlib import Path
@@ -377,8 +378,6 @@ def _parse_offset_time(offset_str: str) -> str:
     Raises:
         ValueError: If the offset format is invalid
     """
-    import re
-    
     # Parse the offset string: +<number><unit>
     match = re.match(r'^\+(\d+)([dhm])$', offset_str)
     if not match:
