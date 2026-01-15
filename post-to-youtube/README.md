@@ -83,7 +83,7 @@ You need to set up YouTube Data API v3 access:
 
 ```yaml
 - name: Upload video to YouTube
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -102,7 +102,7 @@ If you're using this action from another repository, reference it with the full 
 
 ```yaml
 - name: Upload video to YouTube
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
     video-file: "path/to/video.mp4"
@@ -149,7 +149,7 @@ If you're developing within the social-media-posters repository:
 | `tags` | Comma-separated list of video tags | No | - |
 | `category-id` | Video category ID | No | 22 (People & Blogs) |
 | `privacy-status` | Privacy status (public, private, unlisted) | No | public |
-| `publish-at` | Schedule publication (ISO 8601: YYYY-MM-DDTHH:MM:SSZ) | No | - |
+| `publish-at` | Schedule publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | - |
 | `thumbnail` | Path to custom thumbnail (local or URL) | No | - |
 | `playlist-id` | Playlist ID to add video to | No | - |
 | `made-for-kids` | Whether video is made for kids (true/false) | No | false |
@@ -201,7 +201,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload video to YouTube
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -218,7 +218,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload video to YouTube
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     api-key: ${{ secrets.YOUTUBE_SERVICE_ACCOUNT_JSON }}
     video-file: "recordings/demo.mp4"
@@ -233,7 +233,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload video from URL
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -246,9 +246,11 @@ Common YouTube category IDs:
 
 ### Scheduled Video Upload
 
+Schedule videos for future publication using either ISO 8601 format or relative offset format:
+
 ```yaml
-- name: Schedule video publication
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+- name: Schedule video for specific date/time
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -261,13 +263,33 @@ Common YouTube category IDs:
     tags: "weekly,update,news"
 ```
 
+```yaml
+- name: Schedule video for 2 hours from now
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
+  with:
+    oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
+    oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
+    oauth-refresh-token: ${{ secrets.YOUTUBE_OAUTH_REFRESH_TOKEN }}
+    video-file: "content/livestream-recording.mp4"
+    title: "Livestream Recording"
+    description: "Recording from today's livestream"
+    privacy-status: "private"
+    publish-at: "+2h"
+    tags: "livestream,recording"
+```
+
 **Note**: Scheduled publishing requires `privacy-status` to be set to `private`. The video will automatically become public at the scheduled time.
+
+**Offset Format**: You can use relative time offsets:
+- `+1d` - 1 day from now
+- `+2h` - 2 hours from now
+- `+30m` - 30 minutes from now
 
 ### Video with Custom Thumbnail and Playlist
 
 ```yaml
 - name: Upload with thumbnail and add to playlist
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -285,7 +307,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload educational content for kids
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -304,7 +326,7 @@ Common YouTube category IDs:
 
 ```yaml
 - name: Upload AI-generated video
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -325,7 +347,7 @@ By default, the action uses the `https://www.googleapis.com/auth/youtube` scope,
 
 ```yaml
 - name: Upload video with custom scopes
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -420,7 +442,7 @@ This action supports API-driven templated content using the `@{json...}` syntax.
 
 ```yaml
 - name: Upload video with dynamic content
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -497,7 +519,7 @@ Set `dry-run` to `true` to test without actually uploading:
 
 ```yaml
 - name: Test YouTube upload
-  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+  uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
   with:
     oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
     oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}
@@ -526,12 +548,12 @@ In dry-run mode, the action will:
 ## GitHub Actions Best Practices
 
 ### Version Pinning
-- **Use specific version tags** (e.g., `@v1.15.1`) for stability
+- **Use specific version tags** (e.g., `@v1.16.0`) for stability
 - **Test updates** before deploying to production
 - **Check changelog** for breaking changes
 
 ### Action References
-- **External**: `geraldnguyen/social-media-posters/post-to-youtube@v1.15.1`
+- **External**: `geraldnguyen/social-media-posters/post-to-youtube@v1.16.0`
 - **Local**: `./post-to-youtube` (requires checkout step)
 
 ### Workflow Tips
@@ -559,7 +581,7 @@ jobs:
       
       - name: Upload to YouTube
         id: youtube
-        uses: geraldnguyen/social-media-posters/post-to-youtube@v1.15.1
+        uses: geraldnguyen/social-media-posters/post-to-youtube@v1.16.0
         with:
           oauth-client-id: ${{ secrets.YOUTUBE_OAUTH_CLIENT_ID }}
           oauth-client-secret: ${{ secrets.YOUTUBE_OAUTH_CLIENT_SECRET }}

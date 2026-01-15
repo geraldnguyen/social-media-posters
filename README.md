@@ -94,6 +94,7 @@ Post content to X (formerly Twitter) using the X API v2.
 ### 📘 [Post to Facebook Page](./post-to-facebook)
 Post content to Facebook Pages using the Facebook Graph API.
 - Supports text posts with media and links
+- **Schedule posts** with ISO 8601 or offset format ("+1d", "+2h", "+30m")
 - No strict character limit
 - Media support: Images and videos
 
@@ -119,7 +120,7 @@ Post content to LinkedIn using the LinkedIn API v2.
 Upload videos and update video metadata on YouTube using the YouTube Data API v3.
 - Supports video uploads with full metadata
 - Update existing videos (title, description, tags, privacy, etc.)
-- Schedule video publishing
+- **Schedule video publishing** with ISO 8601 or offset format ("+1d", "+2h", "+30m")
 - Custom thumbnails and playlist integration
 - Media support: Video files (local or remote URLs)
 
