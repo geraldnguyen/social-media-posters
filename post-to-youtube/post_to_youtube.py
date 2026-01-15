@@ -40,7 +40,8 @@ from social_media_utils import (
     handle_api_error,
     log_success,
     download_file_if_url,
-    dry_run_guard
+    dry_run_guard,
+    parse_scheduled_time
 )
 
 # Google API imports
@@ -361,7 +362,6 @@ def post_to_youtube():
             # Parse scheduled time (supports ISO 8601 and offset format)
             publish_at = None
             if publish_at_str:
-                from social_media_utils import parse_scheduled_time
                 publish_at = parse_scheduled_time(publish_at_str)
                 logger.info(f"Video will be scheduled for: {publish_at}")
             

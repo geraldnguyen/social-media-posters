@@ -31,7 +31,8 @@ from social_media_utils import (
     validate_post_content,
     handle_api_error,
     log_success,
-    parse_media_files
+    parse_media_files,
+    parse_scheduled_time
 )
 
 
@@ -292,7 +293,6 @@ def post_to_facebook():
         media_files = parse_media_files(media_input)
         
         # Get scheduling parameters
-        from social_media_utils import parse_scheduled_time
         scheduled_time_str = get_optional_env_var("SCHEDULED_PUBLISH_TIME", "")
         scheduled_publish_time = None
         
