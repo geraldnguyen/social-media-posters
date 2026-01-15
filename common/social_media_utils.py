@@ -299,3 +299,110 @@ def parse_media_files(media_input: str, max_download_size_mb: int = 5):
             sys.exit(1)
         local_files.append(local_path)
     return local_files
+
+
+def parse_scheduled_time(scheduled_time: str) -> Optional[str]:
+    """
+    Parse scheduled time in either ISO 8601 format or offset format.
+    
+    Supported formats:
+    1. ISO 8601 datetime string (e.g., '2024-12-31T23:59:59Z' or '2024-12-31T23:59:59+00:00')
+    2. Offset format: '+<offset><time-unit>' where:
+       - '+' means present time PLUS the offset period
+       - <offset> is a positive integer
+       - <time-unit> can be 'd' (days), 'h' (hours), 'm' (minutes)
+       Examples: '+1d' (1 day from now), '+2h' (2 hours from now), '+30m' (30 minutes from now)
+    
+    Args:
+        scheduled_time: Time string in one of the supported formats
+    
+    Returns:
+        ISO 8601 formatted datetime string in UTC, or None if input is empty/None
+    
+    Raises:
+        ValueError: If the format is invalid
+    """
+    if not scheduled_time:
+        return None
+    
+    scheduled_time = scheduled_time.strip()
+    
+    # After stripping, check if empty
+    if not scheduled_time:
+        return None
+    
+    # Check if it's an offset format
+    if scheduled_time.startswith('+'):
+        return _parse_offset_time(scheduled_time)
+    
+    # Otherwise, treat as ISO 8601 datetime
+    try:
+        # Parse the datetime string
+        # Try with timezone first
+        try:
+            dt = datetime.fromisoformat(scheduled_time.replace('Z', '+00:00'))
+        except ValueError:
+            # Try without timezone (assume UTC)
+            dt = datetime.fromisoformat(scheduled_time)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+        
+        # Convert to UTC if needed
+        if dt.tzinfo != timezone.utc:
+            dt = dt.astimezone(timezone.utc)
+        
+        # Return in ISO 8601 format
+        return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+    
+    except ValueError as e:
+        logger.error(f"Invalid datetime format '{scheduled_time}': {e}")
+        raise ValueError(
+            f"Invalid scheduled time format. Expected ISO 8601 datetime "
+            f"(e.g., '2024-12-31T23:59:59Z') or offset format "
+            f"(e.g., '+1d', '+2h', '+30m'). Got: '{scheduled_time}'"
+        )
+
+
+def _parse_offset_time(offset_str: str) -> str:
+    """
+    Parse offset time format and return ISO 8601 datetime string.
+    
+    Args:
+        offset_str: Offset string in format '+<offset><time-unit>'
+                   Example: '+1d', '+2h', '+30m'
+    
+    Returns:
+        ISO 8601 formatted datetime string in UTC
+    
+    Raises:
+        ValueError: If the offset format is invalid
+    """
+    import re
+    
+    # Parse the offset string: +<number><unit>
+    match = re.match(r'^\+(\d+)([dhm])$', offset_str)
+    if not match:
+        raise ValueError(
+            f"Invalid offset format '{offset_str}'. "
+            f"Expected format: '+<offset><time-unit>' where offset is a positive integer "
+            f"and time-unit is 'd' (days), 'h' (hours), or 'm' (minutes). "
+            f"Examples: '+1d', '+2h', '+30m'"
+        )
+    
+    offset_value = int(match.group(1))
+    time_unit = match.group(2)
+    
+    # Calculate the target datetime
+    now = datetime.now(timezone.utc)
+    
+    if time_unit == 'd':
+        target_dt = now + timedelta(days=offset_value)
+    elif time_unit == 'h':
+        target_dt = now + timedelta(hours=offset_value)
+    elif time_unit == 'm':
+        target_dt = now + timedelta(minutes=offset_value)
+    else:
+        raise ValueError(f"Invalid time unit '{time_unit}'. Must be 'd', 'h', or 'm'.")
+    
+    # Return in ISO 8601 format
+    return target_dt.strftime('%Y-%m-%dT%H:%M:%SZ')

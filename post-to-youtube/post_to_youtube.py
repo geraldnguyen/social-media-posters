@@ -356,7 +356,14 @@ def post_to_youtube():
             
             category_id = get_optional_env_var("VIDEO_CATEGORY_ID", "22")
             privacy_status = get_optional_env_var("VIDEO_PRIVACY_STATUS", "public")
-            publish_at = get_optional_env_var("VIDEO_PUBLISH_AT", "")
+            publish_at_str = get_optional_env_var("VIDEO_PUBLISH_AT", "")
+            
+            # Parse scheduled time (supports ISO 8601 and offset format)
+            publish_at = None
+            if publish_at_str:
+                from social_media_utils import parse_scheduled_time
+                publish_at = parse_scheduled_time(publish_at_str)
+                logger.info(f"Video will be scheduled for: {publish_at}")
             
             # Get video settings
             made_for_kids = get_optional_env_var("VIDEO_MADE_FOR_KIDS", "false").lower() in ('true', '1', 'yes')

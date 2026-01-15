@@ -51,7 +51,7 @@ class TestVideoUpload(unittest.TestCase):
         # Verify
         mock_simple.assert_called_once_with(
             self.page_id, "/path/to/video.mp4", self.description, 
-            self.published, self.access_token
+            self.published, self.access_token, None
         )
         self.assertEqual(result, "test_video_id")
     
@@ -72,7 +72,7 @@ class TestVideoUpload(unittest.TestCase):
         # Verify
         mock_resumable.assert_called_once_with(
             self.page_id, "/path/to/large_video.mp4", self.description, 
-            self.published, self.access_token
+            self.published, self.access_token, None
         )
         self.assertEqual(result, "test_video_id")
     
@@ -308,6 +308,54 @@ class TestPhotoUpload(unittest.TestCase):
         self.assertEqual(call_args[1]['data']['message'], "Test message")
         self.assertEqual(call_args[1]['data']['published'], 'true')
         self.assertEqual(result, 'test_post_id')
+    
+    @patch('post_to_facebook._graph_api_post')
+    @patch('builtins.open', new_callable=mock_open, read_data=b'photo_data')
+    def test_upload_photo_with_scheduling(self, mock_file, mock_api_post):
+        """Test photo upload with scheduled publish time."""
+        # Setup
+        mock_api_post.return_value = {'post_id': 'test_scheduled_post_id'}
+        scheduled_time = 1735689599  # Unix timestamp
+        
+        # Execute
+        result = upload_photo("page_123", "/path/to/photo.jpg", "Test message", False, "token_456", scheduled_time)
+        
+        # Verify
+        mock_file.assert_called_once_with("/path/to/photo.jpg", 'rb')
+        mock_api_post.assert_called_once()
+        call_args = mock_api_post.call_args
+        self.assertEqual(call_args[0][0], "page_123/photos")
+        self.assertEqual(call_args[0][1], "token_456")
+        self.assertEqual(call_args[1]['data']['message'], "Test message")
+        self.assertEqual(call_args[1]['data']['published'], 'false')
+        self.assertEqual(call_args[1]['data']['scheduled_publish_time'], str(scheduled_time))
+        self.assertEqual(result, 'test_scheduled_post_id')
+
+
+class TestVideoScheduling(unittest.TestCase):
+    """Test cases for video scheduling functionality."""
+    
+    @patch('post_to_facebook._graph_api_post')
+    @patch('builtins.open', new_callable=mock_open, read_data=b'video_data')
+    def test_upload_video_simple_with_scheduling(self, mock_file, mock_api_post):
+        """Test simple video upload with scheduled publish time."""
+        # Setup
+        mock_api_post.return_value = {'id': 'test_video_id'}
+        scheduled_time = 1735689599  # Unix timestamp
+        
+        # Execute
+        result = _upload_video_simple("page_123", "/path/to/video.mp4", "Test description", False, "token_456", scheduled_time)
+        
+        # Verify
+        mock_file.assert_called_once_with("/path/to/video.mp4", 'rb')
+        mock_api_post.assert_called_once()
+        call_args = mock_api_post.call_args
+        self.assertEqual(call_args[0][0], "page_123/videos")
+        self.assertEqual(call_args[0][1], "token_456")
+        self.assertEqual(call_args[1]['data']['description'], "Test description")
+        self.assertEqual(call_args[1]['data']['published'], 'false')
+        self.assertEqual(call_args[1]['data']['scheduled_publish_time'], str(scheduled_time))
+        self.assertEqual(result, 'test_video_id')
 
 
 if __name__ == '__main__':
