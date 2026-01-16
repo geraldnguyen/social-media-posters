@@ -447,6 +447,54 @@ social x --post-content "@{json.description | max_length(200, '...')}"
 social linkedin --post-content "@{json.stories | random() | attr(title)}"
 ```
 
+### Advanced Features (v1.17.0+)
+
+#### Optional Parentheses
+
+Function calls can omit parentheses for cleaner syntax:
+
+```bash
+# Both syntaxes work:
+social x --post-content "@{json.genres | each:prefix('#') | join(' ')}"
+social x --post-content "@{json.genres | each:prefix '#' | join ' '}"
+```
+
+#### JSON Expressions as Parameters
+
+Use JSON field values as function parameters:
+
+```bash
+# Use json.separator as the join separator
+export CONTENT_JSON="https://api.example.com/data.json"
+social x --post-content "@{json.items | join json.separator}"
+
+# Use json.tag_prefix for dynamic prefixing
+social facebook --post-content "@{json.tags | each:prefix json.tag_prefix | join ' '}"
+```
+
+#### Coalesce with `or` Operation
+
+Use the first truthy (non-null, non-empty, non-blank) value:
+
+```bash
+# Use youtube_link if available, otherwise use permalink
+social x --post-content "Watch: @{json.youtube_link | or json.permalink}"
+
+# Chain multiple fallbacks
+social facebook --post-content "@{json.title | or json.headline | or 'Untitled'}"
+
+# Combine with other operations
+social x --post-content "@{json.short_desc | or json.description | max_length(200, '...')}"
+```
+
+#### Complete Example
+
+```bash
+export CONTENT_JSON="https://tellstory.net/stories/random/index.json | stories[RANDOM]"
+
+social x --post-content "@{json.description | max_length 150 '...'} @{json.youtube_link | or json.permalink} @{json.genres | each:prefix '#' | join ' '}"
+```
+
 ## Troubleshooting
 
 ### Common Issues
