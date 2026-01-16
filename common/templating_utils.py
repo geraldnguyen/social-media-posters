@@ -509,7 +509,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                     logger.info("Applied random() selecting index %d - obtained %s", idx, value)
                 elif func_name == 'attr':
                     if not isinstance(value, dict):
-                        raise ValueError("attr() operation requires dict input but provided %s of type %s", value, type(value).__name__)
+                        raise ValueError(f"attr() operation requires dict input but provided {value} of type {type(value).__name__}")
                     if not func_arg or len(func_arg) < 1:
                         raise ValueError("attr() requires at least 1 argument (attribute name)")
                     attr_name = func_arg[0]
