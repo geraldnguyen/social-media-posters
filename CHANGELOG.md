@@ -5,48 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.17.0] - 2026-01-16
-
-### Added
-
-- **Optional Parentheses in Template Functions** - Cleaner template syntax
-  - Function calls can now omit parentheses: `@{json.items | join ' '}` instead of `@{json.items | join(' ')}`
-  - Single quotes around literal strings are still required
-  - Comma separator between parameters is optional in non-parentheses format
-  - Works with all template operations: `each:prefix`, `join`, `join_while`, `or`, etc.
-
-- **JSON Expressions as Function Parameters** - Dynamic parameter values
-  - Use `json.xxx` expressions directly as function parameters
-  - Example: `@{json.items | each:prefix json.tag_prefix}` uses the value of `json.tag_prefix` as the prefix
-  - Works with both parentheses and non-parentheses syntax
-  - Applies to all operations that accept string parameters
-
-- **`or` Operation** - Coalesce behavior for template values
-  - Returns the first truthy (non-null, non-empty, non-blank) value
-  - Syntax: `@{json.youtube_link | or json.permalink}`
-  - Supports chaining: `@{json.primary | or json.secondary | or json.tertiary}`
-  - Works with both literal strings and JSON expressions as fallback values
-  - Handles null, empty strings, and whitespace-only strings as falsy
-
-### Changed
-
-- **Template Engine Enhancements**
-  - Improved handling of null and empty values in JSON paths
-  - Better distinction between "path not found" and "path found with empty/null value"
-  - Enhanced argument resolution to support both literal strings and JSON expressions
-
-### Tests
-
-- Added 16 comprehensive unit tests for v1.17.0 features
-- All existing 129 tests continue to pass
-- Test coverage for optional parentheses, JSON expressions as parameters, and `or` operation
-
-### Documentation
-
-- Updated README.md with v1.17.0 template features and examples
-- Updated social_cli/GUIDE.md with advanced templating examples
-- Added complete documentation for new syntax features
-
 ## [1.16.0] - 2026-01-15
 
 ### Added

@@ -148,12 +148,12 @@ class TestTemplatingUtilsLengthOperations(unittest.TestCase):
         
         # Test max_length with invalid arguments
         content1 = "@{json.text | max_length()}"
-        result1, = process_templated_content_if_needed(content1)
+        result1 = process_templated_content_if_needed(content1)
         self.assertEqual(result1, "hello world")  # Should remain unchanged
         
         # Test join_while with insufficient arguments
         content2 = "@{json.items | join_while(' ')}"
-        result2, = process_templated_content_if_needed(content2)
+        result2 = process_templated_content_if_needed(content2)
         self.assertEqual(result2, "['a', 'b', 'c']")  # Should remain unchanged
 
 if __name__ == '__main__':
