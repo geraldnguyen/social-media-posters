@@ -339,3 +339,39 @@ Expectation:
 - Then run the tests 
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
 
+## v1.17.0 - Expand the template content helper
+
+**Optional parantheses following function name**
+
+Update the parser to make  parantheses following function name optional. Note:
+- Single quotes around literal strings are still required
+- Comma separating parameters is optional in non-paranthese format
+
+
+For example: 
+- `each:prefix('AAA')` can be written as `each:prefix 'AAA'`  
+- `join_while(' ', 100)` can be written as `join_while ' ' 100`
+
+**`json.expression` can appear in place of string parameter**
+
+Function that accept string parameter e.g. `each:prefix(str)` or `join(str)` can accept both literal string (wrapped in single quotes) as well as `json.xxx` expression
+
+For example, assume `json.series` has value `Aesop`, then the `each:prefix json.series` is the same as `each:prefix Aesop`
+
+**The `or` operation**
+
+`or(str or template_expression)`: return the left-hand-side value if it is not-null, not-empty, not-blank. Else evaluate `str or template_expression` and return the obtained value
+
+For example: Given `@{ json.youtube_link | or json.permalink }` expresson:
+- If `json.youtube_link` is null, empty or blank, it will return the value from `json.permalink`
+- If `json.youtube_link` has a valid value e.g. `https://...`, it will return that value.
+
+The `or` operation can be chained to implement a coalese-like operation where the first truthy value is returned.
+
+Expectation:
+- Implement the above requirements 
+- Create unit tests for the changes 
+- Then run the tests 
+- If applicable, update the CLI correspondingly to surface the new feature. 
+- Update the Python package-related files to match the new version.
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
