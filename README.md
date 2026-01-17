@@ -373,6 +373,34 @@ All actions include a flexible templating engine that can pull values from envir
 - `each:max_length(int, suffix?)` applies max_length to each item in a list
 - `join_while(separator, max_length)` joins items until maximum length is reached
 
+#### Advanced Operations (v1.17.0+)
+- `or(fallback)` returns the left value if truthy, otherwise the fallback (supports chaining for coalesce behavior)
+- `random()` selects a random element from a list
+- `attr(name)` extracts an attribute from an object
+
+#### New Syntax Features (v1.17.0+)
+
+**Optional Parentheses**: Function calls can omit parentheses for cleaner syntax:
+```
+# Before: @{json.genres | each:prefix('#') | join(' ')}
+# Now:    @{json.genres | each:prefix '#' | join ' '}
+```
+
+**JSON Expressions as Parameters**: Use `json.xxx` expressions directly as function parameters:
+```
+# Use a JSON field as the prefix
+@{json.items | each:prefix json.tag_prefix | join json.separator}
+```
+
+**Coalesce with `or`**: Chain `or` operations to use the first truthy (non-null, non-empty, non-blank) value:
+```
+# Use youtube_link if available, otherwise use permalink
+@{json.youtube_link | or json.permalink}
+
+# Chain multiple fallbacks
+@{json.primary | or json.secondary | or json.tertiary | or 'default'}
+```
+
 Example:
 
 ```
