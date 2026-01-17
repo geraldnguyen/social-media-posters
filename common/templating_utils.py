@@ -11,6 +11,11 @@ from jsonpath_ng import parse as jsonpath_parse
 # Module-level logger
 logger = logging.getLogger(__name__)
 
+# Sentinel value to indicate a JSON path was not found
+class _NotFound:
+    pass
+_NOT_FOUND = _NotFound()
+
 def extract_json_path(data, path):
     logger.debug("Extracting JSON path: %s from data type: %s", path, type(data).__name__)
     try:
@@ -20,12 +25,18 @@ def extract_json_path(data, path):
         
         if not matches:
             logger.debug("No matches found for path '%s'", path)
-            return ''
+            # Return sentinel to indicate path not found
+            return _NOT_FOUND
         if len(matches) == 1:
             val = matches[0]
             logger.debug("Single match for path '%s': type=%s, value='%s'", path, type(val).__name__, str(val)[:100])
             if isinstance(val, (dict, list)):
                 return val
+            # v1.17.0: Return actual values including None and empty string
+            if val is None:
+                return None
+            if val == '':
+                return ''
             return str(val)
         # If multiple matches, join as comma-separated string
         logger.debug("Multiple matches for path '%s': %d values", path, len(matches))
@@ -34,7 +45,7 @@ def extract_json_path(data, path):
         return result
     except Exception as e:
         logger.error("Error parsing JSON path '%s': %s", path, e)
-        return ''
+        return _NOT_FOUND  # Return sentinel to indicate error
 
 
 def get_json_data():
@@ -217,49 +228,92 @@ def _process_content_with_json_root(content: str, json_root) -> str:
     def parse_function_call(expr: str):
         expr = expr.strip()
         logger.debug("Parsing function call: %s", expr)
+        
+        # Try matching with parentheses first
         call_match = re.match(r'^([a-zA-Z_][\w\-]*)\((.*)\)$', expr)
-        if not call_match:
-            logger.debug("Not a function call, returning as-is: %s", expr)
-            return expr, None
-
-        func_name = call_match.group(1)
-        arg_str = call_match.group(2).strip()
-        logger.debug("Function name: %s, arguments string: %s", func_name, arg_str)
-        if not arg_str:
-            logger.debug("No arguments for function %s", func_name)
-            return func_name, []
-        
-        # Parse multiple arguments separated by commas
-        args = []
-        current_arg = []
-        in_quotes = False
-        quote_char = None
-        paren_depth = 0
-        
-        for char in arg_str:
-            if char in ('"', "'") and paren_depth == 0:
-                if not in_quotes:
-                    in_quotes = True
-                    quote_char = char
-                elif char == quote_char:
-                    in_quotes = False
-                    quote_char = None
-            elif char == '(' and not in_quotes:
-                paren_depth += 1
-            elif char == ')' and not in_quotes:
-                paren_depth -= 1
-            elif char == ',' and not in_quotes and paren_depth == 0:
-                args.append(strip_quotes(''.join(current_arg).strip()))
-                current_arg = []
-                continue
+        if call_match:
+            func_name = call_match.group(1)
+            arg_str = call_match.group(2).strip()
+            logger.debug("Function name: %s, arguments string: %s", func_name, arg_str)
+            if not arg_str:
+                logger.debug("No arguments for function %s", func_name)
+                return func_name, []
             
-            current_arg.append(char)
+            # Parse multiple arguments separated by commas
+            args = []
+            current_arg = []
+            in_quotes = False
+            quote_char = None
+            paren_depth = 0
+            
+            for char in arg_str:
+                if char in ('"', "'") and paren_depth == 0:
+                    if not in_quotes:
+                        in_quotes = True
+                        quote_char = char
+                    elif char == quote_char:
+                        in_quotes = False
+                        quote_char = None
+                elif char == '(' and not in_quotes:
+                    paren_depth += 1
+                elif char == ')' and not in_quotes:
+                    paren_depth -= 1
+                elif char == ',' and not in_quotes and paren_depth == 0:
+                    args.append(strip_quotes(''.join(current_arg).strip()))
+                    current_arg = []
+                    continue
+                
+                current_arg.append(char)
+            
+            if current_arg:
+                args.append(strip_quotes(''.join(current_arg).strip()))
+            
+            logger.debug("Parsed function %s with %d arguments: %s", func_name, len(args), args)
+            return func_name, args
         
-        if current_arg:
-            args.append(strip_quotes(''.join(current_arg).strip()))
+        # Try matching without parentheses (v1.17.0 feature)
+        # Format: function_name 'arg1' arg2 'arg3'
+        # or: function_name json.xxx json.yyy
+        no_paren_match = re.match(r'^([a-zA-Z_][\w\-]*)\s+(.+)$', expr)
+        if no_paren_match:
+            func_name = no_paren_match.group(1)
+            args_str = no_paren_match.group(2).strip()
+            logger.debug("Function name (no parens): %s, arguments string: %s", func_name, args_str)
+            
+            # Parse arguments - they can be quoted strings, json expressions, or numbers
+            # Split by whitespace and commas, but respect quotes
+            args = []
+            current_arg = []
+            in_quotes = False
+            quote_char = None
+            
+            for char in args_str:
+                if char in ('"', "'"):
+                    if not in_quotes:
+                        in_quotes = True
+                        quote_char = char
+                    elif char == quote_char:
+                        in_quotes = False
+                        quote_char = None
+                    current_arg.append(char)
+                elif (char in (' ', ',')) and not in_quotes:
+                    arg = ''.join(current_arg).strip()
+                    if arg:
+                        args.append(strip_quotes(arg))
+                    current_arg = []
+                else:
+                    current_arg.append(char)
+            
+            # Add final argument
+            arg = ''.join(current_arg).strip()
+            if arg:
+                args.append(strip_quotes(arg))
+            
+            logger.debug("Parsed function (no parens) %s with %d arguments: %s", func_name, len(args), args)
+            return func_name, args
         
-        logger.debug("Parsed function %s with %d arguments: %s", func_name, len(args), args)
-        return func_name, args
+        logger.debug("Not a function call, returning as-is: %s", expr)
+        return expr, None
 
     def apply_case_transformation(text: str, case_type: str) -> str:
         """Apply case transformation to a string."""
@@ -316,7 +370,32 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         
         return result + suffix
 
-    def apply_operations(value, operations):
+    def resolve_argument(arg, json_root):
+        """Resolve an argument that could be a literal string or a json expression.
+        
+        v1.17.0: Support json.xxx expressions as function parameters.
+        """
+        if not arg:
+            return arg
+        
+        # Check if it's a json expression (json.xxx format)
+        if arg.startswith('json.'):
+            json_path = arg[5:]  # Remove 'json.' prefix
+            logger.debug("Resolving json expression argument: %s", arg)
+            if json_root is None:
+                logger.warning("No JSON data available for argument %s", arg)
+                return arg
+            resolved = extract_json_path(json_root, json_path)
+            if resolved is _NOT_FOUND:
+                logger.warning("Could not resolve json argument %s", arg)
+                return ''  # Return empty string for not found in arguments
+            logger.debug("Resolved json argument %s to: %s", arg, str(resolved)[:100])
+            return resolved
+        
+        # Otherwise, it's a literal string
+        return arg
+    
+    def apply_operations(value, operations, json_root=None):
         logger.debug("Applying %d operations to value (type: %s)", len(operations), type(value).__name__)
         original_value = value
         for i, op in enumerate(operations):
@@ -333,7 +412,8 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                             "each:prefix operation requires list input but received %s", type(value).__name__
                         )
                         continue
-                    prefix = '' if not func_arg else str(func_arg[0] if func_arg else '')
+                    prefix_arg = resolve_argument(func_arg[0], json_root) if func_arg else ''
+                    prefix = '' if not prefix_arg else str(prefix_arg)
                     value = [prefix + str(item) for item in value]
                     logger.debug("Applied each:prefix('%s') to list", prefix)
                 elif func_name.startswith('case_'):
@@ -370,7 +450,8 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                             "join operation requires list input but received %s", type(value).__name__
                         )
                         continue
-                    separator = '' if not func_arg else str(func_arg[0] if func_arg else '')
+                    separator_arg = resolve_argument(func_arg[0], json_root) if func_arg else ''
+                    separator = '' if not separator_arg else str(separator_arg)
                     value = separator.join(str(item) for item in value)
                     logger.debug("Applied join('%s') to list", separator)
                 elif func_name == 'max_length':
@@ -394,7 +475,8 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         logger.warning("join_while requires 2 arguments (separator, max_length)")
                         continue
                     try:
-                        separator = str(func_arg[0])
+                        separator_arg = resolve_argument(func_arg[0], json_root)
+                        separator = str(separator_arg)
                         max_len = int(func_arg[1])
                         result_parts = []
                         for item in value:
@@ -427,7 +509,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                     logger.info("Applied random() selecting index %d - obtained %s", idx, value)
                 elif func_name == 'attr':
                     if not isinstance(value, dict):
-                        raise ValueError("attr() operation requires dict input but provided %s of type %s", value, type(value).__name__)
+                        raise ValueError(f"attr() operation requires dict input but provided {value} of type {type(value).__name__}")
                     if not func_arg or len(func_arg) < 1:
                         raise ValueError("attr() requires at least 1 argument (attribute name)")
                     attr_name = func_arg[0]
@@ -435,6 +517,33 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         raise ValueError(f"attr() attribute '{attr_name}' not found in object")
                     value = value[attr_name]
                     logger.debug("Applied attr('%s')", attr_name)
+                elif func_name == 'or':
+                    # v1.17.0: or operation - return left-hand-side if truthy, else evaluate and return right-hand-side
+                    def is_truthy(val):
+                        """Check if a value is truthy (not null, not empty, not blank)."""
+                        if val is None:
+                            return False
+                        if isinstance(val, str):
+                            return val.strip() != ''
+                        if isinstance(val, (list, tuple, dict)):
+                            return len(val) > 0
+                        return bool(val)
+                    
+                    if is_truthy(value):
+                        logger.debug("or: Left-hand-side is truthy, keeping value: %s", str(value)[:100])
+                    else:
+                        # Value is not truthy, evaluate the right-hand-side
+                        if not func_arg or len(func_arg) < 1:
+                            logger.warning("or operation requires at least 1 argument (fallback value)")
+                            continue
+                        
+                        fallback_arg = func_arg[0]
+                        logger.debug("or: Left-hand-side is falsy, evaluating fallback: %s", fallback_arg)
+                        
+                        # The fallback can be a literal string or a json expression
+                        fallback_value = resolve_argument(fallback_arg, json_root)
+                        value = fallback_value
+                        logger.debug("or: Using fallback value: %s", str(value)[:100])
                 else:
                     logger.warning("Unsupported pipeline operation '%s'", func_name)
 
@@ -469,9 +578,11 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                 logger.warning("No JSON data available for %s.%s", source, key)
                 return match.group(0)
             val = extract_json_path(data, key)
-            if val == '' or val is None:
+            # v1.17.0: Check if path was not found (sentinel value)
+            if val is _NOT_FOUND:
                 logger.warning("Could not resolve %s.%s, leaving placeholder as-is.", source, key)
                 return match.group(0)
+            # v1.17.0: Allow empty strings and None to be processed by operations (e.g., 'or')
             logger.debug("Resolved %s.%s to '%s'", source, key, str(val)[:100])
         else:
             logger.warning("Unknown placeholder source: %s", source)
@@ -479,7 +590,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
 
         if operations:
             logger.debug("Applying %d operations to resolved value", len(operations))
-            val = apply_operations(val, operations)
+            val = apply_operations(val, operations, json_root)
 
         result = str(val)
         logger.debug("Placeholder replacement result: '%s'", result[:100])

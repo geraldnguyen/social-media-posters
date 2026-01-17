@@ -35,7 +35,8 @@ class TestProcessTemplatedContents(unittest.TestCase):
         content2 = "Builtin: @{builtin.CURR_DATE}"
         result1, result2 = process_templated_contents(content1, content2)
         self.assertEqual(result1, "Env: ")
-        self.assertIn("Builtin: 2025-09-30", result2)  # Assuming current date
+        # Check that result2 contains a date in YYYY-MM-DD format
+        self.assertRegex(result2, r"Builtin: \d{4}-\d{2}-\d{2}")
 
     @patch('templating_utils.requests.get')
     def test_single_content(self, mock_get):
