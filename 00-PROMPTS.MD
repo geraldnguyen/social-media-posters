@@ -375,3 +375,11 @@ Expectation:
 - If applicable, update the CLI correspondingly to surface the new feature. 
 - Update the Python package-related files to match the new version.
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
+
+## v1.18.0 - Fix Unicode encoding and Fix FB posting with multiple media files
+
+vibe-coded
+
+Note: 
+- Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
+

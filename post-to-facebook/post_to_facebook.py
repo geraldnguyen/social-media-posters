@@ -4,6 +4,7 @@ Post content to a Facebook Page using the Facebook Graph API (v20.0) via direct 
 """
 
 import os
+import json
 from pathlib import Path
 from datetime import datetime
 
@@ -358,23 +359,48 @@ def post_to_facebook():
                     )
                     post_id = payload.get('id')
             else:
-                # Multiple media files - create a text post and mention that media was uploaded separately
-                logger.info("Multiple media files detected. Uploading separately and creating text post.")
-                for media_file in media_files:
-                    file_ext = Path(media_file).suffix.lower()
-                    if file_ext in ['.jpg', '.jpeg', '.png', '.gif']:
-                        upload_photo(page_id, media_file, "", published, access_token, scheduled_publish_time)
-                    elif file_ext in ['.mp4', '.mov', '.avi']:
-                        upload_video(page_id, media_file, "", published, access_token, scheduled_publish_time)
-                
-                # Create the main text post
-                payload = _graph_api_post(
-                    f"{page_id}/feed",
-                    access_token,
-                    data=post_data,
-                    action="create feed post"
-                )
-                post_id = payload.get('id')
+                # Multiple media files
+                image_exts = {'.jpg', '.jpeg', '.png', '.gif'}
+                video_exts = {'.mp4', '.mov', '.avi'}
+                image_files = [m for m in media_files if Path(m).suffix.lower() in image_exts]
+                video_files = [m for m in media_files if Path(m).suffix.lower() in video_exts]
+
+                if image_files and not video_files:
+                    # Multiple images: upload as unpublished and attach to a single feed post
+                    logger.info("Multiple images detected. Uploading as attached media.")
+                    attached_media = []
+                    for media_file in image_files:
+                        try:
+                            with open(media_file, 'rb') as photo_file:
+                                payload = _graph_api_post(
+                                    f"{page_id}/photos",
+                                    access_token,
+                                    data={'published': 'false'},
+                                    files={'source': photo_file},
+                                    action="photo upload (unpublished)"
+                                )
+                            media_id = payload.get('id') or payload.get('post_id')
+                            if not media_id:
+                                raise RuntimeError(f"No media id returned for {media_file}")
+                            attached_media.append({'media_fbid': media_id})
+                        except Exception as exc:
+                            logger.error(f"Failed to upload photo {media_file} for attached media: {exc}")
+                            raise
+
+                    # Create the main text post with attached media
+                    post_data_with_media = dict(post_data)
+                    post_data_with_media['attached_media'] = json.dumps(attached_media)
+                    payload = _graph_api_post(
+                        f"{page_id}/feed",
+                        access_token,
+                        data=post_data_with_media,
+                        action="create feed post with attached media"
+                    )
+                    post_id = payload.get('id')
+                else:
+                    # Mixed media types or multiple videos are not supported for a single feed post
+                    logger.error("Facebook does not support mixed media types (photos + videos) or multiple videos in a single feed post.")
+                    sys.exit(1)
         else:
             # Create text post
             payload = _graph_api_post(

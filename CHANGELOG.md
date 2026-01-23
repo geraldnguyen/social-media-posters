@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-01-24
+
+### Added
+
+- **Facebook Multi-Image Support** - Attach multiple images to a single Facebook feed post
+  - Uploads multiple images as unpublished media and attaches them to one post using `attached_media` parameter
+  - Supports up to 4 images per post (Facebook limit)
+  - Maintains proper error handling and logging for upload failures
+  - Only supports images; mixed media types (photos + videos) are explicitly rejected with clear error messages
+
+### Changed
+
+- **Facebook Media Handling** - Improved logic for multiple media files
+  - Separates image and video files for appropriate handling
+  - Uses Facebook's `attached_media` API for multiple images instead of separate posts
+  - Better validation and error messages for unsupported combinations
+
+### Fixed
+
+- **UTF-8 Encoding for JSON Config Files** - Resolved codec errors with non-ASCII characters
+  - Added explicit `encoding='utf-8'` when opening JSON configuration files
+  - Prevents `'charmap' codec can't decode byte` errors on Windows systems
+  - Ensures proper handling of international characters in JSON configs
+
+- **Facebook API Parameter Format** - Fixed `attached_media` parameter serialization
+  - Serializes `attached_media` array as JSON string for API compatibility
+  - Resolves "param attached_media must be an array" error from Facebook Graph API
+
 ## [1.17.0] - 2026-01-16
 
 ### Added
