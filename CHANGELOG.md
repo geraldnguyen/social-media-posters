@@ -9,52 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Instagram via Facebook with Resumable Upload** - New posting method for Instagram
-  - New `post_to_instagram_via_fb.py` script that uses Facebook's Graph API infrastructure
-  - Resumable upload support for videos using Facebook's chunked upload API (start/transfer/finish flow)
-  - Upload local video files directly without pre-hosting (up to 500MB configurable)
-  - 4MB chunk size for reliable video transfers with automatic retry capability
-  - Automatic video processing status monitoring before publishing
+- **Instagram via Facebook Posting Method** - Alternative method for Instagram posting
+  - New `post_to_instagram_via_fb.py` script that uses Facebook's access token
+  - Uses Instagram Graph API via Facebook infrastructure
   - Support for both single media and carousel posts (up to 10 items)
-  - Support for mixed media carousels (videos + images)
+  - Automatic video processing status monitoring before publishing
   - Comprehensive error handling and detailed logging
   - Full integration with existing templating engine and utilities
   - Dry-run mode for testing without actual posting
   
 - **Documentation Updates**
-  - Updated `post-to-instagram/README.md` with v1.19.0 features and usage examples
-  - Comparison table between original and FB methods
+  - Updated `post-to-instagram/README.md` with v1.19.0 features and clarifications
+  - Clear explanation of Instagram Graph API limitations
   - Detailed environment variables reference
-  - Troubleshooting guide for common issues
-  - Usage examples for local video upload, carousels, and CLI
+  - Troubleshooting guide and hosting options
+  - Usage examples for both original and via-Facebook methods
   
 - **Unit Tests**
   - New `test_post_to_instagram_via_fb.py` with 12 comprehensive tests
   - Tests for InstagramFBAPI class methods
-  - Tests for upload workflow and container operations
+  - Tests for container operations and publishing
   - Tests for dry-run mode and error handling
   - All tests passing successfully
 
 ### Changed
 
 - **Instagram Posting Options** - Now offers two methods:
-  - Original method: Best for pre-hosted media URLs
-  - FB method (new): Best for local video files with resumable upload
+  - Original method: Uses Instagram-specific access token
+  - FB method (new): Uses Facebook access token for Instagram posting
   
+### Important Note
+
+- **Instagram API Limitation Discovered**: After implementation and testing, we confirmed that Instagram Graph API **does not support direct resumable upload of local files**. All media (both images and videos) must be hosted at publicly accessible URLs. This is a limitation of Instagram's API itself, not the implementation.
+- Users with local files must first upload them to a hosting service (S3, Cloudinary, etc.) before posting to Instagram.
+
 ### Technical Details
 
-- Uses Instagram Graph API via Facebook's infrastructure
-- Videos: Resumable upload with chunks to Meta servers, then publish to Instagram
-- Images: Still require public URLs (Instagram API limitation)
+- Uses Instagram Graph API with Facebook access token
+- All media requires public URLs (Instagram API limitation)
 - Supports Facebook access tokens with `instagram_content_publish` permission
 - Compatible with Instagram Business and Creator accounts linked to Facebook Pages
-
-### Benefits
-
-- **Better Reliability**: Chunked uploads prevent timeout errors for large video files
-- **Local File Support**: No need to pre-host videos before uploading
-- **Resume Capability**: Failed uploads can resume from last successful chunk
-- **Progress Monitoring**: Real-time logging of upload progress and status
+- Provides clear error messages when local files are provided instead of URLs
 
 ## [1.18.0] - 2026-01-24
 

@@ -32,8 +32,7 @@ from social_media_utils import (
     get_optional_env_var,
     validate_post_content,
     handle_api_error,
-    log_success,
-    download_file_if_url
+    log_success
 )
 
 from templating_utils import process_templated_contents
@@ -83,9 +82,42 @@ class InstagramFBAPI:
                     logger.error(f"Response text: {e.response.text}")
             raise
     
+    def create_video_container_with_url(self, video_url, caption):
+        """
+        Create a video media container using a publicly accessible URL.
+        
+        Instagram Graph API requires videos to be hosted at publicly accessible URLs.
+        The video is downloaded by Instagram's servers from the provided URL.
+        
+        Args:
+            video_url: Public URL to video file
+            caption: Video caption
+            
+        Returns:
+            container_id: Media container ID ready for publishing
+        """
+        logger.info(f"Creating video container with URL: {video_url}")
+        
+        data = {
+            'media_type': 'REELS',
+            'video_url': video_url,
+            'caption': caption
+        }
+        
+        response = self._make_request('POST', f"{self.ig_user_id}/media", data=data)
+        container_id = response.get('id')
+        
+        logger.info(f"Video container created: {container_id}")
+        return container_id
+    
     def upload_video_resumable(self, video_path, caption):
         """
         Upload a video using resumable upload (start/transfer/finish flow).
+        
+        Note: Instagram Graph API requires videos to be accessible via public URLs.
+        This method uploads the video to a temporary location that can be accessed
+        by Instagram's servers. For production use, consider uploading to S3, Cloudinary,
+        or similar hosting service first.
         
         Args:
             video_path: Path to local video file
@@ -97,85 +129,19 @@ class InstagramFBAPI:
         video_size = os.path.getsize(video_path)
         logger.info(f"Uploading video {video_path} (size: {video_size} bytes) using resumable upload")
         
-        # Step 1: Start upload session
-        logger.info("Step 1: Starting upload session...")
-        start_data = {
-            'media_type': 'REELS',  # Use REELS for videos
-            'caption': caption,
-            'upload_phase': 'start',
-            'file_size': str(video_size)
-        }
-        
-        start_response = self._make_request('POST', f"{self.ig_user_id}/media", data=start_data)
-        upload_session_id = start_response.get('upload_session_id')
-        video_id = start_response.get('id')
-        
-        if not upload_session_id:
-            raise RuntimeError(f"Failed to get upload_session_id from start phase: {start_response}")
-        
-        logger.info(f"Upload session started: session_id={upload_session_id}, video_id={video_id}")
-        
-        # Step 2: Transfer video data in chunks
-        logger.info("Step 2: Transferring video data in chunks...")
-        # Use 4MB chunks - recommended chunk size for video uploads
-        chunk_size = 1024 * 1024 * 4  # 4MB chunks
-        start_offset = 0
-        
-        try:
-            with open(video_path, 'rb') as video_file:
-                while start_offset < video_size:
-                    # Read chunk
-                    video_file.seek(start_offset)
-                    chunk = video_file.read(chunk_size)
-                    
-                    if not chunk:
-                        break
-                    
-                    # Upload chunk
-                    chunk_end = min(start_offset + len(chunk), video_size)
-                    logger.info(f"Uploading chunk: bytes {start_offset}-{chunk_end-1}/{video_size}")
-                    
-                    transfer_data = {
-                        'upload_phase': 'transfer',
-                        'upload_session_id': upload_session_id,
-                        'start_offset': str(start_offset)
-                    }
-                    
-                    # Use files parameter for binary data
-                    transfer_response = self._make_request(
-                        'POST',
-                        f"{self.ig_user_id}/media",
-                        data=transfer_data,
-                        files={'video_file_chunk': chunk},
-                        timeout=300  # 5 minutes for chunk upload
-                    )
-                    
-                    logger.debug(f"Chunk upload response: {transfer_response}")
-                    start_offset += len(chunk)
-            
-            logger.info("Video data transfer complete")
-            
-        except Exception as exc:
-            logger.error(f"Failed to transfer video chunks: {exc}")
-            raise
-        
-        # Step 3: Finish upload
-        logger.info("Step 3: Finishing upload...")
-        finish_data = {
-            'upload_phase': 'finish',
-            'upload_session_id': upload_session_id
-        }
-        
-        finish_response = self._make_request(
-            'POST',
-            f"{self.ig_user_id}/media",
-            data=finish_data
+        # Instagram Graph API doesn't support direct resumable upload like Facebook Pages do.
+        # We need to upload to a hosting service first, then use the URL.
+        # For now, raise an error with helpful message
+        raise NotImplementedError(
+            "Instagram Graph API requires videos to be hosted at publicly accessible URLs. "
+            "Please upload your video to a hosting service (S3, Cloudinary, etc.) first, "
+            "then use the URL in MEDIA_FILES. "
+            "\n\nAlternatively, for local testing, you can:"
+            "\n1. Use a tool like ngrok to expose a local HTTP server"
+            "\n2. Upload to a temporary hosting service"
+            "\n3. Use the original post_to_instagram.py script which accepts URLs"
+            "\n\nSee: https://developers.facebook.com/docs/instagram-api/guides/content-publishing"
         )
-        
-        logger.info(f"Video upload completed successfully: {finish_response}")
-        
-        # Return the container ID (video_id from start phase)
-        return video_id
     
     def create_image_container(self, image_url, caption):
         """
@@ -306,30 +272,30 @@ class InstagramFBAPI:
         return response
 
 
-def upload_image_to_temp_hosting(image_path):
+def upload_image_to_temp_hosting(image_url):
     """
-    Upload image to a temporary hosting service to get a public URL.
+    Validate that the image is a publicly accessible URL.
     
-    Note: For production use, you should upload to your own hosting service (S3, CDN, etc.).
-    This function serves as a placeholder and requires the image to already be accessible via URL.
+    Instagram Graph API requires all media to be hosted at publicly accessible URLs.
     
     Args:
-        image_path: Path to local image file or URL
+        image_url: URL to image or path
         
     Returns:
-        str: Public URL to the image
+        str: The validated URL
+        
+    Raises:
+        ValueError: If the input is not a valid URL
     """
-    if image_path.startswith(('http://', 'https://')):
+    if image_url.startswith(('http://', 'https://')):
         # Already a URL
-        return image_path
+        return image_url
     else:
         # For local files, we need a public URL
-        # In production, upload to S3, Cloudinary, or similar service
-        logger.error(f"Local image file requires public URL. Please upload {image_path} to a hosting service.")
+        logger.error(f"Local image file requires public URL. Please upload {image_url} to a hosting service.")
         raise ValueError(
-            f"Instagram requires publicly accessible URLs for images. "
-            f"Please upload your image to a hosting service (S3, Cloudinary, etc.) and provide the URL, "
-            f"or use the MEDIA_FILES environment variable with HTTP/HTTPS URLs."
+            f"Instagram requires publicly accessible URLs for all media. "
+            f"Please upload your media to a hosting service (S3, Cloudinary, etc.) and provide the URL."
         )
 
 
@@ -394,29 +360,22 @@ def post_to_instagram_via_fb():
             'media_count': len(media_files_raw),
             'media_files': media_details,
             'is_carousel': len(media_files_raw) > 1,
-            'upload_method': 'FB Resumable Upload (videos) / Public URL (images)'
+            'upload_method': 'Instagram Graph API (requires public URLs for all media)'
         }
         dry_run_guard("Instagram (via Facebook)", content, media_files_raw, dry_run_request)
         
         # After dry run check, process media files for actual upload
         media_files = []
         for media_file in media_files_raw:
-            # Download videos for resumable upload, keep image URLs as-is
             file_ext = Path(media_file).suffix.lower()
-            if file_ext in ['.mp4', '.mov']:
-                # Video - download if it's a URL
-                if media_file.startswith(('http://', 'https://')):
-                    # Download video for resumable upload
-                    max_download_mb = int(get_optional_env_var("MAX_DOWNLOAD_SIZE_MB", "500"))
-                    media_file = download_file_if_url(media_file, max_download_mb)
-                if not os.path.exists(media_file):
-                    logger.error(f"Video file not found: {media_file}")
-                    sys.exit(1)
-            else:
-                # Image - must be a URL (Instagram Graph API requirement)
-                if not media_file.startswith(('http://', 'https://')):
-                    logger.error(f"Image file must be a publicly accessible URL: {media_file}")
-                    sys.exit(1)
+            # Both videos and images must be URLs for Instagram Graph API
+            if not media_file.startswith(('http://', 'https://')):
+                logger.error(
+                    f"Instagram Graph API requires publicly accessible URLs for all media. "
+                    f"Invalid media file: {media_file}\n"
+                    f"Please upload your media to a hosting service (S3, Cloudinary, etc.) first."
+                )
+                sys.exit(1)
             media_files.append(media_file)
         
         # Create Instagram API client
@@ -431,13 +390,13 @@ def post_to_instagram_via_fb():
             file_ext = Path(media_file).suffix.lower()
             
             if file_ext in ['.mp4', '.mov']:
-                # Video - use resumable upload
-                logger.info(f"Uploading video using resumable upload: {media_file}")
+                # Video - create container with URL
+                logger.info(f"Creating video container with URL: {media_file}")
                 
                 # For single video, use the caption; for carousel, don't use caption on individual items
                 item_caption = content if len(media_files) == 1 else ""
                 
-                container_id = ig_api.upload_video_resumable(media_file, item_caption)
+                container_id = ig_api.create_video_container_with_url(media_file, item_caption)
                 container_ids.append(container_id)
                 
                 # Wait for video processing
@@ -447,16 +406,13 @@ def post_to_instagram_via_fb():
                     sys.exit(1)
                 
             else:
-                # Image - need public URL
-                logger.info(f"Processing image: {media_file}")
-                
-                # Get public URL (either from URL input or upload to hosting)
-                image_url = upload_image_to_temp_hosting(media_file)
+                # Image - create container with URL
+                logger.info(f"Creating image container with URL: {media_file}")
                 
                 # For single image, use the caption; for carousel, don't use caption on individual items
                 item_caption = content if len(media_files) == 1 else ""
                 
-                container_id = ig_api.create_image_container(image_url, item_caption)
+                container_id = ig_api.create_image_container(media_file, item_caption)
                 container_ids.append(container_id)
                 
                 # Wait a moment for container creation

@@ -242,26 +242,26 @@ social instagram \
 
 ### Instagram via Facebook Examples (v1.19.0+)
 
-The `instagram-via-fb` command uses Facebook's Graph API with resumable upload support, making it ideal for uploading local video files.
+The `instagram-via-fb` command uses Facebook's access token for Instagram posting. **Note**: All media must be hosted at publicly accessible URLs (Instagram API limitation).
 
-#### Example 1: Upload Local Video
+#### Example 1: Post Video from URL
 
 ```bash
 social instagram-via-fb \
   --ig-user-id "your_ig_user_id" \
   --fb-access-token "your_fb_access_token" \
   --post-content "Check out this amazing video! 🎥" \
-  --media-files "/path/to/video.mp4"
+  --media-files "https://cdn.example.com/video.mp4"
 ```
 
-#### Example 2: Post Image (URL still required)
+#### Example 2: Post Image from URL
 
 ```bash
 social instagram-via-fb \
   --ig-user-id "your_ig_user_id" \
   --fb-access-token "your_fb_access_token" \
   --post-content "Beautiful photo! 📸" \
-  --media-files "https://example.com/image.jpg"
+  --media-files "https://cdn.example.com/image.jpg"
 ```
 
 #### Example 3: Carousel with Mixed Media
@@ -269,8 +269,7 @@ social instagram-via-fb \
 ```bash
 social instagram-via-fb \
   --post-content "My trip highlights! 🌍✈️" \
-  --media-files "/local/video.mp4,https://example.com/photo1.jpg,https://example.com/photo2.jpg" \
-  --max-download-size-mb 500 \
+  --media-files "https://cdn.com/video.mp4,https://cdn.com/photo1.jpg,https://cdn.com/photo2.jpg" \
   --dry-run
 ```
 
@@ -280,10 +279,12 @@ social instagram-via-fb \
 export IG_USER_ID="your_ig_user_id"
 export FB_ACCESS_TOKEN="your_fb_access_token"
 export POST_CONTENT="New video! 🎥 #content"
-export MEDIA_FILES="/path/to/local/video.mp4"
+export MEDIA_FILES="https://cdn.example.com/video.mp4"
 
 social instagram-via-fb
 ```
+
+**Note for Local Files**: If you have local files, upload them to S3, Cloudinary, or similar hosting first, then use the public URL.
 
 ### LinkedIn Examples
 
