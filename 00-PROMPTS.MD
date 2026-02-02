@@ -383,3 +383,18 @@ vibe-coded
 Note: 
 - Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
 
+## v1.19.0 - Post to instagram using Facebook login and resumable upload
+
+Edit the post-to-insgram or create a new post-to-instagram-via-fb that can post content and media files to insgram using FB access token and FB resumable upload
+
+The media files thus are available locally and upload to a meta server via FB's resumable upload before published to insgram account.
+
+Expectation:
+- Implement the above requirements 
+- Create unit tests for the changes 
+- Then run the tests 
+- If applicable, update the CLI correspondingly to surface the new feature. 
+- Update the Python package-related files to match the new version.
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
+- Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
+
