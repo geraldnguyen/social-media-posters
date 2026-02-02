@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2026-02-02
+
+### Added
+
+- **Instagram via Facebook with Resumable Upload** - New posting method for Instagram
+  - New `post_to_instagram_via_fb.py` script that uses Facebook's Graph API infrastructure
+  - Resumable upload support for videos using Facebook's chunked upload API (start/transfer/finish flow)
+  - Upload local video files directly without pre-hosting (up to 500MB configurable)
+  - 4MB chunk size for reliable video transfers with automatic retry capability
+  - Automatic video processing status monitoring before publishing
+  - Support for both single media and carousel posts (up to 10 items)
+  - Support for mixed media carousels (videos + images)
+  - Comprehensive error handling and detailed logging
+  - Full integration with existing templating engine and utilities
+  - Dry-run mode for testing without actual posting
+  
+- **Documentation Updates**
+  - Updated `post-to-instagram/README.md` with v1.19.0 features and usage examples
+  - Comparison table between original and FB methods
+  - Detailed environment variables reference
+  - Troubleshooting guide for common issues
+  - Usage examples for local video upload, carousels, and CLI
+  
+- **Unit Tests**
+  - New `test_post_to_instagram_via_fb.py` with 12 comprehensive tests
+  - Tests for InstagramFBAPI class methods
+  - Tests for upload workflow and container operations
+  - Tests for dry-run mode and error handling
+  - All tests passing successfully
+
+### Changed
+
+- **Instagram Posting Options** - Now offers two methods:
+  - Original method: Best for pre-hosted media URLs
+  - FB method (new): Best for local video files with resumable upload
+  
+### Technical Details
+
+- Uses Instagram Graph API via Facebook's infrastructure
+- Videos: Resumable upload with chunks to Meta servers, then publish to Instagram
+- Images: Still require public URLs (Instagram API limitation)
+- Supports Facebook access tokens with `instagram_content_publish` permission
+- Compatible with Instagram Business and Creator accounts linked to Facebook Pages
+
+### Benefits
+
+- **Better Reliability**: Chunked uploads prevent timeout errors for large video files
+- **Local File Support**: No need to pre-host videos before uploading
+- **Resume Capability**: Failed uploads can resume from last successful chunk
+- **Progress Monitoring**: Real-time logging of upload progress and status
+
 ## [1.18.0] - 2026-01-24
 
 ### Added

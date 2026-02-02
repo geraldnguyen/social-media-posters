@@ -240,6 +240,51 @@ social instagram \
   --dry-run
 ```
 
+### Instagram via Facebook Examples (v1.19.0+)
+
+The `instagram-via-fb` command uses Facebook's Graph API with resumable upload support, making it ideal for uploading local video files.
+
+#### Example 1: Upload Local Video
+
+```bash
+social instagram-via-fb \
+  --ig-user-id "your_ig_user_id" \
+  --fb-access-token "your_fb_access_token" \
+  --post-content "Check out this amazing video! 🎥" \
+  --media-files "/path/to/video.mp4"
+```
+
+#### Example 2: Post Image (URL still required)
+
+```bash
+social instagram-via-fb \
+  --ig-user-id "your_ig_user_id" \
+  --fb-access-token "your_fb_access_token" \
+  --post-content "Beautiful photo! 📸" \
+  --media-files "https://example.com/image.jpg"
+```
+
+#### Example 3: Carousel with Mixed Media
+
+```bash
+social instagram-via-fb \
+  --post-content "My trip highlights! 🌍✈️" \
+  --media-files "/local/video.mp4,https://example.com/photo1.jpg,https://example.com/photo2.jpg" \
+  --max-download-size-mb 500 \
+  --dry-run
+```
+
+#### Example 4: Using Environment Variables
+
+```bash
+export IG_USER_ID="your_ig_user_id"
+export FB_ACCESS_TOKEN="your_fb_access_token"
+export POST_CONTENT="New video! 🎥 #content"
+export MEDIA_FILES="/path/to/local/video.mp4"
+
+social instagram-via-fb
+```
+
 ### LinkedIn Examples
 
 #### Example 1: Text Post
