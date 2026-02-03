@@ -9,21 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Instagram via Facebook Posting Method** - Alternative method for Instagram posting
-  - New `post_to_instagram_via_fb.py` script that uses Facebook's access token
-  - Uses Instagram Graph API via Facebook infrastructure
-  - Support for both single media and carousel posts (up to 10 items)
+- **Instagram via Facebook with Resumable Upload** - Upload local video files to Instagram
+  - New `post_to_instagram_via_fb.py` script with resumable upload support
+  - Direct upload of local video files to `rupload.facebook.com`
+  - Supports both local video files and public URLs for videos
+  - Images still require public URLs (Instagram API requirement)
   - Automatic video processing status monitoring before publishing
+  - Support for both single media and carousel posts (up to 10 items)
   - Comprehensive error handling and detailed logging
   - Full integration with existing templating engine and utilities
   - Dry-run mode for testing without actual posting
   
 - **Documentation Updates**
-  - Updated `post-to-instagram/README.md` with v1.19.0 features and clarifications
-  - Clear explanation of Instagram Graph API limitations
+  - Updated `post-to-instagram/README.md` with v1.19.0 features
+  - Clear explanation of resumable upload workflow
   - Detailed environment variables reference
-  - Troubleshooting guide and hosting options
-  - Usage examples for both original and via-Facebook methods
+  - Usage examples for local video files and URLs
+  - Examples for both original and via-Facebook methods
   
 - **Unit Tests**
   - New `test_post_to_instagram_via_fb.py` with 12 comprehensive tests
@@ -35,21 +37,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Instagram Posting Options** - Now offers two methods:
-  - Original method: Uses Instagram-specific access token
-  - FB method (new): Uses Facebook access token for Instagram posting
+  - Original method: Uses Instagram-specific access token (URLs only)
+  - FB method (new): Uses Facebook access token with resumable upload for videos
   
-### Important Note
-
-- **Instagram API Limitation Discovered**: After implementation and testing, we confirmed that Instagram Graph API **does not support direct resumable upload of local files**. All media (both images and videos) must be hosted at publicly accessible URLs. This is a limitation of Instagram's API itself, not the implementation.
-- Users with local files must first upload them to a hosting service (S3, Cloudinary, etc.) before posting to Instagram.
-
 ### Technical Details
 
 - Uses Instagram Graph API with Facebook access token
-- All media requires public URLs (Instagram API limitation)
+- Videos: Resumable upload to `rupload.facebook.com` for local files, or direct URL
+- Images: Require public URLs (Instagram API limitation)
 - Supports Facebook access tokens with `instagram_content_publish` permission
 - Compatible with Instagram Business and Creator accounts linked to Facebook Pages
-- Provides clear error messages when local files are provided instead of URLs
+- Implements Instagram's resumable upload protocol per official documentation
+
+### Benefits
+
+- **Local Video Upload**: No need to host videos separately before posting
+- **Reliable Transfer**: Resumable upload ensures large videos upload successfully
+- **Flexibility**: Supports both local files and URLs for videos
+- **Simplified Workflow**: Upload and post in a single operation
 
 ## [1.18.0] - 2026-01-24
 

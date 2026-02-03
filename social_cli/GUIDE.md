@@ -242,19 +242,29 @@ social instagram \
 
 ### Instagram via Facebook Examples (v1.19.0+)
 
-The `instagram-via-fb` command uses Facebook's access token for Instagram posting. **Note**: All media must be hosted at publicly accessible URLs (Instagram API limitation).
+The `instagram-via-fb` command supports uploading local video files using resumable upload to `rupload.facebook.com`. Images still require public URLs.
 
-#### Example 1: Post Video from URL
+#### Example 1: Upload Local Video
 
 ```bash
 social instagram-via-fb \
   --ig-user-id "your_ig_user_id" \
   --fb-access-token "your_fb_access_token" \
   --post-content "Check out this amazing video! 🎥" \
+  --media-files "/path/to/local/video.mp4"
+```
+
+#### Example 2: Post Video from URL
+
+```bash
+social instagram-via-fb \
+  --ig-user-id "your_ig_user_id" \
+  --fb-access-token "your_fb_access_token" \
+  --post-content "Remote video! 🎥" \
   --media-files "https://cdn.example.com/video.mp4"
 ```
 
-#### Example 2: Post Image from URL
+#### Example 3: Post Image from URL
 
 ```bash
 social instagram-via-fb \
@@ -264,27 +274,27 @@ social instagram-via-fb \
   --media-files "https://cdn.example.com/image.jpg"
 ```
 
-#### Example 3: Carousel with Mixed Media
+#### Example 4: Carousel with Mixed Media
 
 ```bash
 social instagram-via-fb \
   --post-content "My trip highlights! 🌍✈️" \
-  --media-files "https://cdn.com/video.mp4,https://cdn.com/photo1.jpg,https://cdn.com/photo2.jpg" \
+  --media-files "/local/video.mp4,https://cdn.com/photo1.jpg,https://cdn.com/photo2.jpg" \
   --dry-run
 ```
 
-#### Example 4: Using Environment Variables
+#### Example 5: Using Environment Variables
 
 ```bash
 export IG_USER_ID="your_ig_user_id"
 export FB_ACCESS_TOKEN="your_fb_access_token"
 export POST_CONTENT="New video! 🎥 #content"
-export MEDIA_FILES="https://cdn.example.com/video.mp4"
+export MEDIA_FILES="/path/to/local/video.mp4"
 
 social instagram-via-fb
 ```
 
-**Note for Local Files**: If you have local files, upload them to S3, Cloudinary, or similar hosting first, then use the public URL.
+**Media Support**: Videos can be local files or URLs; images require public URLs.
 
 ### LinkedIn Examples
 

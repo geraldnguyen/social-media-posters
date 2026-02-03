@@ -112,12 +112,10 @@ class InstagramFBAPI:
     
     def upload_video_resumable(self, video_path, caption):
         """
-        Upload a video using resumable upload (start/transfer/finish flow).
+        Upload a video using resumable upload to rupload.facebook.com.
         
-        Note: Instagram Graph API requires videos to be accessible via public URLs.
-        This method uploads the video to a temporary location that can be accessed
-        by Instagram's servers. For production use, consider uploading to S3, Cloudinary,
-        or similar hosting service first.
+        This uses Instagram's resumable upload endpoint to upload local video files
+        directly to Meta's servers in chunks.
         
         Args:
             video_path: Path to local video file
@@ -129,19 +127,68 @@ class InstagramFBAPI:
         video_size = os.path.getsize(video_path)
         logger.info(f"Uploading video {video_path} (size: {video_size} bytes) using resumable upload")
         
-        # Instagram Graph API doesn't support direct resumable upload like Facebook Pages do.
-        # We need to upload to a hosting service first, then use the URL.
-        # For now, raise an error with helpful message
-        raise NotImplementedError(
-            "Instagram Graph API requires videos to be hosted at publicly accessible URLs. "
-            "Please upload your video to a hosting service (S3, Cloudinary, etc.) first, "
-            "then use the URL in MEDIA_FILES. "
-            "\n\nAlternatively, for local testing, you can:"
-            "\n1. Use a tool like ngrok to expose a local HTTP server"
-            "\n2. Upload to a temporary hosting service"
-            "\n3. Use the original post_to_instagram.py script which accepts URLs"
-            "\n\nSee: https://developers.facebook.com/docs/instagram-api/guides/content-publishing"
-        )
+        # Step 1: Initialize upload session - create container
+        logger.info("Step 1: Initializing upload session...")
+        init_data = {
+            'media_type': 'REELS',
+            'caption': caption,
+            'video_url': 'https://rupload.facebook.com/video-upload-incomplete',  # Placeholder
+            'upload_phase': 'start'
+        }
+        
+        init_response = self._make_request('POST', f"{self.ig_user_id}/media", data=init_data)
+        video_id = init_response.get('id')
+        
+        if not video_id:
+            raise RuntimeError(f"Failed to get video_id from initialization: {init_response}")
+        
+        logger.info(f"Upload session initialized: video_id={video_id}")
+        
+        # Step 2: Upload video to rupload.facebook.com
+        logger.info("Step 2: Uploading video to rupload.facebook.com...")
+        rupload_url = f"https://rupload.facebook.com/video-upload/{GRAPH_API_VERSION}/{video_id}"
+        
+        headers = {
+            'Authorization': f'OAuth {self.access_token}',
+            'offset': '0',
+            'file_size': str(video_size),
+            'Content-Type': 'application/octet-stream'
+        }
+        
+        try:
+            with open(video_path, 'rb') as video_file:
+                video_data = video_file.read()
+                
+            logger.info(f"Uploading {video_size} bytes to {rupload_url}")
+            response = requests.post(rupload_url, headers=headers, data=video_data, timeout=600)
+            response.raise_for_status()
+            
+            upload_result = response.json()
+            logger.info(f"Video uploaded successfully: {upload_result}")
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Video upload to rupload.facebook.com failed: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                try:
+                    error_detail = e.response.json()
+                    logger.error(f"Error details: {error_detail}")
+                except:
+                    logger.error(f"Response text: {e.response.text}")
+            raise
+        
+        # Step 3: Finalize upload
+        logger.info("Step 3: Finalizing upload...")
+        finish_data = {
+            'upload_phase': 'finish'
+        }
+        
+        finish_response = self._make_request('POST', f"{self.ig_user_id}/media", 
+                                            data={**finish_data, 'creation_id': video_id})
+        
+        logger.info(f"Upload finalized: {finish_response}")
+        
+        # Return the container ID
+        return video_id
     
     def create_image_container(self, image_url, caption):
         """
@@ -360,7 +407,7 @@ def post_to_instagram_via_fb():
             'media_count': len(media_files_raw),
             'media_files': media_details,
             'is_carousel': len(media_files_raw) > 1,
-            'upload_method': 'Instagram Graph API (requires public URLs for all media)'
+            'upload_method': 'Resumable Upload (videos) / Public URL (images)'
         }
         dry_run_guard("Instagram (via Facebook)", content, media_files_raw, dry_run_request)
         
@@ -368,14 +415,24 @@ def post_to_instagram_via_fb():
         media_files = []
         for media_file in media_files_raw:
             file_ext = Path(media_file).suffix.lower()
-            # Both videos and images must be URLs for Instagram Graph API
-            if not media_file.startswith(('http://', 'https://')):
-                logger.error(
-                    f"Instagram Graph API requires publicly accessible URLs for all media. "
-                    f"Invalid media file: {media_file}\n"
-                    f"Please upload your media to a hosting service (S3, Cloudinary, etc.) first."
-                )
-                sys.exit(1)
+            # Videos can be local files or URLs; images must be URLs
+            if file_ext in ['.mp4', '.mov']:
+                # Video - can be local file or URL
+                if not media_file.startswith(('http://', 'https://')):
+                    # Local video file - will use resumable upload
+                    if not os.path.exists(media_file):
+                        logger.error(f"Video file not found: {media_file}")
+                        sys.exit(1)
+                # URL video - will use direct container creation
+            else:
+                # Image - must be URL
+                if not media_file.startswith(('http://', 'https://')):
+                    logger.error(
+                        f"Images require publicly accessible URLs. "
+                        f"Invalid media file: {media_file}\n"
+                        f"Please upload your image to a hosting service (S3, Cloudinary, etc.) first."
+                    )
+                    sys.exit(1)
             media_files.append(media_file)
         
         # Create Instagram API client
@@ -390,13 +447,19 @@ def post_to_instagram_via_fb():
             file_ext = Path(media_file).suffix.lower()
             
             if file_ext in ['.mp4', '.mov']:
-                # Video - create container with URL
-                logger.info(f"Creating video container with URL: {media_file}")
-                
+                # Video - use resumable upload for local files, URL for remote
                 # For single video, use the caption; for carousel, don't use caption on individual items
                 item_caption = content if len(media_files) == 1 else ""
                 
-                container_id = ig_api.create_video_container_with_url(media_file, item_caption)
+                if media_file.startswith(('http://', 'https://')):
+                    # Remote video - use URL
+                    logger.info(f"Creating video container with URL: {media_file}")
+                    container_id = ig_api.create_video_container_with_url(media_file, item_caption)
+                else:
+                    # Local video - use resumable upload
+                    logger.info(f"Uploading local video using resumable upload: {media_file}")
+                    container_id = ig_api.upload_video_resumable(media_file, item_caption)
+                
                 container_ids.append(container_id)
                 
                 # Wait for video processing
