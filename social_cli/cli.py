@@ -142,6 +142,8 @@ def instagram(**kwargs):
               help='Facebook access token with Instagram permissions')
 @click.option('--max-download-size-mb', callback=set_env_from_option, 
               help='Maximum size in MB for downloading remote videos (default: 500)')
+@click.option('--scheduled-publish-time', callback=set_env_from_option,
+              help='Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
 def instagram_via_fb(**kwargs):
     """Post to Instagram using Facebook Graph API with resumable upload (v1.19.0+).
     

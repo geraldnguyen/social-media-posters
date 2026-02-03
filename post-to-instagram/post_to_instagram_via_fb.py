@@ -7,6 +7,7 @@ with support for uploading local media files directly to Meta's servers using re
 """
 
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Load environment variables from a local .env file if present (for local development)
@@ -32,7 +33,8 @@ from social_media_utils import (
     get_optional_env_var,
     validate_post_content,
     handle_api_error,
-    log_success
+    log_success,
+    parse_scheduled_time
 )
 
 from templating_utils import process_templated_contents
@@ -81,6 +83,37 @@ class InstagramFBAPI:
                 except:
                     logger.error(f"Response text: {e.response.text}")
             raise
+
+    def _create_resumable_video_container(self, caption, is_carousel_item):
+        """Start a resumable upload session and return container id + upload URL."""
+        data = {
+            'upload_type': 'resumable',
+            'media_type': 'VIDEO' if is_carousel_item else 'REELS',
+        }
+
+        # Captions go on the container unless it's a carousel item
+        if caption and not is_carousel_item:
+            data['caption'] = caption
+
+        if is_carousel_item:
+            data['is_carousel_item'] = True
+
+        response = self._make_request('POST', f"{self.ig_user_id}/media", data=data)
+
+        container_id = response.get('id')
+        upload_url = response.get('upload_url') or response.get('uri')
+
+        if not container_id:
+            raise RuntimeError(f"Failed to create resumable upload container: {response}")
+
+        # Fallback to documented rupload endpoint if API does not return a URL key
+        if not upload_url:
+            upload_url = f"https://rupload.facebook.com/ig-api-upload/{GRAPH_API_VERSION}/{container_id}"
+
+        logger.info(
+            "Resumable upload session created: container_id=%s upload_url=%s", container_id, upload_url
+        )
+        return container_id, upload_url
     
     def create_video_container_with_url(self, video_url, caption):
         """
@@ -112,76 +145,59 @@ class InstagramFBAPI:
     
     def upload_video_resumable(self, video_path, caption):
         """
-        Upload a video using resumable upload.
-        
-        This uses Instagram's resumable upload protocol to upload local video files
-        directly to Meta's servers. The workflow:
-        1. Initialize upload session and get upload_url
-        2. Upload video binary to the upload_url
-        3. Video is automatically associated with the container
-        
-        Args:
-            video_path: Path to local video file
-            caption: Video caption
-            
-        Returns:
-            container_id: Media container ID ready for publishing
+        Upload a video using the documented resumable upload flow.
+
+        Supports both local files and publicly hosted videos (via `file_url`).
         """
-        video_size = os.path.getsize(video_path)
-        logger.info(f"Uploading video {video_path} (size: {video_size} bytes) using resumable upload")
-        
-        # Step 1: Initialize upload session - create container and get upload_url
-        logger.info("Step 1: Initializing upload session...")
-        init_data = {
-            'media_type': 'REELS',
-            'caption': caption
-        }
-        
-        init_response = self._make_request('POST', f"{self.ig_user_id}/media", data=init_data)
-        video_id = init_response.get('id')
-        upload_url = init_response.get('upload_url')
-        
-        if not video_id:
-            raise RuntimeError(f"Failed to get video_id from initialization: {init_response}")
-        
-        if not upload_url:
-            # If no upload_url returned, API expects video_url parameter instead
-            logger.error(f"No upload_url in response. Response: {init_response}")
-            raise RuntimeError(
-                "API did not return upload_url. This may mean:\n"
-                "1. The account doesn't have permissions for resumable upload\n"
-                "2. The API version doesn't support this feature\n"
-                "3. Additional parameters may be required\n"
-                f"Response received: {init_response}"
-            )
-        
-        logger.info(f"Upload session initialized: video_id={video_id}, upload_url={upload_url}")
-        
-        # Step 2: Upload video to the provided upload_url
-        logger.info("Step 2: Uploading video binary to upload_url...")
-        
+        is_carousel_item = False  # Backward compatibility when callers omit this flag
+        return self.upload_video_resumable_with_carousel_flag(video_path, caption, is_carousel_item)
+
+    def upload_video_resumable_with_carousel_flag(self, video_source, caption, is_carousel_item=False):
+        """Resumable upload that explicitly supports carousel items."""
+        logger.info(
+            "Starting resumable upload for %s (carousel_item=%s)", video_source, is_carousel_item
+        )
+
+        container_id, upload_url = self._create_resumable_video_container(caption, is_carousel_item)
+
         headers = {
-            'Authorization': f'OAuth {self.access_token}',
-            'offset': '0',
-            'file_size': str(video_size),
-            'Content-Type': 'application/octet-stream'
+            'Authorization': f'OAuth {self.access_token}'
         }
-        
+
         try:
-            with open(video_path, 'rb') as video_file:
-                video_data = video_file.read()
-                
-            logger.info(f"Uploading {video_size} bytes to {upload_url}")
-            response = requests.post(upload_url, headers=headers, data=video_data, timeout=600)
+            if str(video_source).startswith(('http://', 'https://')):
+                # Hosted file upload using file_url header
+                headers['file_url'] = video_source
+                logger.info("Uploading hosted video via file_url header to %s", upload_url)
+                response = requests.post(upload_url, headers=headers, timeout=600)
+            else:
+                if not os.path.exists(video_source):
+                    raise FileNotFoundError(f"Video file not found: {video_source}")
+
+                file_size = os.path.getsize(video_source)
+                headers.update({
+                    'offset': '0',
+                    'file_size': str(file_size),
+                    'Content-Type': 'application/octet-stream'
+                })
+
+                logger.info("Uploading %s bytes to %s", file_size, upload_url)
+                with open(video_source, 'rb') as video_file:
+                    response = requests.post(
+                        upload_url,
+                        headers=headers,
+                        data=video_file.read(),
+                        timeout=600
+                    )
+
             response.raise_for_status()
-            
-            # Try to parse response, but it might be empty or non-JSON
+
             try:
                 upload_result = response.json()
-                logger.info(f"Video uploaded successfully: {upload_result}")
-            except:
-                logger.info(f"Video uploaded successfully (status: {response.status_code})")
-            
+                logger.info("Resumable upload response: %s", upload_result)
+            except ValueError:
+                logger.info("Resumable upload completed (status: %s)", response.status_code)
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Video upload failed: {e}")
             if hasattr(e, 'response') and e.response is not None:
@@ -191,10 +207,8 @@ class InstagramFBAPI:
                 except:
                     logger.error(f"Response text: {e.response.text}")
             raise
-        
-        # Return the container ID (upload is automatically associated with it)
-        logger.info(f"Upload complete, returning container ID: {video_id}")
-        return video_id
+
+        return container_id
     
     def create_image_container(self, image_url, caption):
         """
@@ -247,40 +261,42 @@ class InstagramFBAPI:
     
     def check_container_status(self, container_id, max_wait=300):
         """
-        Check the status of a media container and wait until it's ready.
-        
-        Args:
-            container_id: Media container ID
-            max_wait: Maximum time to wait in seconds
-            
-        Returns:
-            bool: True if container is ready, False otherwise
+        Poll the container until the upload + processing phases finish.
         """
         logger.info(f"Checking status of container {container_id}")
-        
+
         start_time = time.time()
         while time.time() - start_time < max_wait:
             response = self._make_request(
                 'GET',
                 container_id,
-                params={'fields': 'status_code,status'}
+                params={'fields': 'status,status_code,video_status'}
             )
-            
+
             status_code = response.get('status_code')
             status = response.get('status')
-            
-            logger.debug(f"Container status: {status_code} - {status}")
-            
-            if status_code == 'FINISHED':
+            video_status = response.get('video_status', {}) or {}
+            uploading_phase = video_status.get('uploading_phase', {})
+            processing_phase = video_status.get('processing_phase', {})
+
+            logger.debug(
+                "Container status_code=%s status=%s uploading=%s processing=%s",
+                status_code,
+                status,
+                uploading_phase,
+                processing_phase
+            )
+
+            if status_code in ('FINISHED', 'PUBLISHED'):
                 logger.info("Container is ready for publishing")
                 return True
-            elif status_code == 'ERROR':
+            if status_code == 'ERROR':
                 logger.error(f"Container processing failed: {status}")
                 return False
-            
+
             # Wait before checking again
             time.sleep(2)
-        
+
         logger.warning(f"Container status check timed out after {max_wait} seconds")
         return False
     
@@ -375,7 +391,7 @@ def post_to_instagram_via_fb():
         content, media_input = process_templated_contents(content, media_input)
         
         # Parse media files - for Instagram via FB, we handle URLs differently
-        # Videos will be uploaded directly, images need to stay as URLs
+        # Videos use resumable upload (local file or hosted URL), images need to stay as URLs
         if not media_input:
             logger.error("At least one media file is required for Instagram posting")
             sys.exit(1)
@@ -390,6 +406,26 @@ def post_to_instagram_via_fb():
         # Validate content
         if not validate_post_content(content, max_length=2200):  # Instagram caption limit
             sys.exit(1)
+
+        # Scheduling (local wait-until publish)
+        scheduled_time_str = get_optional_env_var("SCHEDULED_PUBLISH_TIME", "")
+        scheduled_publish_time = None
+        scheduled_time_iso = None
+
+        if scheduled_time_str:
+            scheduled_time_iso = parse_scheduled_time(scheduled_time_str)
+            if scheduled_time_iso:
+                dt = datetime.fromisoformat(scheduled_time_iso.replace('Z', '+00:00'))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                else:
+                    dt = dt.astimezone(timezone.utc)
+                scheduled_publish_time = int(dt.timestamp())
+                logger.info(
+                    "Post will be scheduled for: %s (Unix timestamp: %s)",
+                    scheduled_time_iso,
+                    scheduled_publish_time
+                )
         
         # DRY RUN GUARD - Check before processing media files
         from social_media_utils import dry_run_guard
@@ -413,8 +449,10 @@ def post_to_instagram_via_fb():
             'media_count': len(media_files_raw),
             'media_files': media_details,
             'is_carousel': len(media_files_raw) > 1,
-            'upload_method': 'Resumable Upload (videos) / Public URL (images)'
+            'upload_method': 'Resumable upload via rupload (videos) / Public URL (images)'
         }
+        if scheduled_publish_time:
+            dry_run_request['scheduled_for'] = scheduled_time_str
         dry_run_guard("Instagram (via Facebook)", content, media_files_raw, dry_run_request)
         
         # After dry run check, process media files for actual upload
@@ -423,13 +461,10 @@ def post_to_instagram_via_fb():
             file_ext = Path(media_file).suffix.lower()
             # Videos can be local files or URLs; images must be URLs
             if file_ext in ['.mp4', '.mov']:
-                # Video - can be local file or URL
                 if not media_file.startswith(('http://', 'https://')):
-                    # Local video file - will use resumable upload
                     if not os.path.exists(media_file):
                         logger.error(f"Video file not found: {media_file}")
                         sys.exit(1)
-                # URL video - will use direct container creation
             else:
                 # Image - must be URL
                 if not media_file.startswith(('http://', 'https://')):
@@ -453,27 +488,25 @@ def post_to_instagram_via_fb():
             file_ext = Path(media_file).suffix.lower()
             
             if file_ext in ['.mp4', '.mov']:
-                # Video - use resumable upload for local files, URL for remote
-                # For single video, use the caption; for carousel, don't use caption on individual items
+                # Video - always use resumable upload (local or hosted via file_url header)
                 item_caption = content if len(media_files) == 1 else ""
-                
-                if media_file.startswith(('http://', 'https://')):
-                    # Remote video - use URL
-                    logger.info(f"Creating video container with URL: {media_file}")
-                    container_id = ig_api.create_video_container_with_url(media_file, item_caption)
-                else:
-                    # Local video - use resumable upload
-                    logger.info(f"Uploading local video using resumable upload: {media_file}")
-                    container_id = ig_api.upload_video_resumable(media_file, item_caption)
-                
+                is_carousel_item = len(media_files) > 1
+
+                logger.info("Uploading video via resumable flow: %s", media_file)
+                container_id = ig_api.upload_video_resumable_with_carousel_flag(
+                    media_file,
+                    item_caption,
+                    is_carousel_item=is_carousel_item
+                )
+
                 container_ids.append(container_id)
-                
+
                 # Wait for video processing
                 logger.info("Waiting for video processing...")
                 if not ig_api.check_container_status(container_id):
                     logger.error("Video processing failed or timed out")
                     sys.exit(1)
-                
+
             else:
                 # Image - create container with URL
                 logger.info(f"Creating image container with URL: {media_file}")
@@ -494,9 +527,26 @@ def post_to_instagram_via_fb():
         else:
             final_container_id = container_ids[0]
         
-        # Wait before publishing (Instagram recommendation)
+        # Wait before publishing (Instagram recommendation + optional scheduling)
         logger.info("Waiting before publishing...")
         time.sleep(2)
+
+        if scheduled_publish_time:
+            now_ts = int(time.time())
+            wait_seconds = scheduled_publish_time - now_ts
+            if wait_seconds > 0:
+                logger.info(
+                    "Scheduling enabled. Waiting %s seconds until %s before publishing...",
+                    wait_seconds,
+                    scheduled_time_iso
+                )
+                time.sleep(wait_seconds)
+            else:
+                logger.info(
+                    "Scheduled time %s already passed (diff=%ss). Publishing now...",
+                    scheduled_time_iso,
+                    wait_seconds
+                )
         
         # Publish media
         logger.info("Publishing media...")
@@ -514,9 +564,13 @@ def post_to_instagram_via_fb():
             with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                 f.write(f"post-id={media_id}\n")
                 f.write(f"post-url={post_url}\n")
+                if scheduled_publish_time:
+                    f.write(f"scheduled-time={scheduled_time_str}\n")
         
         log_success("Instagram (via Facebook)", media_id)
         logger.info(f"Post URL: {post_url}")
+        if scheduled_publish_time:
+            logger.info(f"Post scheduled for: {scheduled_time_str}")
         
     except Exception as e:
         handle_api_error(e, "Instagram (via Facebook)")
