@@ -108,6 +108,7 @@ class InstagramFBAPI:
 
         # Fallback to documented rupload endpoint if API does not return a URL key
         if not upload_url:
+            logger.warning("No upload_url returned by API; using documented rupload endpoint")
             upload_url = f"https://rupload.facebook.com/ig-api-upload/{GRAPH_API_VERSION}/{container_id}"
 
         logger.info(
