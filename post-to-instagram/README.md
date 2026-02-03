@@ -321,28 +321,29 @@ jobs:
 
 ### Overview
 
-The Instagram via Facebook method (v1.19.0+) uses Facebook's access token and `rupload.facebook.com` endpoint to enable **direct upload of local video files** to Instagram. This implements Instagram's resumable upload protocol for reliable video transfers.
+The Instagram via Facebook method (v1.19.0+) uses Facebook's access token to enable **direct upload of local video files** to Instagram using Instagram's resumable upload protocol. When initializing a media container, Instagram provides an `upload_url` where the video binary is uploaded.
 
 ### Key Features
 
 1. **Local Video Upload**: Upload video files directly from local storage using resumable upload
-2. **rupload.facebook.com**: Uses Facebook's dedicated upload endpoint for video chunks
+2. **Automatic upload_url**: Instagram API provides the upload URL during initialization
 3. **Resumable Transfer**: Reliable upload for large video files
 4. **Image URLs**: Images still require publicly accessible URLs (Instagram API requirement)
 
 ### Key Differences from Original Method
 
 1. **Access Token**: Uses Facebook access token instead of Instagram-specific token
-2. **Video Upload**: Supports local video files via resumable upload to `rupload.facebook.com`
+2. **Video Upload**: Supports local video files via resumable upload
 3. **Account Setup**: Requires Instagram account linked to Facebook Page
 4. **Image Handling**: Same URL requirement as original method
 
 ### How It Works
 
 1. **For Local Videos**:
-   - Initialize upload session with Instagram Graph API
-   - Upload video data to `rupload.facebook.com` endpoint
-   - Finalize upload and wait for video processing
+   - Initialize upload session with Instagram Graph API (creates container)
+   - API returns `upload_url` where video should be uploaded
+   - Upload video binary data to the provided `upload_url`
+   - Wait for video processing to complete
    - Publish video container to Instagram
 
 2. **For Video URLs**:
@@ -431,43 +432,63 @@ social instagram-via-fb \
 **Media Requirements:**
 
 *Videos (Local Files or URLs):*
-- **Local files supported** via resumable upload to `rupload.facebook.com`
+- **Local files supported** via resumable upload
+- API provides `upload_url` during container initialization
 - Formats: MP4, MOV
 - Maximum file size: Limited by Instagram's requirements
-- Uploaded in single transfer (chunked upload available for very large files)
+- Single upload transfer with proper headers
 
 *Images (URL Only):*
 - **Must be publicly accessible URLs**
 - No authentication required to access the URL
 - No redirects (direct file URLs only)
-- Formats: MP4, MOV (video), JPEG, PNG (images)
+- Formats: JPEG, PNG
 - Minimum resolution: 320x320 pixels
 
-### For Local Files
+### Technical Workflow
 
-If you have local files, upload them to a hosting service first:
+**Resumable Upload for Local Videos:**
 
-1. **Production**: AWS S3, Cloudinary, Google Cloud Storage, Azure Blob
-2. **Testing**: ngrok (expose local HTTP server temporarily)
-3. **Quick Tests**: GitHub Pages (for public repos)
+```python
+# Step 1: Initialize - Create container
+POST /{ig_user_id}/media
+  media_type: "REELS"
+  caption: "Video caption"
+→ Returns:
+  {
+    "id": "container_id",
+    "upload_url": "https://rupload.facebook.com/..."
+  }
 
-**Example with S3:**
-```bash
-# Upload to S3
-aws s3 cp video.mp4 s3://my-bucket/video.mp4 --acl public-read
+# Step 2: Upload - Send binary to upload_url
+POST {upload_url}
+  Headers:
+    Authorization: OAuth {access_token}
+    offset: "0"
+    file_size: "{bytes}"
+    Content-Type: "application/octet-stream"
+  Body: {video_binary_data}
 
-# Use the URL
-export MEDIA_FILES="https://my-bucket.s3.amazonaws.com/video.mp4"
+# Step 3: Wait for processing
+GET /{container_id}?fields=status_code
+→ Wait until status_code is "FINISHED"
+
+# Step 4: Publish
+POST /{ig_user_id}/media_publish
+  creation_id: {container_id}
 ```
 
 ### Troubleshooting (FB Method)
 
-**"Instagram Graph API requires publicly accessible URLs"**
-- All media must be hosted at public URLs
-- Upload your files to S3, Cloudinary, or similar hosting
-- Ensure URLs are direct file links (no redirects)
-- Ensure the video file is not corrupted
-- Try with a smaller video file
+**"No upload_url in response"**
+- API did not return upload_url in initialization step
+- Check that account has permissions for resumable upload
+- Verify using latest API version
+- May need to use `video_url` parameter for URL-based uploads instead
+
+**"The video id provided is invalid"**
+- Don't manually construct upload URL - use the `upload_url` from API response
+- Ensure using the correct video_id/container_id returned from initialization
 
 **"Image file must be a publicly accessible URL"**
 - Images still require public URLs (Instagram API limitation)

@@ -112,10 +112,13 @@ class InstagramFBAPI:
     
     def upload_video_resumable(self, video_path, caption):
         """
-        Upload a video using resumable upload to rupload.facebook.com.
+        Upload a video using resumable upload.
         
-        This uses Instagram's resumable upload endpoint to upload local video files
-        directly to Meta's servers in chunks.
+        This uses Instagram's resumable upload protocol to upload local video files
+        directly to Meta's servers. The workflow:
+        1. Initialize upload session and get upload_url
+        2. Upload video binary to the upload_url
+        3. Video is automatically associated with the container
         
         Args:
             video_path: Path to local video file
@@ -127,26 +130,35 @@ class InstagramFBAPI:
         video_size = os.path.getsize(video_path)
         logger.info(f"Uploading video {video_path} (size: {video_size} bytes) using resumable upload")
         
-        # Step 1: Initialize upload session - create container
+        # Step 1: Initialize upload session - create container and get upload_url
         logger.info("Step 1: Initializing upload session...")
         init_data = {
             'media_type': 'REELS',
-            'caption': caption,
-            'video_url': 'https://rupload.facebook.com/video-upload-incomplete',  # Placeholder
-            'upload_phase': 'start'
+            'caption': caption
         }
         
         init_response = self._make_request('POST', f"{self.ig_user_id}/media", data=init_data)
         video_id = init_response.get('id')
+        upload_url = init_response.get('upload_url')
         
         if not video_id:
             raise RuntimeError(f"Failed to get video_id from initialization: {init_response}")
         
-        logger.info(f"Upload session initialized: video_id={video_id}")
+        if not upload_url:
+            # If no upload_url returned, API expects video_url parameter instead
+            logger.error(f"No upload_url in response. Response: {init_response}")
+            raise RuntimeError(
+                "API did not return upload_url. This may mean:\n"
+                "1. The account doesn't have permissions for resumable upload\n"
+                "2. The API version doesn't support this feature\n"
+                "3. Additional parameters may be required\n"
+                f"Response received: {init_response}"
+            )
         
-        # Step 2: Upload video to rupload.facebook.com
-        logger.info("Step 2: Uploading video to rupload.facebook.com...")
-        rupload_url = f"https://rupload.facebook.com/video-upload/{GRAPH_API_VERSION}/{video_id}"
+        logger.info(f"Upload session initialized: video_id={video_id}, upload_url={upload_url}")
+        
+        # Step 2: Upload video to the provided upload_url
+        logger.info("Step 2: Uploading video binary to upload_url...")
         
         headers = {
             'Authorization': f'OAuth {self.access_token}',
@@ -159,15 +171,19 @@ class InstagramFBAPI:
             with open(video_path, 'rb') as video_file:
                 video_data = video_file.read()
                 
-            logger.info(f"Uploading {video_size} bytes to {rupload_url}")
-            response = requests.post(rupload_url, headers=headers, data=video_data, timeout=600)
+            logger.info(f"Uploading {video_size} bytes to {upload_url}")
+            response = requests.post(upload_url, headers=headers, data=video_data, timeout=600)
             response.raise_for_status()
             
-            upload_result = response.json()
-            logger.info(f"Video uploaded successfully: {upload_result}")
+            # Try to parse response, but it might be empty or non-JSON
+            try:
+                upload_result = response.json()
+                logger.info(f"Video uploaded successfully: {upload_result}")
+            except:
+                logger.info(f"Video uploaded successfully (status: {response.status_code})")
             
         except requests.exceptions.RequestException as e:
-            logger.error(f"Video upload to rupload.facebook.com failed: {e}")
+            logger.error(f"Video upload failed: {e}")
             if hasattr(e, 'response') and e.response is not None:
                 try:
                     error_detail = e.response.json()
@@ -176,18 +192,8 @@ class InstagramFBAPI:
                     logger.error(f"Response text: {e.response.text}")
             raise
         
-        # Step 3: Finalize upload
-        logger.info("Step 3: Finalizing upload...")
-        finish_data = {
-            'upload_phase': 'finish'
-        }
-        
-        finish_response = self._make_request('POST', f"{self.ig_user_id}/media", 
-                                            data={**finish_data, 'creation_id': video_id})
-        
-        logger.info(f"Upload finalized: {finish_response}")
-        
-        # Return the container ID
+        # Return the container ID (upload is automatically associated with it)
+        logger.info(f"Upload complete, returning container ID: {video_id}")
         return video_id
     
     def create_image_container(self, image_url, caption):
