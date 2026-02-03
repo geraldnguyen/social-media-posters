@@ -134,6 +134,25 @@ def instagram(**kwargs):
     import_and_run_post_script('post-to-instagram', 'post_to_instagram', 'post_to_instagram')
 
 
+@main.command('instagram-via-fb')
+@add_common_options
+@click.option('--ig-user-id', callback=set_env_from_option, 
+              help='Instagram user ID')
+@click.option('--fb-access-token', callback=set_env_from_option, 
+              help='Facebook access token with Instagram permissions')
+@click.option('--max-download-size-mb', callback=set_env_from_option, 
+              help='Maximum size in MB for downloading remote videos (default: 500)')
+@click.option('--scheduled-publish-time', callback=set_env_from_option,
+              help='Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
+def instagram_via_fb(**kwargs):
+    """Post to Instagram using Facebook Graph API with resumable upload (v1.19.0+).
+    
+    This method supports uploading local video files using Facebook's resumable upload API.
+    Videos are uploaded in chunks for better reliability. Images still require public URLs.
+    """
+    import_and_run_post_script('post-to-instagram', 'post_to_instagram_via_fb', 'post_to_instagram_via_fb')
+
+
 @main.command()
 @add_common_options
 @click.option('--threads-user-id', callback=set_env_from_option, 

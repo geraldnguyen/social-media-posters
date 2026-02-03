@@ -1,5 +1,31 @@
 # Post to Instagram Action
 
+## 🎉 v1.19.0: Instagram via Facebook with Resumable Upload
+
+This version introduces support for uploading **local video files** directly to Instagram using Facebook's resumable upload infrastructure (`rupload.facebook.com`).
+
+### Key Features
+
+- **Local Video Upload**: Upload video files directly from your local system using resumable upload
+- **Resumable Upload**: Videos are uploaded to `rupload.facebook.com` for reliable transfer
+- **Images via URL**: Images still require publicly accessible URLs (Instagram API requirement)
+- **Facebook Access Token**: Use Facebook's access token for Instagram posting
+
+### Two Posting Methods Available
+
+1. **Original Method** (`post_to_instagram.py`): Uses Instagram Graph API with public URLs for all media
+2. **Via Facebook Method** (`post_to_instagram_via_fb.py`): Uses resumable upload for videos + URLs for images
+
+**Choose the via-Facebook method if you:**
+- Have local video files to upload
+- Want to use Facebook's access token for Instagram posting
+- Need reliable upload for large video files
+
+**Stick with the original method if you:**
+- All your media is already hosted at public URLs
+- You prefer using Instagram-specific access tokens
+- You only post images (which require URLs in both methods)
+
 ## Template Interpolation
 
 You can use template placeholders in your post content and media file URLs. The following sources are supported:
@@ -26,12 +52,58 @@ This GitHub Action allows you to post content to Instagram using the Instagram G
 
 ## Features
 
+- **v1.19.0+**: Upload local video files using resumable upload to `rupload.facebook.com`
+- **v1.19.0+**: Instagram posting via Facebook access token
 - Post single images and videos to Instagram
 - Create carousel posts with multiple images/videos (up to 10 media files)
 - Add captions to posts
 - Template interpolation support
 - Configurable logging levels
 - Returns post ID and URL for further processing
+- **Videos**: Can use local files (resumable upload) or public URLs
+- **Images**: Require publicly accessible URLs
+
+## Installation Methods
+
+### Method 1: Instagram via Facebook (v1.19.0+) - Supports Local Videos
+
+Upload local video files or use public URLs:
+
+```yaml
+- name: Post local video to Instagram (via Facebook)
+  uses: geraldnguyen/social-media-posters/post-to-instagram@v1.19.0
+  with:
+    access-token: ${{ secrets.FB_ACCESS_TOKEN }}  # Facebook access token
+    user-id: ${{ secrets.IG_USER_ID }}  # Instagram User ID
+    content: "Check out this video! 🎥"
+    media-files: "/path/to/local/video.mp4"  # Local file or URL
+```
+
+Or with public URLs:
+
+```yaml
+- name: Post to Instagram (via Facebook)
+  uses: geraldnguyen/social-media-posters/post-to-instagram@v1.19.0
+  with:
+    access-token: ${{ secrets.FB_ACCESS_TOKEN }}
+    user-id: ${{ secrets.IG_USER_ID }}
+    content: "Check out this! 📸"
+    media-files: "https://example.com/hosted-media.mp4"
+```
+
+### Method 2: Original Instagram Graph API - URLs Only
+
+Use this method with Instagram-specific access tokens (URLs only):
+
+```yaml
+- name: Post to Instagram  
+  uses: geraldnguyen/social-media-posters/post-to-instagram@v1.19.0
+  with:
+    access-token: ${{ secrets.IG_ACCESS_TOKEN }}  # Instagram access token
+    user-id: ${{ secrets.IG_USER_ID }}
+    content: "Check out this amazing photo! 📸"
+    media-file: "https://example.com/hosted-image.jpg"  # Must be publicly accessible URL
+```
 
 ## Prerequisites
 
@@ -244,6 +316,200 @@ jobs:
 1. Follow the [Instagram Basic Display API documentation](https://developers.facebook.com/docs/instagram-basic-display-api/getting-started)
 2. Use the [Instagram Graph API Explorer](https://developers.facebook.com/tools/explorer/)
 3. Generate a long-lived access token for production use
+
+## v1.19.0: Instagram via Facebook Method Details
+
+### Overview
+
+The Instagram via Facebook method (v1.19.0+) uses Facebook's access token to enable **direct upload of local video files** to Instagram using Instagram's resumable upload protocol. When initializing a media container, Instagram provides an `upload_url` where the video binary is uploaded.
+
+### Key Features
+
+1. **Local Video Upload**: Upload video files directly from local storage using resumable upload
+2. **Automatic upload_url**: Instagram API provides the upload URL during initialization
+3. **Resumable Transfer**: Reliable upload for large video files
+4. **Image URLs**: Images still require publicly accessible URLs (Instagram API requirement)
+
+### Key Differences from Original Method
+
+1. **Access Token**: Uses Facebook access token instead of Instagram-specific token
+2. **Video Upload**: Supports local video files via resumable upload
+3. **Account Setup**: Requires Instagram account linked to Facebook Page
+4. **Image Handling**: Same URL requirement as original method
+
+### How It Works
+
+1. **For Local Videos**:
+   - Initialize upload session with Instagram Graph API (creates container)
+   - API returns `upload_url` where video should be uploaded
+   - Upload video binary data to the provided `upload_url`
+   - Wait for video processing to complete
+   - Publish video container to Instagram
+
+2. **For Video URLs**:
+   - Video container is created with the URL
+   - System waits for video processing to complete
+   - Video container is published to Instagram
+
+3. **For Images**:
+   - Images must be hosted at publicly accessible URLs
+   - Image container is created with the URL
+   - Container is published to Instagram
+
+4. **For Carousels**:
+   - Videos can be local files or URLs; images must be URLs
+   - All containers are combined into a carousel
+   - Carousel is published with the caption
+
+### Environment Variables (via FB Method)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `IG_USER_ID` | Instagram Business/Creator User ID | Yes |
+| `FB_ACCESS_TOKEN` | Facebook Access Token with Instagram permissions | Yes |
+| `POST_CONTENT` | Post caption (max 2200 characters) | Yes |
+| `MEDIA_FILES` | Comma-separated list of media paths (videos: local or URL; images: URL only) | Yes |
+| `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | No (default: INFO) |
+| `DRY_RUN` | Set to "true" to test without posting | No |
+
+### Usage Examples
+
+**Local Video Upload:**
+
+```bash
+# Using environment variables
+export IG_USER_ID="your_ig_user_id"
+export FB_ACCESS_TOKEN="your_fb_access_token"
+export POST_CONTENT="Check out this video! 🎥 #video"
+export MEDIA_FILES="/path/to/local/video.mp4"  # Local file path
+
+python post-to-instagram/post_to_instagram_via_fb.py
+```
+
+**Video from URL:**
+
+```bash
+export MEDIA_FILES="https://cdn.com/video.mp4"  # Remote URL
+python post-to-instagram/post_to_instagram_via_fb.py
+```
+
+**Carousel with Mixed Media:**
+
+```bash
+export MEDIA_FILES="/local/video.mp4,https://cdn.com/image1.jpg,https://cdn.com/image2.jpg"
+export POST_CONTENT="My amazing carousel! 📸🎥"
+
+python post-to-instagram/post_to_instagram_via_fb.py
+```
+
+**Using CLI:**
+
+```bash
+# Install CLI
+pip install -e ".[instagram]"
+
+# Post local video
+social instagram-via-fb \
+  --ig-user-id "your_ig_user_id" \
+  --fb-access-token "your_token" \
+  --post-content "Video post! 🎥" \
+  --media-files "/path/to/video.mp4" \
+  --dry-run
+```
+
+### Requirements for FB Method
+
+**Facebook Access Token:**
+- Must have `instagram_content_publish` permission
+- Must have access to the linked Instagram Business/Creator account
+- Can be obtained via Facebook Graph API Explorer
+
+**Instagram Account:**
+- Must be a Business or Creator account
+- Must be linked to a Facebook Page
+- Instagram User ID can be obtained via Graph API
+
+**Media Requirements:**
+
+*Videos (Local Files or URLs):*
+- **Local files supported** via resumable upload
+- API provides `upload_url` during container initialization
+- Formats: MP4, MOV
+- Maximum file size: Limited by Instagram's requirements
+- Single upload transfer with proper headers
+
+*Images (URL Only):*
+- **Must be publicly accessible URLs**
+- No authentication required to access the URL
+- No redirects (direct file URLs only)
+- Formats: JPEG, PNG
+- Minimum resolution: 320x320 pixels
+
+### Technical Workflow
+
+**Resumable Upload for Local Videos:**
+
+```python
+# Step 1: Initialize - Create container
+POST /{ig_user_id}/media
+  media_type: "REELS"
+  caption: "Video caption"
+→ Returns:
+  {
+    "id": "container_id",
+    "upload_url": "https://rupload.facebook.com/..."
+  }
+
+# Step 2: Upload - Send binary to upload_url
+POST {upload_url}
+  Headers:
+    Authorization: OAuth {access_token}
+    offset: "0"
+    file_size: "{bytes}"
+    Content-Type: "application/octet-stream"
+  Body: {video_binary_data}
+
+# Step 3: Wait for processing
+GET /{container_id}?fields=status_code
+→ Wait until status_code is "FINISHED"
+
+# Step 4: Publish
+POST /{ig_user_id}/media_publish
+  creation_id: {container_id}
+```
+
+### Troubleshooting (FB Method)
+
+**"No upload_url in response"**
+- API did not return upload_url in initialization step
+- Check that account has permissions for resumable upload
+- Verify using latest API version
+- May need to use `video_url` parameter for URL-based uploads instead
+
+**"The video id provided is invalid"**
+- Don't manually construct upload URL - use the `upload_url` from API response
+- Ensure using the correct video_id/container_id returned from initialization
+
+**"Image file must be a publicly accessible URL"**
+- Images still require public URLs (Instagram API limitation)
+- Upload images to S3, Cloudinary, or similar hosting service
+- Use the URL in MEDIA_FILES
+
+**"Upload session failed"**
+- Check your Facebook access token has correct permissions
+- Verify your Instagram account is linked to a Facebook Page
+- Ensure your token hasn't expired
+
+### Comparison: Original vs FB Method
+
+| Feature | Original Method | FB Method (v1.19.0) |
+|---------|----------------|---------------------|
+| Video Upload | URL only | Local files + URLs |
+| Image Upload | URL only | URL only |
+| Upload Method | Direct URL | Resumable chunks (videos) |
+| Reliability | Good | Better (chunked) |
+| File Size Limit | Per Instagram API | Up to 500MB (configurable) |
+| Best For | Pre-hosted media | Local video files |
 
 ## Limitations
 

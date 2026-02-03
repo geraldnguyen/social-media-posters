@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2026-02-02
+
+### Added
+
+- **Instagram via Facebook with Resumable Upload** - Upload local video files to Instagram
+  - New `post_to_instagram_via_fb.py` script with resumable upload support
+  - Direct upload of local video files to `rupload.facebook.com`
+  - Supports both local video files and public URLs for videos
+  - Images still require public URLs (Instagram API requirement)
+  - Automatic video processing status monitoring before publishing
+  - Support for both single media and carousel posts (up to 10 items)
+  - Comprehensive error handling and detailed logging
+  - Full integration with existing templating engine and utilities
+  - Dry-run mode for testing without actual posting
+  
+- **Documentation Updates**
+  - Updated `post-to-instagram/README.md` with v1.19.0 features
+  - Clear explanation of resumable upload workflow
+  - Detailed environment variables reference
+  - Usage examples for local video files and URLs
+  - Examples for both original and via-Facebook methods
+  
+- **Unit Tests**
+  - New `test_post_to_instagram_via_fb.py` with 12 comprehensive tests
+  - Tests for InstagramFBAPI class methods
+  - Tests for container operations and publishing
+  - Tests for dry-run mode and error handling
+  - All tests passing successfully
+
+### Changed
+
+- **Instagram Posting Options** - Now offers two methods:
+  - Original method: Uses Instagram-specific access token (URLs only)
+  - FB method (new): Uses Facebook access token with resumable upload for videos
+  
+### Technical Details
+
+- Uses Instagram Graph API with Facebook access token
+- Videos: Resumable upload to `rupload.facebook.com` for local files, or direct URL
+- Images: Require public URLs (Instagram API limitation)
+- Supports Facebook access tokens with `instagram_content_publish` permission
+- Compatible with Instagram Business and Creator accounts linked to Facebook Pages
+- Implements Instagram's resumable upload protocol per official documentation
+
+### Benefits
+
+- **Local Video Upload**: No need to host videos separately before posting
+- **Reliable Transfer**: Resumable upload ensures large videos upload successfully
+- **Flexibility**: Supports both local files and URLs for videos
+- **Simplified Workflow**: Upload and post in a single operation
+
 ## [1.18.0] - 2026-01-24
 
 ### Added
