@@ -389,6 +389,16 @@ Edit the post-to-insgram or create a new post-to-instagram-via-fb that can post 
 
 The media files thus are available locally and upload to a meta server via FB's resumable upload before published to insgram account.
 
+## v1.20.0 - Post FB comment
+
+Modify post-to-fb script, its github action files and corresponding CLI option to support posting FB comment instead of new post/reel
+
+**Condition**: if `--fb-post-id <fb post id>` is provided (or equivalent GH action input/variable)
+
+**Supported content**: Text and/or link and/or or media
+
+**Optional**: Support scheduling if possible.
+
 Expectation:
 - Implement the above requirements 
 - Create unit tests for the changes 
