@@ -107,17 +107,19 @@ def x(**kwargs):
 @main.command()
 @add_common_options
 @click.option('--fb-page-id', callback=set_env_from_option, 
-              help='Facebook Page ID')
+              help='Facebook Page ID (required for posts, not required for comments)')
 @click.option('--fb-access-token', callback=set_env_from_option, 
               help='Facebook Page access token')
+@click.option('--fb-post-id', callback=set_env_from_option,
+              help='Facebook Post ID to comment on (if provided, will post as comment instead of new post)')
 @click.option('--post-link', callback=set_env_from_option, 
-              help='Link to attach to the post')
+              help='Link to attach to the post or include in comment text')
 @click.option('--post-privacy', callback=set_env_from_option, 
               help='Post privacy (public or private)')
 @click.option('--scheduled-publish-time', callback=set_env_from_option,
-              help='Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
+              help='Schedule post for future publication (posts only). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
 def facebook(**kwargs):
-    """Post to Facebook Page."""
+    """Post to Facebook Page or comment on a post."""
     import_and_run_post_script('post-to-facebook', 'post_to_facebook', 'post_to_facebook')
 
 

@@ -17,16 +17,72 @@ NAME=Gerald
 ```
 This will post: `Hello Gerald, today is 2025-09-07 at 14:18:25!`
 
-This GitHub Action allows you to post content to a Facebook Page using the Facebook Graph API.
+This GitHub Action allows you to post content to a Facebook Page or comment on a Facebook post using the Facebook Graph API.
 
 ## Features
 
 - Post text content to Facebook Pages
-- Attach media files (images, videos)
-- Include links in posts
+- **Post comments on Facebook posts** (v1.20.0+)
+- Attach media files (images, videos) to posts
+- Include links in posts and comments
 - **Schedule posts for future publication** with flexible time formats
 - Configurable logging levels
-- Returns post ID and URL for further processing
+- Returns post/comment ID and URL for further processing
+
+## Posting Comments (v1.20.0+)
+
+You can now post comments on existing Facebook posts by providing the `fb-post-id` parameter:
+
+```yaml
+- name: Comment on Facebook Post
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.20.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    fb-post-id: "123456789_987654321"  # The post ID to comment on
+    content: "Great post! Check out this link: https://example.com"
+```
+
+### Comment Limitations
+
+Due to Facebook Graph API restrictions, comments have the following limitations:
+- **No direct media upload**: You cannot upload images or videos directly to comments. However, you can include media URLs in the comment text.
+- **No scheduling**: Comments cannot be scheduled and are posted immediately.
+- **No rich link previews**: Links in comments appear as plain URLs without preview cards.
+- **Page ID not required**: When posting comments, you only need `access-token` and `fb-post-id` (no `page-id` needed).
+
+### Comment Examples
+
+**Text-only comment:**
+```yaml
+- name: Post text comment
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.20.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    fb-post-id: "123456789_987654321"
+    content: "This is a great post!"
+```
+
+**Comment with link:**
+```yaml
+- name: Post comment with link
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.20.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    fb-post-id: "123456789_987654321"
+    content: "Check out our blog post!"
+    link: "https://blog.example.com/latest"
+```
+
+**Comment with media URL:**
+```yaml
+- name: Post comment with image URL
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.20.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    fb-post-id: "123456789_987654321"
+    content: "Here's a great image:"
+    media-files: "https://example.com/image.jpg"
+```
 
 ## Scheduling Posts
 
@@ -108,20 +164,25 @@ If you're developing within the social-media-posters repository:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `access-token` | Facebook Page Access Token | Yes | - |
-| `page-id` | Facebook Page ID | Yes | - |
-| `content` | Content to post to Facebook Page | Yes | - |
-| `media-files` | Comma-separated list of media file paths | No | - |
-| `link` | Link to attach to the post | No | - |
-| `scheduled-publish-time` | Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | - |
+| `page-id` | Facebook Page ID (required for posts, not required for comments) | No* | - |
+| `content` | Content to post to Facebook Page or comment text | Yes | - |
+| `fb-post-id` | Facebook Post ID to comment on (if provided, will post as comment instead of new post) | No | - |
+| `media-files` | Comma-separated list of media file paths (for posts) or URLs (for comments) | No | - |
+| `link` | Link to attach to the post or include in comment text | No | - |
+| `scheduled-publish-time` | Schedule post for future publication (posts only, not supported for comments). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
+
+*`page-id` is required when creating a new post, but not required when posting a comment (use `fb-post-id` instead).
 
 ## Outputs
 
 | Output | Description |
 |--------|-------------|
-| `post-id` | ID of the created post |
-| `post-url` | URL of the created post |
-| `scheduled-time` | Scheduled publish time (if scheduling was used) |
+| `post-id` | ID of the created post (if posting) |
+| `post-url` | URL of the created post (if posting) |
+| `comment-id` | ID of the created comment (if commenting) |
+| `comment-url` | URL of the created comment (if commenting) |
+| `scheduled-time` | Scheduled publish time (if scheduling was used for posts) |
 
 ## Example with Media and Link
 

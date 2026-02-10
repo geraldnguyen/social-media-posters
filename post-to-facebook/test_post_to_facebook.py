@@ -20,7 +20,8 @@ from post_to_facebook import (
     _upload_video_simple,
     _upload_video_resumable,
     upload_photo,
-    _graph_api_post
+    _graph_api_post,
+    post_comment
 )
 
 
@@ -356,6 +357,66 @@ class TestVideoScheduling(unittest.TestCase):
         self.assertEqual(call_args[1]['data']['published'], 'false')
         self.assertEqual(call_args[1]['data']['scheduled_publish_time'], str(scheduled_time))
         self.assertEqual(result, 'test_video_id')
+
+
+class TestCommentPosting(unittest.TestCase):
+    """Test cases for comment posting functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.post_id = "123456789_987654321"
+        self.access_token = "test_access_token"
+        self.message = "This is a test comment"
+    
+    @patch('post_to_facebook._graph_api_post')
+    def test_post_comment_basic(self, mock_api_post):
+        """Test basic comment posting."""
+        # Setup
+        mock_api_post.return_value = {'id': 'comment_id_123'}
+        
+        # Execute
+        result = post_comment(self.post_id, self.access_token, self.message)
+        
+        # Verify
+        mock_api_post.assert_called_once()
+        call_args = mock_api_post.call_args
+        self.assertEqual(call_args[0][0], f"{self.post_id}/comments")
+        self.assertEqual(call_args[0][1], self.access_token)
+        self.assertEqual(call_args[1]['data']['message'], self.message)
+        self.assertEqual(call_args[1]['action'], 'post comment')
+        self.assertEqual(result, 'comment_id_123')
+    
+    @patch('post_to_facebook._graph_api_post')
+    def test_post_comment_with_link(self, mock_api_post):
+        """Test comment posting with a link in the message."""
+        # Setup
+        message_with_link = f"{self.message}\nhttps://example.com"
+        mock_api_post.return_value = {'id': 'comment_id_456'}
+        
+        # Execute
+        result = post_comment(self.post_id, self.access_token, message_with_link)
+        
+        # Verify
+        mock_api_post.assert_called_once()
+        call_args = mock_api_post.call_args
+        self.assertEqual(call_args[1]['data']['message'], message_with_link)
+        self.assertEqual(result, 'comment_id_456')
+    
+    @patch('post_to_facebook._graph_api_post')
+    def test_post_comment_with_media_url(self, mock_api_post):
+        """Test comment posting with media URL in the message."""
+        # Setup
+        message_with_media = f"{self.message}\nhttps://example.com/image.jpg"
+        mock_api_post.return_value = {'id': 'comment_id_789'}
+        
+        # Execute
+        result = post_comment(self.post_id, self.access_token, message_with_media)
+        
+        # Verify
+        mock_api_post.assert_called_once()
+        call_args = mock_api_post.call_args
+        self.assertEqual(call_args[1]['data']['message'], message_with_media)
+        self.assertEqual(result, 'comment_id_789')
 
 
 if __name__ == '__main__':
