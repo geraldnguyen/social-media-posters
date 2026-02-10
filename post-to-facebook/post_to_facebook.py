@@ -314,7 +314,12 @@ def post_to_facebook():
             # Get optional parameters for comment
             link = get_optional_env_var("POST_LINK", "")
             media_input = get_optional_env_var("MEDIA_FILES", "")
-            media_files = parse_media_files(media_input)
+            
+            # For comments, don't parse/download media files - just get the raw input
+            raw_media_urls = []
+            if media_input:
+                # Split by comma and strip whitespace
+                raw_media_urls = [url.strip() for url in media_input.split(',') if url.strip()]
             
             # Process templated content and link using the same JSON root
             content, link = process_templated_contents(content, link)
@@ -332,14 +337,14 @@ def post_to_facebook():
                 logger.info(f"Link will be included in comment text: {link}")
             
             # If media files are provided, include them as URLs in the message
-            if media_files:
+            if raw_media_urls:
                 logger.warning("Note: Media files cannot be directly uploaded to comments. URLs will be included in the comment text.")
-                for media_file in media_files:
+                for media_url in raw_media_urls:
                     # If it's a URL, add it to the message
-                    if media_file.startswith('http://') or media_file.startswith('https://'):
-                        comment_message = f"{comment_message}\n{media_file}"
+                    if media_url.startswith('http://') or media_url.startswith('https://'):
+                        comment_message = f"{comment_message}\n{media_url}"
                     else:
-                        logger.warning(f"Local file {media_file} cannot be included in a comment. Please provide a URL instead.")
+                        logger.warning(f"Local file {media_url} cannot be included in a comment. Please provide a URL instead.")
             
             # DRY RUN GUARD
             from social_media_utils import dry_run_guard
