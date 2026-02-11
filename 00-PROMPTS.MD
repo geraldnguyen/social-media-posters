@@ -399,6 +399,8 @@ Modify post-to-fb script, its github action files and corresponding CLI option t
 
 **Optional**: Support scheduling if possible.
 
+# v1.21.0 - Update Post FB comment, Update youtube: Consider empty, "N/A" and "N/A" variations (e.g. "n.a", "n/a", "not applicable"...) empty when determining if the FB POST ID or YOUTUBE VIDEO ID valid Post
+
 Expectation:
 - Implement the above requirements 
 - Create unit tests for the changes 
