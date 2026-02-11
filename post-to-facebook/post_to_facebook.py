@@ -263,17 +263,114 @@ def _upload_video_resumable(page_id: str, video_path: str, description: str, pub
     return video_id
 
 
+def post_comment(post_id: str, access_token: str, message: str) -> str:
+    """Post a comment on a Facebook post.
+    
+    Args:
+        post_id: The Facebook post ID to comment on
+        access_token: Facebook Page access token
+        message: The comment message text (can include links)
+        
+    Returns:
+        The comment ID
+        
+    Note:
+        - Comments only support text messages (including links in text)
+        - Media files cannot be directly uploaded to comments
+        - Comments cannot be scheduled
+    """
+    comment_data = {
+        'message': message
+    }
+    
+    payload = _graph_api_post(
+        f"{post_id}/comments",
+        access_token,
+        data=comment_data,
+        action="post comment"
+    )
+    
+    return payload.get('id')
+
+
 def post_to_facebook():
-    """Main function to post content to Facebook Page."""
+    """Main function to post content to Facebook Page or comment on a post."""
     # Setup logging
     log_level = get_optional_env_var("LOG_LEVEL", "INFO")
     logger = setup_logging(log_level)
     
     try:
         # Get required parameters
-        page_id = get_required_env_var("FB_PAGE_ID")
         access_token = get_required_env_var("FB_ACCESS_TOKEN")
         content = get_required_env_var("POST_CONTENT")
+        
+        # Check if we're posting a comment instead of a new post
+        fb_post_id = get_optional_env_var("FB_POST_ID", "")
+        
+        if fb_post_id:
+            # Comment mode - post as a comment on the specified post
+            logger.info(f"Comment mode: posting comment on post {fb_post_id}")
+            
+            # Get optional parameters for comment
+            link = get_optional_env_var("POST_LINK", "")
+            media_input = get_optional_env_var("MEDIA_FILES", "")
+            
+            # For comments, don't parse/download media files - just get the raw input
+            raw_media_urls = []
+            if media_input:
+                # Split by comma and strip whitespace
+                raw_media_urls = [url.strip() for url in media_input.split(',') if url.strip()]
+            
+            # Process templated content and link using the same JSON root
+            content, link = process_templated_contents(content, link)
+            
+            # Validate content
+            if not validate_post_content(content):
+                sys.exit(1)
+            
+            # Build the comment message
+            comment_message = content
+            
+            # If link is provided, append it to the message
+            if link:
+                comment_message = f"{content}\n{link}"
+                logger.info(f"Link will be included in comment text: {link}")
+            
+            # If media files are provided, include them as URLs in the message
+            if raw_media_urls:
+                logger.warning("Note: Media files cannot be directly uploaded to comments. URLs will be included in the comment text.")
+                for media_url in raw_media_urls:
+                    # If it's a URL, add it to the message
+                    if media_url.startswith('http://') or media_url.startswith('https://'):
+                        comment_message = f"{comment_message}\n{media_url}"
+                    else:
+                        logger.warning(f"Local file {media_url} cannot be included in a comment. Please provide a URL instead.")
+            
+            # DRY RUN GUARD
+            from social_media_utils import dry_run_guard
+            dry_run_request = {
+                'post_id': fb_post_id,
+                'message': comment_message
+            }
+            dry_run_guard("Facebook Comment", comment_message, [], dry_run_request)
+            
+            # Post the comment
+            comment_id = post_comment(fb_post_id, access_token, comment_message)
+            
+            comment_url = f"https://www.facebook.com/{comment_id}"
+            
+            # Output for GitHub Actions
+            if 'GITHUB_OUTPUT' in os.environ:
+                with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                    f.write(f"comment-id={comment_id}\n")
+                    f.write(f"comment-url={comment_url}\n")
+            
+            log_success("Facebook Comment", comment_id)
+            logger.info(f"Comment URL: {comment_url}")
+            return
+        
+        # Normal post mode - create a new post
+        page_id = get_required_env_var("FB_PAGE_ID")
 
         # Determine privacy mode
         privacy_mode = get_optional_env_var("POST_PRIVACY", "public").strip().lower()

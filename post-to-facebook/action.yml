@@ -10,16 +10,19 @@ inputs:
     description: 'Facebook Page Access Token'
     required: true
   page-id:
-    description: 'Facebook Page ID'
-    required: true
+    description: 'Facebook Page ID (required for posts, not required for comments)'
+    required: false
   content:
-    description: 'Content to post to Facebook Page'
+    description: 'Content to post to Facebook Page or comment text'
     required: true
+  fb-post-id:
+    description: 'Facebook Post ID to comment on (if provided, will post as comment instead of new post)'
+    required: false
   media-files:
-    description: 'Comma-separated list of media file paths to attach (optional)'
+    description: 'Comma-separated list of media file paths to attach (optional, for posts only - comments only support URLs in text)'
     required: false
   link:
-    description: 'Link to attach to the post (optional)'
+    description: 'Link to attach to the post or include in comment text (optional)'
     required: false
   log-level:
     description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
@@ -36,16 +39,20 @@ inputs:
     required: false
     default: 'false'
   scheduled-publish-time:
-    description: 'Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")'
+    description: 'Schedule post for future publication (posts only, not supported for comments). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")'
     required: false
 
 outputs:
   post-id:
-    description: 'ID of the created post'
+    description: 'ID of the created post (if posting)'
   post-url:
-    description: 'URL of the created post'
+    description: 'URL of the created post (if posting)'
+  comment-id:
+    description: 'ID of the created comment (if commenting)'
+  comment-url:
+    description: 'URL of the created comment (if commenting)'
   scheduled-time:
-    description: 'Scheduled publish time (if scheduling was used)'
+    description: 'Scheduled publish time (if scheduling was used for posts)'
 
 runs:
   using: 'composite'
@@ -66,6 +73,7 @@ runs:
         FB_ACCESS_TOKEN: ${{ inputs.access-token }}
         FB_PAGE_ID: ${{ inputs.page-id }}
         POST_CONTENT: ${{ inputs.content }}
+        FB_POST_ID: ${{ inputs.fb-post-id }}
         MEDIA_FILES: ${{ inputs.media-files }}
         POST_LINK: ${{ inputs.link }}
         LOG_LEVEL: ${{ inputs.log-level }}

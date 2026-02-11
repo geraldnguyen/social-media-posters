@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2026-02-10
+
+### Added
+
+- **Facebook Comment Posting** - New functionality to post comments on Facebook posts
+  - New `FB_POST_ID` parameter to specify which post to comment on
+  - When `FB_POST_ID` is provided, content is posted as a comment instead of a new post
+  - Support for text content in comments
+  - Support for links in comment text (included as part of the message)
+  - Support for media URLs in comment text (Facebook API limitation - direct media upload not supported for comments)
+  - Automatic detection: if `FB_POST_ID` is present, switches to comment mode; otherwise creates a new post
+  - Full integration with existing templating engine and utilities
+  - Dry-run mode support for testing without actual posting
+  - `FB_PAGE_ID` is no longer required when posting comments (only `FB_ACCESS_TOKEN` and `FB_POST_ID` are needed)
+
+- **CLI Enhancement**
+  - Added `--fb-post-id` option to `social facebook` command
+  - Updated command description to reflect comment posting capability
+  - `--fb-page-id` now marked as optional in help text (required for posts, not for comments)
+
+- **GitHub Action Enhancement**
+  - Added `fb-post-id` input parameter to action.yml
+  - Updated input descriptions to clarify post vs comment usage
+  - Added `comment-id` and `comment-url` outputs for comment posting
+  - `page-id` input now marked as optional (required for posts, not for comments)
+
+- **Unit Tests**
+  - New `TestCommentPosting` test class with 3 comprehensive tests
+  - Tests for basic comment posting
+  - Tests for comments with links
+  - Tests for comments with media URLs
+  - All 14 tests passing successfully (3 new + 11 existing)
+
+### Changed
+
+- **post_to_facebook.py** - Enhanced to support both post and comment modes
+  - Added `post_comment()` function for posting comments
+  - Modified `post_to_facebook()` to detect `FB_POST_ID` and switch modes accordingly
+  - Comment mode includes warnings for limitations (no direct media upload, no scheduling)
+  - Maintains backward compatibility - existing post functionality unchanged
+
+### Notes
+
+- **Limitations of Facebook Comment API**:
+  - Comments cannot include directly uploaded media files (only URLs in text)
+  - Comments cannot be scheduled (Facebook API restriction)
+  - Rich link previews are not supported in comments (only in posts)
+  - When media files are provided for comments, URLs are included in text if they're remote URLs; local files generate warnings
+
+### Documentation
+
+- README.md will be updated with comment posting examples and usage instructions
+- CLI GUIDE.md will be updated with comment posting examples
+- All documentation updated to version 1.20.0
+
 ## [1.19.0] - 2026-02-02
 
 ### Added

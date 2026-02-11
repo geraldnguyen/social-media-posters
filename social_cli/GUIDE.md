@@ -219,6 +219,43 @@ social facebook \
   --media-files "sunset.jpg"
 ```
 
+#### Example 4: Post a Comment (v1.20.0+)
+
+Post a text comment on an existing Facebook post:
+
+```bash
+social facebook \
+  --fb-access-token "your_token" \
+  --fb-post-id "123456789_987654321" \
+  --post-content "Great post! Thanks for sharing."
+```
+
+#### Example 5: Post a Comment with Link
+
+```bash
+social facebook \
+  --fb-access-token "your_token" \
+  --fb-post-id "123456789_987654321" \
+  --post-content "Check out our related article!" \
+  --post-link "https://example.com/related"
+```
+
+#### Example 6: Post a Comment with Media URL
+
+```bash
+social facebook \
+  --fb-access-token "your_token" \
+  --fb-post-id "123456789_987654321" \
+  --post-content "Here's a relevant image:" \
+  --media-files "https://example.com/image.jpg"
+```
+
+**Note on Comments:**
+- When posting comments, `--fb-page-id` is not required (only `--fb-access-token` and `--fb-post-id`)
+- Comments cannot include directly uploaded media files; use public URLs instead
+- Comments cannot be scheduled and are posted immediately
+- Links in comments appear as plain URLs without rich previews
+
 ### Instagram Examples
 
 #### Example 1: Post Image with Caption
