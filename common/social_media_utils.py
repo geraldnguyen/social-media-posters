@@ -236,6 +236,48 @@ def validate_post_content(content: str, max_length: Optional[int] = None) -> boo
     return True
 
 
+def is_value_empty_or_na(value: str) -> bool:
+    """
+    Check if a value is empty, None, or represents "N/A" or its variations.
+    
+    This function treats the following as empty:
+    - None
+    - Empty string
+    - Whitespace-only strings
+    - "N/A" (case-insensitive)
+    - "n.a" (case-insensitive)
+    - "n/a" (case-insensitive)
+    - "not applicable" (case-insensitive)
+    - "na" (case-insensitive)
+    - "n a" (case-insensitive)
+    
+    Args:
+        value: The string value to check
+        
+    Returns:
+        True if the value is empty or represents N/A, False otherwise
+    """
+    if not value or not value.strip():
+        return True
+    
+    # Normalize the value for comparison: lowercase and remove extra spaces
+    normalized = value.strip().lower()
+    
+    # List of N/A variations to check
+    na_variations = [
+        'n/a',
+        'n.a',
+        'n.a.',
+        'na',
+        'n a',
+        'not applicable',
+        'notapplicable',
+        'not-applicable'
+    ]
+    
+    return normalized in na_variations
+
+
 def handle_api_error(error: Exception, platform: str) -> None:
     """Handle API errors consistently across platforms."""
     logger.error(f"Error posting to {platform}: {str(error)}")

@@ -33,7 +33,8 @@ from social_media_utils import (
     handle_api_error,
     log_success,
     parse_media_files,
-    parse_scheduled_time
+    parse_scheduled_time,
+    is_value_empty_or_na
 )
 
 
@@ -307,7 +308,8 @@ def post_to_facebook():
         # Check if we're posting a comment instead of a new post
         fb_post_id = get_optional_env_var("FB_POST_ID", "")
         
-        if fb_post_id:
+        # Treat N/A and its variations as empty
+        if not is_value_empty_or_na(fb_post_id):
             # Comment mode - post as a comment on the specified post
             logger.info(f"Comment mode: posting comment on post {fb_post_id}")
             

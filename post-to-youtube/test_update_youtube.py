@@ -534,3 +534,97 @@ class TestUpdateYouTube(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestVideoIDValidation(unittest.TestCase):
+    """Test cases for VIDEO_ID validation with N/A variations."""
+    
+    @patch('update_youtube.setup_logging')
+    @patch('update_youtube.get_required_env_var')
+    @patch('update_youtube.get_optional_env_var')
+    def test_video_id_na_variations_exit_with_error(self, mock_optional, mock_required, mock_logging):
+        """Test that VIDEO_ID with N/A variations causes error exit."""
+        from update_youtube import main
+        
+        # Setup mocks
+        mock_logging.return_value = MagicMock()
+        
+        # Test various N/A variations
+        na_variations = ['N/A', 'n/a', 'n.a', 'not applicable', '  n/a  ', '', '   ']
+        
+        for na_value in na_variations:
+            mock_required.side_effect = lambda x: {
+                'VIDEO_ID': na_value
+            }.get(x, '')
+            
+            mock_optional.return_value = ''
+            
+            # Execute - should exit with error
+            with patch('sys.exit') as mock_exit:
+                try:
+                    main()
+                except SystemExit:
+                    pass
+                
+                # Verify sys.exit was called with error code 1
+                mock_exit.assert_called()
+                # Check that it was called with 1 (error exit)
+                call_args = mock_exit.call_args
+                if call_args and call_args[0]:
+                    self.assertEqual(call_args[0][0], 1)
+    
+    @patch('update_youtube.setup_logging')
+    @patch('update_youtube.get_required_env_var')
+    @patch('update_youtube.get_optional_env_var')
+    @patch('update_youtube.process_templated_contents')
+    @patch('update_youtube.YouTubeUpdateAPI')
+    def test_video_id_valid_proceeds(self, mock_api_class, mock_template, 
+                                     mock_optional, mock_required, mock_logging):
+        """Test that valid VIDEO_ID proceeds with update."""
+        from update_youtube import main
+        
+        # Setup mocks
+        mock_logging.return_value = MagicMock()
+        mock_required.side_effect = lambda x: {
+            'VIDEO_ID': 'dQw4w9WgXcQ'  # Valid YouTube video ID
+        }.get(x, '')
+        
+        mock_optional.side_effect = lambda x, default='': {
+            'YOUTUBE_OAUTH_REFRESH_TOKEN': 'test_token',
+            'YOUTUBE_OAUTH_CLIENT_ID': 'test_client_id',
+            'YOUTUBE_OAUTH_CLIENT_SECRET': 'test_client_secret',
+            'VIDEO_TITLE': 'New Title',
+            'VIDEO_DESCRIPTION': '',
+            'VIDEO_TAGS': '',
+            'VIDEO_CATEGORY_ID': '',
+            'VIDEO_PRIVACY_STATUS': '',
+            'VIDEO_EMBEDDABLE': '',
+            'VIDEO_LICENSE': '',
+            'VIDEO_PUBLIC_STATS_VIEWABLE': '',
+            'VIDEO_MADE_FOR_KIDS': '',
+            'VIDEO_CONTAINS_SYNTHETIC_MEDIA': '',
+            'YOUTUBE_OAUTH_SCOPES': '',
+            'YOUTUBE_API_KEY': ''
+        }.get(x, default)
+        
+        mock_template.return_value = ('New Title', '')
+        
+        # Mock the YouTubeUpdateAPI instance
+        mock_api_instance = MagicMock()
+        mock_api_class.return_value = mock_api_instance
+        mock_api_instance.update_video.return_value = {
+            'id': 'dQw4w9WgXcQ',
+            'snippet': {'title': 'New Title'}
+        }
+        
+        # Execute
+        with patch('sys.exit') as mock_exit:
+            with patch('update_youtube.dry_run_guard') as mock_dry_run:
+                with patch('update_youtube.log_success'):
+                    try:
+                        main()
+                    except SystemExit:
+                        pass
+        
+        # Verify update_video was called
+        mock_api_instance.update_video.assert_called_once()

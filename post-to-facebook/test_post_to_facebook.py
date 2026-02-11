@@ -419,5 +419,94 @@ class TestCommentPosting(unittest.TestCase):
         self.assertEqual(result, 'comment_id_789')
 
 
+class TestFBPostIDValidation(unittest.TestCase):
+    """Test cases for FB_POST_ID validation with N/A variations."""
+    
+    @patch('post_to_facebook.setup_logging')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.process_templated_contents')
+    @patch('post_to_facebook.post_content')
+    def test_fb_post_id_na_treated_as_empty(self, mock_post_content, mock_template, 
+                                            mock_optional, mock_required, mock_logging):
+        """Test that FB_POST_ID with N/A is treated as empty (new post mode)."""
+        from post_to_facebook import main
+        
+        # Setup mocks
+        mock_logging.return_value = MagicMock()
+        mock_required.side_effect = lambda x: {
+            'FB_ACCESS_TOKEN': 'test_token',
+            'POST_CONTENT': 'Test content',
+            'FB_PAGE_ID': 'test_page_id'
+        }.get(x, '')
+        
+        # Test various N/A variations
+        na_variations = ['N/A', 'n/a', 'n.a', 'not applicable', '  n/a  ', '', '   ']
+        
+        for na_value in na_variations:
+            mock_optional.side_effect = lambda x, default='': {
+                'FB_POST_ID': na_value,
+                'POST_LINK': '',
+                'MEDIA_FILES': '',
+                'SCHEDULE_TIME': '',
+                'VIDEO_UPLOAD_THRESHOLD_MB': '5'
+            }.get(x, default)
+            
+            mock_template.return_value = ('Test content', '')
+            mock_post_content.return_value = 'post_123'
+            
+            # Execute - should go to post_content (new post), not comment mode
+            with patch('sys.exit') as mock_exit:
+                with patch('post_to_facebook.dry_run_guard') as mock_dry_run:
+                    with patch('post_to_facebook.log_success'):
+                        try:
+                            main()
+                        except SystemExit:
+                            pass
+            
+            # Verify post_content was called (new post mode), not post_comment
+            mock_post_content.assert_called()
+    
+    @patch('post_to_facebook.setup_logging')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.process_templated_contents')
+    @patch('post_to_facebook.post_comment')
+    def test_fb_post_id_valid_goes_to_comment_mode(self, mock_post_comment, mock_template, 
+                                                    mock_optional, mock_required, mock_logging):
+        """Test that valid FB_POST_ID goes to comment mode."""
+        from post_to_facebook import main
+        
+        # Setup mocks
+        mock_logging.return_value = MagicMock()
+        mock_required.side_effect = lambda x: {
+            'FB_ACCESS_TOKEN': 'test_token',
+            'POST_CONTENT': 'Test comment'
+        }.get(x, '')
+        
+        mock_optional.side_effect = lambda x, default='': {
+            'FB_POST_ID': '123456789_987654321',  # Valid post ID
+            'POST_LINK': '',
+            'MEDIA_FILES': '',
+            'SCHEDULE_TIME': ''
+        }.get(x, default)
+        
+        mock_template.return_value = ('Test comment',)
+        mock_post_comment.return_value = 'comment_123'
+        
+        # Execute - should go to comment mode
+        with patch('sys.exit') as mock_exit:
+            with patch('post_to_facebook.dry_run_guard') as mock_dry_run:
+                with patch('post_to_facebook.log_success'):
+                    try:
+                        main()
+                    except SystemExit:
+                        pass
+        
+        # Verify post_comment was called
+        mock_post_comment.assert_called_once()
+
+
 if __name__ == '__main__':
     unittest.main()
+
