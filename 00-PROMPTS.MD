@@ -399,7 +399,14 @@ Modify post-to-fb script, its github action files and corresponding CLI option t
 
 **Optional**: Support scheduling if possible.
 
-# v1.21.0 - Update Post FB comment, Update youtube: Consider empty, "N/A" and "N/A" variations (e.g. "n.a", "n/a", "not applicable"...) empty when determining if the FB POST ID or YOUTUBE VIDEO ID valid Post
+## v1.21.0 - Update Post FB comment, Update youtube: Consider empty, "N/A" and "N/A" variations (e.g. "n.a", "n/a", "not applicable"...) empty when determining if the FB POST ID or YOUTUBE VIDEO ID valid Post
+
+## v1.22.0 - Post Reel to FB page: Supporting Reel title
+
+When posting Video files to FB page (i.e. reel), accept the video's title from `--post-title` option or equivalent Github input and variable settings.
+
+If the video's title is not provided, leave it blank when schedule or publish the video.
+
 
 Expectation:
 - Implement the above requirements 
