@@ -114,6 +114,8 @@ def x(**kwargs):
               help='Facebook Post ID to comment on (if provided, will post as comment instead of new post)')
 @click.option('--post-link', callback=set_env_from_option, 
               help='Link to attach to the post or include in comment text')
+@click.option('--post-title', callback=set_env_from_option,
+              help='Title for video/reel posts (optional, only used for video files)')
 @click.option('--post-privacy', callback=set_env_from_option, 
               help='Post privacy (public or private)')
 @click.option('--scheduled-publish-time', callback=set_env_from_option,

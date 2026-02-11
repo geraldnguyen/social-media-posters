@@ -52,7 +52,7 @@ class TestVideoUpload(unittest.TestCase):
         # Verify
         mock_simple.assert_called_once_with(
             self.page_id, "/path/to/video.mp4", self.description, 
-            self.published, self.access_token, None
+            self.published, self.access_token, None, None
         )
         self.assertEqual(result, "test_video_id")
     
@@ -73,7 +73,7 @@ class TestVideoUpload(unittest.TestCase):
         # Verify
         mock_resumable.assert_called_once_with(
             self.page_id, "/path/to/large_video.mp4", self.description, 
-            self.published, self.access_token, None
+            self.published, self.access_token, None, None
         )
         self.assertEqual(result, "test_video_id")
     
@@ -505,6 +505,158 @@ class TestFBPostIDValidation(unittest.TestCase):
         
         # Verify post_comment was called
         mock_post_comment.assert_called_once()
+
+
+class TestVideoTitleSupport(unittest.TestCase):
+    """Test cases for video title support (v1.22.0)."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.page_id = "test_page_id"
+        self.access_token = "test_access_token"
+        self.description = "Test video description"
+        self.title = "Test Video Title"
+        self.published = True
+    
+    @patch('post_to_facebook._graph_api_post')
+    @patch('builtins.open', new_callable=mock_open, read_data=b'video_data')
+    def test_upload_video_simple_with_title(self, mock_file, mock_api_post):
+        """Test simple video upload with title parameter."""
+        # Setup
+        mock_api_post.return_value = {'id': 'test_video_id'}
+        
+        # Execute
+        result = _upload_video_simple(self.page_id, "/path/to/video.mp4", 
+                                     self.description, self.published, self.access_token, 
+                                     None, self.title)
+        
+        # Verify
+        mock_file.assert_called_once_with("/path/to/video.mp4", 'rb')
+        mock_api_post.assert_called_once()
+        call_args = mock_api_post.call_args
+        self.assertEqual(call_args[0][0], f"{self.page_id}/videos")
+        self.assertEqual(call_args[0][1], self.access_token)
+        self.assertEqual(call_args[1]['data']['description'], self.description)
+        self.assertEqual(call_args[1]['data']['title'], self.title)
+        self.assertEqual(call_args[1]['data']['published'], 'true')
+        self.assertEqual(result, 'test_video_id')
+    
+    @patch('post_to_facebook._graph_api_post')
+    @patch('builtins.open', new_callable=mock_open, read_data=b'video_data')
+    def test_upload_video_simple_without_title(self, mock_file, mock_api_post):
+        """Test simple video upload without title parameter (backward compatibility)."""
+        # Setup
+        mock_api_post.return_value = {'id': 'test_video_id'}
+        
+        # Execute
+        result = _upload_video_simple(self.page_id, "/path/to/video.mp4", 
+                                     self.description, self.published, self.access_token)
+        
+        # Verify
+        mock_file.assert_called_once_with("/path/to/video.mp4", 'rb')
+        mock_api_post.assert_called_once()
+        call_args = mock_api_post.call_args
+        self.assertEqual(call_args[0][0], f"{self.page_id}/videos")
+        self.assertEqual(call_args[0][1], self.access_token)
+        self.assertEqual(call_args[1]['data']['description'], self.description)
+        self.assertNotIn('title', call_args[1]['data'])  # Title should not be present
+        self.assertEqual(call_args[1]['data']['published'], 'true')
+        self.assertEqual(result, 'test_video_id')
+    
+    @patch('post_to_facebook.os.path.getsize')
+    @patch('post_to_facebook._graph_api_post')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_upload_video_resumable_with_title(self, mock_file, mock_api_post, mock_getsize):
+        """Test resumable video upload with title in finish phase."""
+        # Setup
+        video_size = 10 * 1024 * 1024  # 10MB
+        mock_getsize.return_value = video_size
+        
+        # Mock API responses
+        def api_post_side_effect(*args, **kwargs):
+            action = kwargs.get('action', '')
+            if action == 'start upload session':
+                return {'upload_session_id': 'session_123', 'video_id': 'video_456'}
+            elif action == 'transfer video chunk':
+                return {'success': True}
+            elif action == 'finish upload':
+                return {'success': True}
+            return {}
+        
+        mock_api_post.side_effect = api_post_side_effect
+        
+        # Mock file reading
+        chunk_size = 4 * 1024 * 1024  # 4MB
+        chunks = [b'x' * chunk_size, b'x' * chunk_size, b'x' * (video_size - 2 * chunk_size)]
+        mock_file.return_value.read.side_effect = chunks + [b'']
+        
+        # Execute
+        result = _upload_video_resumable(self.page_id, "/path/to/large_video.mp4", 
+                                        self.description, self.published, self.access_token, 
+                                        None, self.title)
+        
+        # Verify
+        self.assertEqual(result, 'video_456')
+        
+        # Check finish phase call for title
+        finish_call = None
+        for call_item in mock_api_post.call_args_list:
+            if call_item[1].get('action') == 'finish upload':
+                finish_call = call_item
+                break
+        
+        self.assertIsNotNone(finish_call)
+        self.assertEqual(finish_call[1]['data']['upload_phase'], 'finish')
+        self.assertEqual(finish_call[1]['data']['description'], self.description)
+        self.assertEqual(finish_call[1]['data']['title'], self.title)
+        self.assertEqual(finish_call[1]['data']['published'], 'true')
+    
+    @patch('post_to_facebook.os.path.getsize')
+    @patch('post_to_facebook._graph_api_post')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_upload_video_resumable_without_title(self, mock_file, mock_api_post, mock_getsize):
+        """Test resumable video upload without title (backward compatibility)."""
+        # Setup
+        video_size = 10 * 1024 * 1024  # 10MB
+        mock_getsize.return_value = video_size
+        
+        # Mock API responses
+        def api_post_side_effect(*args, **kwargs):
+            action = kwargs.get('action', '')
+            if action == 'start upload session':
+                return {'upload_session_id': 'session_123', 'video_id': 'video_456'}
+            elif action == 'transfer video chunk':
+                return {'success': True}
+            elif action == 'finish upload':
+                return {'success': True}
+            return {}
+        
+        mock_api_post.side_effect = api_post_side_effect
+        
+        # Mock file reading
+        chunk_size = 4 * 1024 * 1024  # 4MB
+        chunks = [b'x' * chunk_size, b'x' * chunk_size, b'x' * (video_size - 2 * chunk_size)]
+        mock_file.return_value.read.side_effect = chunks + [b'']
+        
+        # Execute
+        result = _upload_video_resumable(self.page_id, "/path/to/large_video.mp4", 
+                                        self.description, self.published, self.access_token)
+        
+        # Verify
+        self.assertEqual(result, 'video_456')
+        
+        # Check finish phase call - title should not be present
+        finish_call = None
+        for call_item in mock_api_post.call_args_list:
+            if call_item[1].get('action') == 'finish upload':
+                finish_call = call_item
+                break
+        
+        self.assertIsNotNone(finish_call)
+        self.assertEqual(finish_call[1]['data']['upload_phase'], 'finish')
+        self.assertEqual(finish_call[1]['data']['description'], self.description)
+        self.assertNotIn('title', finish_call[1]['data'])  # Title should not be present
+        self.assertEqual(finish_call[1]['data']['published'], 'true')
 
 
 if __name__ == '__main__':
