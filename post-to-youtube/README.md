@@ -422,6 +422,8 @@ update_youtube()
 | `VIDEO_MADE_FOR_KIDS` | Whether video is for kids (true/false) | No |
 | `VIDEO_CONTAINS_SYNTHETIC_MEDIA` | Whether video has AI/synthetic content (true/false) | No |
 
+**Note (v1.21.0+)**: `VIDEO_ID` cannot be empty, contain only whitespace, or be a placeholder value like "N/A", "n/a", "not applicable", etc. The script will exit with an error if such values are provided.
+
 **Note**: At least one field besides `VIDEO_ID` must be provided for the update to proceed.
 
 ### Dry Run Mode for Updates
