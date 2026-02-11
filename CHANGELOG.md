@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2026-02-11
+
+### Added
+
+- **Enhanced Input Validation** - New validation for FB_POST_ID and VIDEO_ID parameters
+  - New `is_value_empty_or_na()` utility function in `common/social_media_utils.py`
+  - Treats empty strings, whitespace, and "N/A" variations as empty/invalid values
+  - Supported N/A variations: "N/A", "n/a", "n.a", "n.a.", "na", "n a", "not applicable", "notapplicable", "not-applicable" (all case-insensitive)
+  - Comprehensive unit tests with 16 test cases covering all variations
+  - Prevents accidental posting when placeholder values are used
+
+### Changed
+
+- **Facebook Comment Posting** - Enhanced `post_to_facebook.py` to validate `FB_POST_ID`
+  - Now treats N/A and its variations as empty (switches to new post mode instead of comment mode)
+  - Added import for `is_value_empty_or_na` function
+  - Updated validation logic to use `is_value_empty_or_na()` instead of simple truthiness check
+  - Maintains backward compatibility with existing behavior
+
+- **YouTube Video Update** - Enhanced `update_youtube.py` to validate `VIDEO_ID`
+  - Now explicitly validates that VIDEO_ID is not empty or N/A variation
+  - Exits with clear error message if VIDEO_ID is invalid
+  - Added import for `is_value_empty_or_na` function
+  - Prevents failed API calls with invalid video IDs
+
+### Testing
+
+- **New Unit Tests**
+  - Added `test_value_validation.py` with 16 tests for `is_value_empty_or_na()` function
+  - Added integration tests in `test_post_to_facebook.py` for FB_POST_ID validation
+  - Added integration tests in `test_update_youtube.py` for VIDEO_ID validation
+  - All tests passing successfully
+
+### Documentation
+
+- Updated version numbers in:
+  - `pyproject.toml` (1.20.0 → 1.21.0)
+  - `common/__init__.py` (1.19.0 → 1.21.0)
+  - `social_cli/__init__.py` (1.20.0 → 1.21.0)
+
 ## [1.20.0] - 2026-02-10
 
 ### Added

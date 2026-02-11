@@ -42,6 +42,8 @@ You can now post comments on existing Facebook posts by providing the `fb-post-i
     content: "Great post! Check out this link: https://example.com"
 ```
 
+**Note (v1.21.0+):** If `fb-post-id` is empty, contains only whitespace, or is a placeholder value like "N/A", "n/a", "not applicable", etc., the action will create a new post instead of a comment. This prevents accidental posting when placeholder values are used.
+
 ### Comment Limitations
 
 Due to Facebook Graph API restrictions, comments have the following limitations:

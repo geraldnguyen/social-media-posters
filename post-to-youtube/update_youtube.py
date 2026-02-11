@@ -36,7 +36,8 @@ from social_media_utils import (
     get_optional_env_var,
     handle_api_error,
     log_success,
-    dry_run_guard
+    dry_run_guard,
+    is_value_empty_or_na
 )
 
 # Google API imports
@@ -295,6 +296,11 @@ def update_youtube():
         
         # Get video ID (required)
         video_id = get_required_env_var("VIDEO_ID")
+        
+        # Validate that VIDEO_ID is not empty or N/A variation
+        if is_value_empty_or_na(video_id):
+            logger.error("VIDEO_ID cannot be empty, N/A, or similar variations")
+            sys.exit(1)
         
         # Get optional update fields
         title = get_optional_env_var("VIDEO_TITLE", "")
