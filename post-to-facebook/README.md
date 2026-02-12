@@ -24,6 +24,7 @@ This GitHub Action allows you to post content to a Facebook Page or comment on a
 - Post text content to Facebook Pages
 - **Post comments on Facebook posts** (v1.20.0+)
 - Attach media files (images, videos) to posts
+- **Support video/reel titles** (v1.22.0+)
 - Include links in posts and comments
 - **Schedule posts for future publication** with flexible time formats
 - Configurable logging levels
@@ -84,6 +85,50 @@ Due to Facebook Graph API restrictions, comments have the following limitations:
     fb-post-id: "123456789_987654321"
     content: "Here's a great image:"
     media-files: "https://example.com/image.jpg"
+```
+
+## Video/Reel Titles (v1.22.0+)
+
+When posting videos or reels to Facebook, you can now specify a title for the video using the `post-title` parameter. This is particularly useful for reels and video content that benefits from a clear title.
+
+**Note:** The title parameter only applies to video files (`.mp4`, `.mov`, `.avi`). It is ignored for image posts and text-only posts.
+
+### Examples
+
+**Video post with title:**
+```yaml
+- name: Post video with title
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.22.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    page-id: ${{ secrets.FB_PAGE_ID }}
+    content: "Check out this amazing tutorial!"
+    media-files: "videos/tutorial.mp4"
+    post-title: "How to Build Amazing Apps"
+```
+
+**Reel post with title:**
+```yaml
+- name: Post reel with title
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.22.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    page-id: ${{ secrets.FB_PAGE_ID }}
+    content: "New behind-the-scenes content! 🎬"
+    media-files: "reels/behind-scenes.mp4"
+    post-title: "Behind the Scenes: Day 1"
+```
+
+**Video without title (optional):**
+```yaml
+- name: Post video without title
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.22.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    page-id: ${{ secrets.FB_PAGE_ID }}
+    content: "Watch this!"
+    media-files: "videos/video.mp4"
+    # post-title is optional - video will be posted without a title
 ```
 
 ## Scheduling Posts
@@ -171,6 +216,7 @@ If you're developing within the social-media-posters repository:
 | `fb-post-id` | Facebook Post ID to comment on (if provided, will post as comment instead of new post) | No | - |
 | `media-files` | Comma-separated list of media file paths (for posts) or URLs (for comments) | No | - |
 | `link` | Link to attach to the post or include in comment text | No | - |
+| `post-title` | Title for video/reel posts (v1.22.0+, only used for video files) | No | - |
 | `scheduled-publish-time` | Schedule post for future publication (posts only, not supported for comments). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
 

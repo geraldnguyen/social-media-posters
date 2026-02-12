@@ -24,6 +24,9 @@ inputs:
   link:
     description: 'Link to attach to the post or include in comment text (optional)'
     required: false
+  post-title:
+    description: 'Title for video/reel posts (optional, only used for video files)'
+    required: false
   log-level:
     description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
     required: false
@@ -76,6 +79,7 @@ runs:
         FB_POST_ID: ${{ inputs.fb-post-id }}
         MEDIA_FILES: ${{ inputs.media-files }}
         POST_LINK: ${{ inputs.link }}
+        POST_TITLE: ${{ inputs.post-title }}
         LOG_LEVEL: ${{ inputs.log-level }}
         CONTENT_JSON: ${{ inputs.content-json }}
         TIME_ZONE: ${{ inputs.time-zone }}

@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2026-02-11
+
+### Added
+
+- **Video/Reel Title Support** - Facebook video and reel posts now support titles
+  - Added `POST_TITLE` environment variable support in `post_to_facebook.py`
+  - Added `post-title` input parameter to GitHub Action (`action.yml`)
+  - Added `--post-title` CLI option to `social` command for Facebook
+  - Title is included in both simple and resumable video upload methods
+  - Title parameter is optional - videos can still be posted without a title
+  - Only applies to video files (`.mp4`, `.mov`, `.avi`) - ignored for images and text posts
+
+### Changed
+
+- **Video Upload Functions** - Updated to accept and process title parameter
+  - Modified `upload_video()` function signature to include optional `title` parameter
+  - Modified `_upload_video_simple()` to include title in upload data
+  - Modified `_upload_video_resumable()` to include title in finish phase data
+  - Backward compatible - existing code without title parameter continues to work
+
+### Testing
+
+- **New Unit Tests** - Added comprehensive test coverage for video title feature
+  - Added `TestVideoTitleSupport` class with 4 test cases
+  - Tests cover both simple and resumable upload with and without title
+  - Tests verify backward compatibility (title parameter is optional)
+  - Updated existing tests to handle new function signatures
+  - All 18 video-related tests passing successfully
+
+### Documentation
+
+- Updated `post-to-facebook/README.md` with:
+  - New "Video/Reel Titles" section explaining the feature
+  - Examples showing how to use the `post-title` parameter
+  - Updated inputs table to include `post-title` parameter
+  - Updated features list to highlight title support
+- Updated version numbers in package files (to be done)
+
 ## [1.21.0] - 2026-02-11
 
 ### Added

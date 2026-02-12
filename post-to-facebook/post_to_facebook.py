@@ -100,7 +100,7 @@ def upload_photo(page_id: str, photo_path: str, message: str, published: bool, a
     return payload.get('post_id') or payload.get('id')
 
 
-def upload_video(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None) -> str:
+def upload_video(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None, title: str = None) -> str:
     """
     Upload a video to Facebook Page using resumable upload.
     
@@ -120,17 +120,22 @@ def upload_video(page_id: str, video_path: str, description: str, published: boo
     
     if video_size < threshold_bytes:
         logger.info(f"Video is smaller than {threshold_mb}MB, using simple upload")
-        return _upload_video_simple(page_id, video_path, description, published, access_token, scheduled_publish_time)
+        return _upload_video_simple(page_id, video_path, description, published, access_token, scheduled_publish_time, title)
     else:
         logger.info(f"Video is larger than {threshold_mb}MB, using resumable upload")
-        return _upload_video_resumable(page_id, video_path, description, published, access_token, scheduled_publish_time)
+        return _upload_video_resumable(page_id, video_path, description, published, access_token, scheduled_publish_time, title)
 
 
-def _upload_video_simple(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None) -> str:
+def _upload_video_simple(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None, title: str = None) -> str:
     """Upload a small video using simple POST request."""
     data = {'published': str(published).lower()}
     if description:
         data['description'] = description
+    
+    # Add title if provided
+    if title:
+        data['title'] = title
+        logger.info(f"Video title: {title}")
     
     # Add scheduled publish time if provided
     if scheduled_publish_time:
@@ -153,7 +158,7 @@ def _upload_video_simple(page_id: str, video_path: str, description: str, publis
     return payload.get('id')
 
 
-def _upload_video_resumable(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None) -> str:
+def _upload_video_resumable(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None, title: str = None) -> str:
     """
     Upload a large video using Facebook's resumable upload API.
     
@@ -239,6 +244,11 @@ def _upload_video_resumable(page_id: str, video_path: str, description: str, pub
     
     if description:
         finish_data['description'] = description
+    
+    # Add title if provided
+    if title:
+        finish_data['title'] = title
+        logger.info(f"Video title: {title}")
     
     finish_data['published'] = str(published).lower()
     
@@ -383,6 +393,7 @@ def post_to_facebook():
 
         # Get optional parameters
         link = get_optional_env_var("POST_LINK", "")
+        title = get_optional_env_var("POST_TITLE", "")
         # Process templated content and link using the same JSON root
         content, link = process_templated_contents(content, link)
 
@@ -445,8 +456,8 @@ def post_to_facebook():
                     # Upload photo
                     post_id = upload_photo(page_id, media_file, content, published, access_token, scheduled_publish_time)
                 elif file_ext in ['.mp4', '.mov', '.avi']:
-                    # Upload video
-                    post_id = upload_video(page_id, media_file, content, published, access_token, scheduled_publish_time)
+                    # Upload video (with title if provided)
+                    post_id = upload_video(page_id, media_file, content, published, access_token, scheduled_publish_time, title)
                 else:
                     logger.warning(f"Unsupported media type: {file_ext}")
                     # Create text post with link if media type not supported
