@@ -201,7 +201,7 @@ def post_to_instagram():
         media_types = []
         for media_file in media_files:
             file_ext = Path(media_file).suffix.lower() if not media_file.startswith('http') else Path(media_file).suffix.lower()
-            if file_ext in ['.mp4', '.mov']:
+            if file_ext in ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']:
                 media_types.append("VIDEO")
             else:
                 media_types.append("IMAGE")

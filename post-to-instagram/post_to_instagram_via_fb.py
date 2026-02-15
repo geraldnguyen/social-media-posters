@@ -433,7 +433,7 @@ def post_to_instagram_via_fb():
         media_details = []
         for i, media_file in enumerate(media_files_raw):
             file_ext = Path(media_file).suffix.lower()
-            media_type = "VIDEO" if file_ext in ['.mp4', '.mov'] else "IMAGE"
+            media_type = "VIDEO" if file_ext in ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv'] else "IMAGE"
             file_size = os.path.getsize(media_file) if os.path.exists(media_file) else 'N/A'
             media_details.append({
                 'index': i + 1,
@@ -461,7 +461,7 @@ def post_to_instagram_via_fb():
         for media_file in media_files_raw:
             file_ext = Path(media_file).suffix.lower()
             # Videos can be local files or URLs; images must be URLs
-            if file_ext in ['.mp4', '.mov']:
+            if file_ext in ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']:
                 if not media_file.startswith(('http://', 'https://')):
                     if not os.path.exists(media_file):
                         logger.error(f"Video file not found: {media_file}")
@@ -488,7 +488,7 @@ def post_to_instagram_via_fb():
             
             file_ext = Path(media_file).suffix.lower()
             
-            if file_ext in ['.mp4', '.mov']:
+            if file_ext in ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']:
                 # Video - always use resumable upload (local or hosted via file_url header)
                 item_caption = content if len(media_files) == 1 else ""
                 is_carousel_item = len(media_files) > 1

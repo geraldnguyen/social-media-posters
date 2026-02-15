@@ -234,7 +234,7 @@ def post_to_linkedin():
             for media_file in media_files:
                 file_ext = Path(media_file).suffix.lower()
                 
-                if file_ext in ['.jpg', '.jpeg', '.png', '.gif']:
+                if file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']:
                     # Upload image
                     asset_urn = api.upload_image(author_id, media_file)
                     media_assets.append(asset_urn)

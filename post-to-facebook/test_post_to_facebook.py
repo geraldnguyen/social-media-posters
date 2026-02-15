@@ -659,6 +659,187 @@ class TestVideoTitleSupport(unittest.TestCase):
         self.assertEqual(finish_call[1]['data']['published'], 'true')
 
 
+class TestExpandedFileExtensions(unittest.TestCase):
+    """Test cases for expanded image and video file extensions (v1.23.0)."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.page_id = "test_page_id"
+        self.access_token = "test_access_token"
+        self.description = "Test content"
+        self.published = True
+    
+    @patch('post_to_facebook.os.path.getsize')
+    @patch('post_to_facebook.upload_photo')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.dry_run_guard')
+    def test_webp_image_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_photo, mock_getsize):
+        """Test that .webp image files are recognized and uploaded."""
+        from post_to_facebook import main
+        
+        # Setup
+        mock_get_required.side_effect = lambda x: {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description
+        }[x]
+        mock_get_optional.side_effect = lambda x, default=None: {
+            'MEDIA_FILES': '/path/to/image.webp',
+            'PUBLISHED': 'true'
+        }.get(x, default)
+        mock_upload_photo.return_value = "test_post_id"
+        mock_getsize.return_value = 1024
+        
+        # Execute
+        with patch.dict(os.environ, {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description,
+            'MEDIA_FILES': '/path/to/image.webp'
+        }):
+            main()
+        
+        # Verify upload_photo was called
+        mock_upload_photo.assert_called_once()
+    
+    @patch('post_to_facebook.os.path.getsize')
+    @patch('post_to_facebook.upload_photo')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.dry_run_guard')
+    def test_bmp_image_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_photo, mock_getsize):
+        """Test that .bmp image files are recognized and uploaded."""
+        from post_to_facebook import main
+        
+        # Setup
+        mock_get_required.side_effect = lambda x: {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description
+        }[x]
+        mock_get_optional.side_effect = lambda x, default=None: {
+            'MEDIA_FILES': '/path/to/image.bmp',
+            'PUBLISHED': 'true'
+        }.get(x, default)
+        mock_upload_photo.return_value = "test_post_id"
+        mock_getsize.return_value = 1024
+        
+        # Execute
+        with patch.dict(os.environ, {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description,
+            'MEDIA_FILES': '/path/to/image.bmp'
+        }):
+            main()
+        
+        # Verify upload_photo was called
+        mock_upload_photo.assert_called_once()
+    
+    @patch('post_to_facebook.os.path.getsize')
+    @patch('post_to_facebook.upload_video')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.dry_run_guard')
+    def test_wmv_video_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_video, mock_getsize):
+        """Test that .wmv video files are recognized and uploaded."""
+        from post_to_facebook import main
+        
+        # Setup
+        mock_get_required.side_effect = lambda x: {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description
+        }[x]
+        mock_get_optional.side_effect = lambda x, default=None: {
+            'MEDIA_FILES': '/path/to/video.wmv',
+            'PUBLISHED': 'true'
+        }.get(x, default)
+        mock_upload_video.return_value = "test_post_id"
+        mock_getsize.return_value = 1024 * 1024  # 1MB
+        
+        # Execute
+        with patch.dict(os.environ, {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description,
+            'MEDIA_FILES': '/path/to/video.wmv'
+        }):
+            main()
+        
+        # Verify upload_video was called
+        mock_upload_video.assert_called_once()
+    
+    @patch('post_to_facebook.os.path.getsize')
+    @patch('post_to_facebook.upload_video')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.dry_run_guard')
+    def test_webm_video_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_video, mock_getsize):
+        """Test that .webm video files are recognized and uploaded."""
+        from post_to_facebook import main
+        
+        # Setup
+        mock_get_required.side_effect = lambda x: {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description
+        }[x]
+        mock_get_optional.side_effect = lambda x, default=None: {
+            'MEDIA_FILES': '/path/to/video.webm',
+            'PUBLISHED': 'true'
+        }.get(x, default)
+        mock_upload_video.return_value = "test_post_id"
+        mock_getsize.return_value = 1024 * 1024  # 1MB
+        
+        # Execute
+        with patch.dict(os.environ, {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description,
+            'MEDIA_FILES': '/path/to/video.webm'
+        }):
+            main()
+        
+        # Verify upload_video was called
+        mock_upload_video.assert_called_once()
+    
+    @patch('post_to_facebook.os.path.getsize')
+    @patch('post_to_facebook.upload_video')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.dry_run_guard')
+    def test_mkv_video_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_video, mock_getsize):
+        """Test that .mkv video files are recognized and uploaded."""
+        from post_to_facebook import main
+        
+        # Setup
+        mock_get_required.side_effect = lambda x: {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description
+        }[x]
+        mock_get_optional.side_effect = lambda x, default=None: {
+            'MEDIA_FILES': '/path/to/video.mkv',
+            'PUBLISHED': 'true'
+        }.get(x, default)
+        mock_upload_video.return_value = "test_post_id"
+        mock_getsize.return_value = 1024 * 1024  # 1MB
+        
+        # Execute
+        with patch.dict(os.environ, {
+            'FB_PAGE_ID': self.page_id,
+            'FB_ACCESS_TOKEN': self.access_token,
+            'POST_CONTENT': self.description,
+            'MEDIA_FILES': '/path/to/video.mkv'
+        }):
+            main()
+        
+        # Verify upload_video was called
+        mock_upload_video.assert_called_once()
+
+
 if __name__ == '__main__':
     unittest.main()
 
