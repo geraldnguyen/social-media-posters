@@ -452,10 +452,10 @@ def post_to_facebook():
                 media_file = media_files[0]
                 file_ext = Path(media_file).suffix.lower()
                 
-                if file_ext in ['.jpg', '.jpeg', '.png', '.gif']:
+                if file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']:
                     # Upload photo
                     post_id = upload_photo(page_id, media_file, content, published, access_token, scheduled_publish_time)
-                elif file_ext in ['.mp4', '.mov', '.avi']:
+                elif file_ext in ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']:
                     # Upload video (with title if provided)
                     post_id = upload_video(page_id, media_file, content, published, access_token, scheduled_publish_time, title)
                 else:
@@ -470,8 +470,8 @@ def post_to_facebook():
                     post_id = payload.get('id')
             else:
                 # Multiple media files
-                image_exts = {'.jpg', '.jpeg', '.png', '.gif'}
-                video_exts = {'.mp4', '.mov', '.avi'}
+                image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif'}
+                video_exts = {'.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv'}
                 image_files = [m for m in media_files if Path(m).suffix.lower() in image_exts]
                 video_files = [m for m in media_files if Path(m).suffix.lower() in video_exts]
 

@@ -328,7 +328,7 @@ jobs:
 
 - Content is limited to 3000 characters (LinkedIn's character limit for posts)
 - Media files must be accessible from the GitHub Actions runner
-- Only image files (.jpg, .jpeg, .png, .gif) are supported for media uploads
+- Only image files (.jpg, .jpeg, .png, .gif, .webp, .bmp, .tiff, .tif) are supported for media uploads (expanded in v1.23.0)
 - Video uploads are not currently supported
 - Rate limits apply based on your LinkedIn API access level
 - Access tokens expire and need to be refreshed
@@ -346,7 +346,7 @@ jobs:
 
 ### Media upload failures
 - Verify the image file exists and is accessible
-- Check that the file is a supported format (.jpg, .jpeg, .png, .gif)
+- Check that the file is a supported format (.jpg, .jpeg, .png, .gif, .webp, .bmp, .tiff, .tif)
 - Ensure the file size is reasonable (LinkedIn has size limits)
 
 ## LinkedIn API Documentation

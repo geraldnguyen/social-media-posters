@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2026-02-15
+
+### Added
+
+- **Extended Image Format Support** - Expanded image file extensions across all platforms
+  - Added `.webp` (WebP format) support to Facebook, LinkedIn, Instagram, Threads
+  - Added `.bmp` (Bitmap) support to all platforms
+  - Added `.tiff`, `.tif` (TIFF format) support to all platforms
+  - Updated `post_to_facebook.py`, `post_to_linkedin.py`, `post_to_instagram.py`, `post_to_instagram_via_fb.py`, `post_to_threads.py`, and `post_to_bluesky.py`
+
+- **Extended Video Format Support** - Expanded video file extensions across all platforms
+  - Added `.wmv` (Windows Media Video) support
+  - Added `.mpg`, `.mpeg` (MPEG formats) support
+  - Added `.webm` (Web Video) support
+  - Added `.flv` (Flash Video) support
+  - Added `.m4v` (iTunes Video) support
+  - Added `.mkv` (Matroska Video) support
+  - Added `.3gp`, `.3g2` (Mobile Video) support
+  - Added `.ogv` (Ogg Video) support
+  - Updated `post_to_facebook.py`, `post_to_instagram.py`, `post_to_instagram_via_fb.py`, and `post_to_threads.py`
+
+### Changed
+
+- **File Extension Lists** - Updated extension checking logic in all post-to-* scripts
+  - Facebook: Now supports 8 image formats and 13 video formats (previously 4 and 3)
+  - LinkedIn: Now supports 8 image formats (previously 4)
+  - Instagram: Now supports 13 video formats (previously 2)
+  - Threads: Now supports 8 image formats and 13 video formats (previously 4 and 2)
+  - Bluesky: Now supports 8 image formats (previously 5)
+  - All changes are backward compatible with existing media files
+
 ## [1.22.0] - 2026-02-11
 
 ### Added

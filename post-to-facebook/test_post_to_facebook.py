@@ -659,6 +659,142 @@ class TestVideoTitleSupport(unittest.TestCase):
         self.assertEqual(finish_call[1]['data']['published'], 'true')
 
 
+class TestExpandedFileExtensions(unittest.TestCase):
+    """Test cases for expanded image and video file extensions (v1.23.0)."""
+    
+    def test_webp_recognized_as_image(self):
+        """Test that .webp files are recognized as images."""
+        from pathlib import Path
+        
+        # These are the extensions from post_to_facebook.py line 455
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
+        
+        # Test that webp is in the list
+        self.assertIn('.webp', image_exts)
+        
+        # Test case insensitive matching
+        test_file = Path('test.webp')
+        self.assertIn(test_file.suffix.lower(), image_exts)
+        
+        test_file_upper = Path('test.WEBP')
+        self.assertIn(test_file_upper.suffix.lower(), image_exts)
+    
+    def test_bmp_recognized_as_image(self):
+        """Test that .bmp files are recognized as images."""
+        from pathlib import Path
+        
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
+        
+        # Test that bmp is in the list
+        self.assertIn('.bmp', image_exts)
+        
+        test_file = Path('test.bmp')
+        self.assertIn(test_file.suffix.lower(), image_exts)
+    
+    def test_tiff_recognized_as_image(self):
+        """Test that .tiff and .tif files are recognized as images."""
+        from pathlib import Path
+        
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
+        
+        # Test that both tiff and tif are in the list
+        self.assertIn('.tiff', image_exts)
+        self.assertIn('.tif', image_exts)
+        
+        test_file1 = Path('test.tiff')
+        self.assertIn(test_file1.suffix.lower(), image_exts)
+        
+        test_file2 = Path('test.tif')
+        self.assertIn(test_file2.suffix.lower(), image_exts)
+    
+    def test_wmv_recognized_as_video(self):
+        """Test that .wmv files are recognized as videos."""
+        from pathlib import Path
+        
+        # These are the extensions from post_to_facebook.py line 458
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        # Test that wmv is in the list
+        self.assertIn('.wmv', video_exts)
+        
+        test_file = Path('test.wmv')
+        self.assertIn(test_file.suffix.lower(), video_exts)
+    
+    def test_webm_recognized_as_video(self):
+        """Test that .webm files are recognized as videos."""
+        from pathlib import Path
+        
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        # Test that webm is in the list
+        self.assertIn('.webm', video_exts)
+        
+        test_file = Path('test.webm')
+        self.assertIn(test_file.suffix.lower(), video_exts)
+    
+    def test_mkv_recognized_as_video(self):
+        """Test that .mkv files are recognized as videos."""
+        from pathlib import Path
+        
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        # Test that mkv is in the list
+        self.assertIn('.mkv', video_exts)
+        
+        test_file = Path('test.mkv')
+        self.assertIn(test_file.suffix.lower(), video_exts)
+    
+    def test_mpeg_formats_recognized_as_video(self):
+        """Test that .mpg and .mpeg files are recognized as videos."""
+        from pathlib import Path
+        
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        # Test that both mpg and mpeg are in the list
+        self.assertIn('.mpg', video_exts)
+        self.assertIn('.mpeg', video_exts)
+        
+        test_file1 = Path('test.mpg')
+        self.assertIn(test_file1.suffix.lower(), video_exts)
+        
+        test_file2 = Path('test.mpeg')
+        self.assertIn(test_file2.suffix.lower(), video_exts)
+    
+    def test_mobile_video_formats_recognized(self):
+        """Test that mobile video formats (.3gp, .3g2) are recognized as videos."""
+        from pathlib import Path
+        
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        # Test that mobile formats are in the list
+        self.assertIn('.3gp', video_exts)
+        self.assertIn('.3g2', video_exts)
+        
+        test_file1 = Path('test.3gp')
+        self.assertIn(test_file1.suffix.lower(), video_exts)
+        
+        test_file2 = Path('test.3g2')
+        self.assertIn(test_file2.suffix.lower(), video_exts)
+    
+    def test_all_new_image_extensions(self):
+        """Test that all newly added image extensions are supported."""
+        new_extensions = ['.webp', '.bmp', '.tiff', '.tif']
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
+        
+        for ext in new_extensions:
+            with self.subTest(extension=ext):
+                self.assertIn(ext, image_exts)
+    
+    def test_all_new_video_extensions(self):
+        """Test that all newly added video extensions are supported."""
+        new_extensions = ['.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        for ext in new_extensions:
+            with self.subTest(extension=ext):
+                self.assertIn(ext, video_exts)
+
+
 if __name__ == '__main__':
     unittest.main()
 

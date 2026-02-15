@@ -110,7 +110,7 @@ def post_to_bluesky():
                 })
             
             # Determine embed type
-            image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
             image_count = sum(1 for f in media_files if Path(f).suffix.lower() in image_exts)
             if image_count > 0:
                 dry_run_request['embed_type'] = 'images'
@@ -147,7 +147,7 @@ def post_to_bluesky():
                 file_ext = Path(media_file).suffix.lower()
                 
                 # Only support images for now
-                if file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                if file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']:
                     try:
                         with open(media_file, 'rb') as f:
                             img_data = f.read()

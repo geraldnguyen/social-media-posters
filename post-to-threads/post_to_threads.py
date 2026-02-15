@@ -56,10 +56,10 @@ class ThreadsAPI:
         }
         
         if media_url:
-            if media_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+            if media_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif')):
                 data["media_type"] = "IMAGE"
                 data["image_url"] = media_url
-            elif media_url.lower().endswith(('.mp4', '.mov')):
+            elif media_url.lower().endswith(('.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv')):
                 data["media_type"] = "VIDEO"
                 data["video_url"] = media_url
         
@@ -201,9 +201,9 @@ def post_to_threads():
         logger.info("Creating thread container...")
         media_type = "TEXT"
         if media_file:
-            if media_file.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+            if media_file.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif')):
                 media_type = "IMAGE"
-            elif media_file.lower().endswith(('.mp4', '.mov')):
+            elif media_file.lower().endswith(('.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv')):
                 media_type = "VIDEO"
         logger.info(f"Creating media container with type: {media_type}, has_link: {bool(link)}")
         
