@@ -407,6 +407,11 @@ When posting Video files to FB page (i.e. reel), accept the video's title from `
 
 If the video's title is not provided, leave it blank when schedule or publish the video.
 
+## v1.23.0 - Expand the list of image and video extensions to include more popular extensions.
+
+For examples, on `post-to-facebook/post_to_facebook.py#L473`, the image extensions are limited to just '.jpg', '.jpeg', '.png', '.gif' while missing `.webp` which is also popular.
+
+Similarly, video extension area also missing out on several other popular extensions such as `.wmv`, '.mpg`...
 
 Expectation:
 - Implement the above requirements 
