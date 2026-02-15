@@ -177,7 +177,7 @@ jobs:
 
 ## Supported Media Types
 
-- **Images**: .jpg, .jpeg, .png, .gif, .webp
+- **Images**: .jpg, .jpeg, .png, .gif, .webp, .bmp, .tiff, .tif (expanded in v1.23.0)
 - Maximum 4 images per post
 - Videos are not currently supported
 
@@ -213,7 +213,7 @@ Key SDK methods used:
 ### Media Upload Errors
 
 - Ensure image files exist and are accessible
-- Check file formats are supported (.jpg, .jpeg, .png, .gif, .webp)
+- Check file formats are supported (.jpg, .jpeg, .png, .gif, .webp, .bmp, .tiff, .tif)
 - Verify you're not exceeding the 4 image limit
 
 ### Content Length Errors

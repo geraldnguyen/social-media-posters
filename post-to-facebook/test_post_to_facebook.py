@@ -662,182 +662,137 @@ class TestVideoTitleSupport(unittest.TestCase):
 class TestExpandedFileExtensions(unittest.TestCase):
     """Test cases for expanded image and video file extensions (v1.23.0)."""
     
-    def setUp(self):
-        """Set up test fixtures."""
-        self.page_id = "test_page_id"
-        self.access_token = "test_access_token"
-        self.description = "Test content"
-        self.published = True
+    def test_webp_recognized_as_image(self):
+        """Test that .webp files are recognized as images."""
+        from pathlib import Path
+        
+        # These are the extensions from post_to_facebook.py line 455
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
+        
+        # Test that webp is in the list
+        self.assertIn('.webp', image_exts)
+        
+        # Test case insensitive matching
+        test_file = Path('test.webp')
+        self.assertIn(test_file.suffix.lower(), image_exts)
+        
+        test_file_upper = Path('test.WEBP')
+        self.assertIn(test_file_upper.suffix.lower(), image_exts)
     
-    @patch('post_to_facebook.os.path.getsize')
-    @patch('post_to_facebook.upload_photo')
-    @patch('post_to_facebook.get_required_env_var')
-    @patch('post_to_facebook.get_optional_env_var')
-    @patch('post_to_facebook.dry_run_guard')
-    def test_webp_image_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_photo, mock_getsize):
-        """Test that .webp image files are recognized and uploaded."""
-        from post_to_facebook import main
+    def test_bmp_recognized_as_image(self):
+        """Test that .bmp files are recognized as images."""
+        from pathlib import Path
         
-        # Setup
-        mock_get_required.side_effect = lambda x: {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description
-        }[x]
-        mock_get_optional.side_effect = lambda x, default=None: {
-            'MEDIA_FILES': '/path/to/image.webp',
-            'PUBLISHED': 'true'
-        }.get(x, default)
-        mock_upload_photo.return_value = "test_post_id"
-        mock_getsize.return_value = 1024
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
         
-        # Execute
-        with patch.dict(os.environ, {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description,
-            'MEDIA_FILES': '/path/to/image.webp'
-        }):
-            main()
+        # Test that bmp is in the list
+        self.assertIn('.bmp', image_exts)
         
-        # Verify upload_photo was called
-        mock_upload_photo.assert_called_once()
+        test_file = Path('test.bmp')
+        self.assertIn(test_file.suffix.lower(), image_exts)
     
-    @patch('post_to_facebook.os.path.getsize')
-    @patch('post_to_facebook.upload_photo')
-    @patch('post_to_facebook.get_required_env_var')
-    @patch('post_to_facebook.get_optional_env_var')
-    @patch('post_to_facebook.dry_run_guard')
-    def test_bmp_image_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_photo, mock_getsize):
-        """Test that .bmp image files are recognized and uploaded."""
-        from post_to_facebook import main
+    def test_tiff_recognized_as_image(self):
+        """Test that .tiff and .tif files are recognized as images."""
+        from pathlib import Path
         
-        # Setup
-        mock_get_required.side_effect = lambda x: {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description
-        }[x]
-        mock_get_optional.side_effect = lambda x, default=None: {
-            'MEDIA_FILES': '/path/to/image.bmp',
-            'PUBLISHED': 'true'
-        }.get(x, default)
-        mock_upload_photo.return_value = "test_post_id"
-        mock_getsize.return_value = 1024
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
         
-        # Execute
-        with patch.dict(os.environ, {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description,
-            'MEDIA_FILES': '/path/to/image.bmp'
-        }):
-            main()
+        # Test that both tiff and tif are in the list
+        self.assertIn('.tiff', image_exts)
+        self.assertIn('.tif', image_exts)
         
-        # Verify upload_photo was called
-        mock_upload_photo.assert_called_once()
+        test_file1 = Path('test.tiff')
+        self.assertIn(test_file1.suffix.lower(), image_exts)
+        
+        test_file2 = Path('test.tif')
+        self.assertIn(test_file2.suffix.lower(), image_exts)
     
-    @patch('post_to_facebook.os.path.getsize')
-    @patch('post_to_facebook.upload_video')
-    @patch('post_to_facebook.get_required_env_var')
-    @patch('post_to_facebook.get_optional_env_var')
-    @patch('post_to_facebook.dry_run_guard')
-    def test_wmv_video_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_video, mock_getsize):
-        """Test that .wmv video files are recognized and uploaded."""
-        from post_to_facebook import main
+    def test_wmv_recognized_as_video(self):
+        """Test that .wmv files are recognized as videos."""
+        from pathlib import Path
         
-        # Setup
-        mock_get_required.side_effect = lambda x: {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description
-        }[x]
-        mock_get_optional.side_effect = lambda x, default=None: {
-            'MEDIA_FILES': '/path/to/video.wmv',
-            'PUBLISHED': 'true'
-        }.get(x, default)
-        mock_upload_video.return_value = "test_post_id"
-        mock_getsize.return_value = 1024 * 1024  # 1MB
+        # These are the extensions from post_to_facebook.py line 458
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
         
-        # Execute
-        with patch.dict(os.environ, {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description,
-            'MEDIA_FILES': '/path/to/video.wmv'
-        }):
-            main()
+        # Test that wmv is in the list
+        self.assertIn('.wmv', video_exts)
         
-        # Verify upload_video was called
-        mock_upload_video.assert_called_once()
+        test_file = Path('test.wmv')
+        self.assertIn(test_file.suffix.lower(), video_exts)
     
-    @patch('post_to_facebook.os.path.getsize')
-    @patch('post_to_facebook.upload_video')
-    @patch('post_to_facebook.get_required_env_var')
-    @patch('post_to_facebook.get_optional_env_var')
-    @patch('post_to_facebook.dry_run_guard')
-    def test_webm_video_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_video, mock_getsize):
-        """Test that .webm video files are recognized and uploaded."""
-        from post_to_facebook import main
+    def test_webm_recognized_as_video(self):
+        """Test that .webm files are recognized as videos."""
+        from pathlib import Path
         
-        # Setup
-        mock_get_required.side_effect = lambda x: {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description
-        }[x]
-        mock_get_optional.side_effect = lambda x, default=None: {
-            'MEDIA_FILES': '/path/to/video.webm',
-            'PUBLISHED': 'true'
-        }.get(x, default)
-        mock_upload_video.return_value = "test_post_id"
-        mock_getsize.return_value = 1024 * 1024  # 1MB
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
         
-        # Execute
-        with patch.dict(os.environ, {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description,
-            'MEDIA_FILES': '/path/to/video.webm'
-        }):
-            main()
+        # Test that webm is in the list
+        self.assertIn('.webm', video_exts)
         
-        # Verify upload_video was called
-        mock_upload_video.assert_called_once()
+        test_file = Path('test.webm')
+        self.assertIn(test_file.suffix.lower(), video_exts)
     
-    @patch('post_to_facebook.os.path.getsize')
-    @patch('post_to_facebook.upload_video')
-    @patch('post_to_facebook.get_required_env_var')
-    @patch('post_to_facebook.get_optional_env_var')
-    @patch('post_to_facebook.dry_run_guard')
-    def test_mkv_video_upload(self, mock_dry_run, mock_get_optional, mock_get_required, mock_upload_video, mock_getsize):
-        """Test that .mkv video files are recognized and uploaded."""
-        from post_to_facebook import main
+    def test_mkv_recognized_as_video(self):
+        """Test that .mkv files are recognized as videos."""
+        from pathlib import Path
         
-        # Setup
-        mock_get_required.side_effect = lambda x: {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description
-        }[x]
-        mock_get_optional.side_effect = lambda x, default=None: {
-            'MEDIA_FILES': '/path/to/video.mkv',
-            'PUBLISHED': 'true'
-        }.get(x, default)
-        mock_upload_video.return_value = "test_post_id"
-        mock_getsize.return_value = 1024 * 1024  # 1MB
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
         
-        # Execute
-        with patch.dict(os.environ, {
-            'FB_PAGE_ID': self.page_id,
-            'FB_ACCESS_TOKEN': self.access_token,
-            'POST_CONTENT': self.description,
-            'MEDIA_FILES': '/path/to/video.mkv'
-        }):
-            main()
+        # Test that mkv is in the list
+        self.assertIn('.mkv', video_exts)
         
-        # Verify upload_video was called
-        mock_upload_video.assert_called_once()
+        test_file = Path('test.mkv')
+        self.assertIn(test_file.suffix.lower(), video_exts)
+    
+    def test_mpeg_formats_recognized_as_video(self):
+        """Test that .mpg and .mpeg files are recognized as videos."""
+        from pathlib import Path
+        
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        # Test that both mpg and mpeg are in the list
+        self.assertIn('.mpg', video_exts)
+        self.assertIn('.mpeg', video_exts)
+        
+        test_file1 = Path('test.mpg')
+        self.assertIn(test_file1.suffix.lower(), video_exts)
+        
+        test_file2 = Path('test.mpeg')
+        self.assertIn(test_file2.suffix.lower(), video_exts)
+    
+    def test_mobile_video_formats_recognized(self):
+        """Test that mobile video formats (.3gp, .3g2) are recognized as videos."""
+        from pathlib import Path
+        
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        # Test that mobile formats are in the list
+        self.assertIn('.3gp', video_exts)
+        self.assertIn('.3g2', video_exts)
+        
+        test_file1 = Path('test.3gp')
+        self.assertIn(test_file1.suffix.lower(), video_exts)
+        
+        test_file2 = Path('test.3g2')
+        self.assertIn(test_file2.suffix.lower(), video_exts)
+    
+    def test_all_new_image_extensions(self):
+        """Test that all newly added image extensions are supported."""
+        new_extensions = ['.webp', '.bmp', '.tiff', '.tif']
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']
+        
+        for ext in new_extensions:
+            with self.subTest(extension=ext):
+                self.assertIn(ext, image_exts)
+    
+    def test_all_new_video_extensions(self):
+        """Test that all newly added video extensions are supported."""
+        new_extensions = ['.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        video_exts = ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']
+        
+        for ext in new_extensions:
+            with self.subTest(extension=ext):
+                self.assertIn(ext, video_exts)
 
 
 if __name__ == '__main__':

@@ -318,8 +318,10 @@ jobs:
 
 ## Supported Media Types
 
-- **Images**: .jpg, .jpeg, .png, .gif
-- **Videos**: .mp4, .mov, .avi
+- **Images**: .jpg, .jpeg, .png, .gif, .webp, .bmp, .tiff, .tif
+- **Videos**: .mp4, .mov, .avi, .wmv, .mpg, .mpeg, .webm, .flv, .m4v, .mkv, .3gp, .3g2, .ogv
+
+Note: Support for additional formats was added in v1.23.0. Facebook's API may have additional restrictions on certain formats.
 
 ## Video Upload Improvements (v1.13.0)
 
