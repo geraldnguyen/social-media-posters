@@ -39,12 +39,14 @@ from templating_utils import process_templated_contents
 # Module-level logger
 logger = logging.getLogger(__name__)
 
+GRAPH_API_VERSION = "v25.0"
+
 class InstagramAPI:
     """Instagram Graph API client."""
     
     def __init__(self, access_token):
         self.access_token = access_token
-        self.base_url = "https://graph.instagram.com"
+        self.base_url = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
     
     def create_media_container(self, user_id, image_url, caption, media_type="IMAGE"):
         """Create a media container for Instagram post."""
@@ -57,13 +59,23 @@ class InstagramAPI:
             "access_token": self.access_token
         }
         
-        if media_type == "VIDEO":
+        # Support both legacy VIDEO and newer REELS media types; REELS is required for video uploads
+        if media_type in ("VIDEO", "REELS"):
             data["video_url"] = image_url
-            del data["image_url"]
+            if "image_url" in data:
+                del data["image_url"]
         
-        response = requests.post(url, data=data)
-        response.raise_for_status()
-        return response.json()["id"]
+        try:
+            response = requests.post(url, data=data)
+            response.raise_for_status()
+            return response.json()["id"]
+        except requests.exceptions.RequestException as e:
+            # Log detailed response body for debugging
+            try:
+                logger.error("API response: %s", e.response.text)
+            except Exception:
+                logger.error("API request failed without response body: %s", str(e))
+            raise
     
     def create_carousel_container(self, user_id, children_ids, caption):
         """Create a carousel container for multiple media items."""
@@ -76,9 +88,16 @@ class InstagramAPI:
             "access_token": self.access_token
         }
         
-        response = requests.post(url, data=data)
-        response.raise_for_status()
-        return response.json()["id"]
+        try:
+            response = requests.post(url, data=data)
+            response.raise_for_status()
+            return response.json()["id"]
+        except requests.exceptions.RequestException as e:
+            try:
+                logger.error("API response: %s", e.response.text)
+            except Exception:
+                logger.error("API request failed without response body: %s", str(e))
+            raise
     
     def publish_media(self, user_id, creation_id):
         """Publish the media container."""
@@ -89,9 +108,16 @@ class InstagramAPI:
             "access_token": self.access_token
         }
         
-        response = requests.post(url, data=data)
-        response.raise_for_status()
-        return response.json()["id"]
+        try:
+            response = requests.post(url, data=data)
+            response.raise_for_status()
+            return response.json()["id"]
+        except requests.exceptions.RequestException as e:
+            try:
+                logger.error("API response: %s", e.response.text)
+            except Exception:
+                logger.error("API request failed without response body: %s", str(e))
+            raise
     
     def get_media_info(self, media_id):
         """Get media information."""
@@ -102,9 +128,51 @@ class InstagramAPI:
             "access_token": self.access_token
         }
         
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            try:
+                logger.error("API response: %s", e.response.text)
+            except Exception:
+                logger.error("API request failed without response body: %s", str(e))
+            raise
+
+    def check_container_status(self, container_id, max_wait=300):
+        """Poll the creation container until it's ready for publishing."""
+        start = time.time()
+        while time.time() - start < max_wait:
+            try:
+                resp = requests.get(f"{self.base_url}/{container_id}", params={
+                    "fields": "status,status_code",
+                    "access_token": self.access_token
+                })
+                resp.raise_for_status()
+                info = resp.json()
+            except requests.exceptions.RequestException as e:
+                try:
+                    logger.error("API response during status check: %s", e.response.text)
+                except Exception:
+                    logger.error("Status check request failed: %s", str(e))
+                time.sleep(2)
+                continue
+
+            status_code = info.get('status_code')
+            status = info.get('status')
+
+            logger.debug("Container status_code=%s status=%s", status_code, status)
+
+            if status_code in ('FINISHED', 'PUBLISHED'):
+                return True
+            if status_code == 'ERROR' or status == 'ERROR':
+                logger.error("Container processing failed: %s", info)
+                return False
+
+            time.sleep(2)
+
+        logger.warning("Timed out waiting for container %s to become ready", container_id)
+        return False
 
 
 def validate_image(file_path):
@@ -260,10 +328,18 @@ def post_to_instagram():
             )
         
         logger.info(f"Media container created with ID: {creation_id}")
-        
-        # Wait a moment before publishing (Instagram recommendation)
-        time.sleep(2)
-        
+
+        # For video-like media (REELS/VIDEO) the container needs processing time
+        if any(mt in ("REELS", "VIDEO") for mt in media_types):
+            logger.info("Waiting for media container to finish processing before publishing...")
+            ready = ig_api.check_container_status(creation_id, max_wait=300)
+            if not ready:
+                logger.error("Media container did not become ready in time")
+                sys.exit(1)
+        else:
+            # Small pause recommended for images
+            time.sleep(2)
+
         # Publish media
         logger.info("Publishing media...")
         media_id = ig_api.publish_media(user_id, creation_id)

@@ -43,7 +43,7 @@ from templating_utils import process_templated_contents
 # Module-level logger
 logger = logging.getLogger(__name__)
 
-GRAPH_API_VERSION = "v23.0"
+GRAPH_API_VERSION = "v25.0"
 GRAPH_API_BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 
 
@@ -271,21 +271,16 @@ class InstagramFBAPI:
             response = self._make_request(
                 'GET',
                 container_id,
-                params={'fields': 'status,status_code,video_status'}
+                params={'fields': 'status,status_code'}
             )
 
             status_code = response.get('status_code')
             status = response.get('status')
-            video_status = response.get('video_status', {}) or {}
-            uploading_phase = video_status.get('uploading_phase', {})
-            processing_phase = video_status.get('processing_phase', {})
 
             logger.debug(
-                "Container status_code=%s status=%s uploading=%s processing=%s",
+                "Container status_code=%s status=%s",
                 status_code,
-                status,
-                uploading_phase,
-                processing_phase
+                status
             )
 
             if status_code in ('FINISHED', 'PUBLISHED'):
