@@ -5,6 +5,84 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] - 2026-04-05
+
+### Added
+
+- **Threads Link Attachment Validation** - Comprehensive fix for intermittent "invalid link attachment" errors
+  - New `validate_link_url()` function to validate link URL format
+  - New `check_link_accessibility()` function to pre-check if link is reachable
+  - Validates that links start with `http://` or `https://`
+  - Pre-publishes link accessibility check with 5-second timeout
+  - Provides clear error messages for invalid link formats
+  - Gracefully logs warnings if link is temporarily unavailable but continues processing
+
+- **Threads Retry Logic** - Automatic retry mechanism for transient publishing failures
+  - Enhanced `publish_media()` method with retry capability (configurable, default 3 attempts)
+  - Exponential backoff strategy: 2s → 4s → 8s between retries
+  - Intelligent error detection: retries on `is_transient=true` flag or HTTP 429, 5xx status codes
+  - Detailed logging of all retry attempts with timestamps
+  - Clear distinction between transient and non-transient errors
+
+- **Fixed Link Attachment Format** - Corrected API data structure
+  - Changed link attachment from raw string to JSON object format: `{"url": "link_url"}`
+  - Matches Threads API's expected data structure
+  - Resolves validation errors caused by incorrect format
+
+### Changed
+
+- **`post_to_threads.py`**
+  - Added `urlparse` import for URL validation
+  - Implemented link validation before container creation
+  - Implemented link accessibility pre-check before publishing
+  - Enhanced `create_media_container()` to send link as JSON object
+  - Enhanced `publish_media()` with retry logic and exponential backoff
+  - Updated logging to be more descriptive for troubleshooting
+
+### Testing
+
+- **New Unit Tests** - Comprehensive test coverage for link validation and retry logic
+  - `TestValidateLinkUrl` class: 12 tests covering URL format validation
+    - Valid HTTPS/HTTP URLs, URLs with query params and fragments
+    - Invalid URLs: no scheme, wrong scheme, empty, None, whitespace, non-strings
+  - `TestCheckLinkAccessibility` class: 8 tests covering accessibility checks
+    - Successful responses (200, 301), failed responses (404, 500)
+    - Timeout and connection error handling
+    - Custom timeout configuration
+  - `TestThreadsAPICreateMediaContainer` class: 2 tests for container creation
+    - Text + link attachment with proper JSON object format
+    - Image media type detection
+  - `TestThreadsAPIPublishMediaRetry` class: 5 tests for retry logic
+    - Successful first attempt (no retries)
+    - Retry on transient errors with exponential backoff
+    - Retry on server errors (503)
+    - Fail immediately on non-transient errors
+    - Fail after exhausting max retries
+  - All 27 tests passing successfully
+
+### Documentation
+
+- Updated `post-to-threads/README.md` with:
+  - New "Link Attachment Validation" section explaining the feature
+  - Notes about automatic link accessibility checks
+  - Troubleshooting guide for link-related errors
+  - Examples of valid link formats
+  - Information about automatic retry behavior
+
+- Updated main `README.md` with:
+  - v1.24.0 feature summary in features section
+  - Link validation improvements for Threads posting
+
+### Bug Fixes
+
+- **Threads Link Attachment Issues** - Fixed intermittent publishing failures
+  - Issue: Retry usually successful suggests transient/timing issue
+  - Root cause 1: Incorrect link format (raw string instead of JSON object)
+  - Root cause 2: No validation before API call
+  - Root cause 3: No retry mechanism for transient failures
+  - Root cause 4: Race condition when Threads API validates link accessibility at publish time
+  - All fixed in this release
+
 ## [1.23.0] - 2026-02-15
 
 ### Added

@@ -19,6 +19,7 @@ import logging
 import requests
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Add common module to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
@@ -37,6 +38,60 @@ from social_media_utils import (
 
 # Module-level logger
 logger = logging.getLogger(__name__)
+
+def validate_link_url(link):
+    """Validate that a link is a properly formatted URL.
+    
+    Args:
+        link: URL string to validate
+        
+    Returns:
+        True if valid, False otherwise
+    """
+    if not link or not isinstance(link, str):
+        return False
+    
+    link = link.strip()
+    if not link:
+        return False
+    
+    try:
+        result = urlparse(link)
+        # Basic validation: must have scheme and netloc
+        return all([result.scheme in ('http', 'https'), result.netloc])
+    except Exception as e:
+        logger.warning(f"Error validating link URL: {e}")
+        return False
+
+def check_link_accessibility(link, timeout=5):
+    """Pre-check if a link is accessible before publishing.
+    
+    Args:
+        link: URL to check
+        timeout: Request timeout in seconds
+        
+    Returns:
+        True if accessible, False otherwise
+    """
+    if not validate_link_url(link):
+        logger.error(f"Invalid link format: {link}")
+        return False
+    
+    try:
+        logger.debug(f"Pre-checking link accessibility: {link}")
+        response = requests.head(link, timeout=timeout, allow_redirects=True)
+        is_accessible = response.status_code < 400
+        if is_accessible:
+            logger.info(f"Link accessibility check passed (status {response.status_code}): {link}")
+        else:
+            logger.warning(f"Link accessibility check failed (status {response.status_code}): {link}")
+        return is_accessible
+    except requests.Timeout:
+        logger.warning(f"Link accessibility check timed out after {timeout}s: {link}")
+        return False
+    except requests.RequestException as e:
+        logger.warning(f"Link accessibility check failed: {link} - {e}")
+        return False
 
 class ThreadsAPI:
     """Threads API client."""
@@ -64,7 +119,8 @@ class ThreadsAPI:
                 data["video_url"] = media_url
         
         if link_attachment:
-            data["link_attachment"] = link_attachment
+            # Threads API expects link_attachment as a JSON object, not a string
+            data["link_attachment"] = {"url": link_attachment}
         
         logger.info(f"Making API request to create media container: POST {url}")
         logger.debug(f"Request data: media_type={data.get('media_type')}, text_length={len(text)}, has_media={bool(media_url)}, has_link={bool(link_attachment)}")
@@ -85,8 +141,15 @@ class ThreadsAPI:
             logger.error(f"Response content: {response.text}")
             raise
     
-    def publish_media(self, user_id, creation_id):
-        """Publish the media container."""
+    def publish_media(self, user_id, creation_id, max_retries=3, base_delay=2):
+        """Publish the media container with retry logic for transient failures.
+        
+        Args:
+            user_id: Threads user ID
+            creation_id: Creation ID to publish
+            max_retries: Maximum number of retry attempts
+            base_delay: Base delay in seconds for exponential backoff
+        """
         url = f"{self.base_url}/{user_id}/threads_publish"
         
         data = {
@@ -94,24 +157,45 @@ class ThreadsAPI:
             "access_token": self.access_token
         }
         
-        logger.info(f"Making API request to publish media: POST {url}")
-        logger.info(f"Publishing creation_id: {creation_id}")
-        response = requests.post(url, data=data)
-        logger.info(f"API response status: {response.status_code}")
-        
-        try:
-            response.raise_for_status()
-            result = response.json()
-            logger.info(f"Media published successfully: {result.get('id')}")
-            return result["id"]
-        except requests.HTTPError as http_err:
-            logger.error(f"HTTP error publishing media: {http_err}")
-            logger.error(f"Response content: {response.text}")
-            raise
-        except ValueError as json_err:
-            logger.error(f"Invalid JSON response: {json_err}")
-            logger.error(f"Response content: {response.text}")
-            raise
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Making API request to publish media (attempt {attempt + 1}/{max_retries}): POST {url}")
+                logger.info(f"Publishing creation_id: {creation_id}")
+                response = requests.post(url, data=data)
+                logger.info(f"API response status: {response.status_code}")
+                
+                response.raise_for_status()
+                result = response.json()
+                logger.info(f"Media published successfully: {result.get('id')}")
+                return result["id"]
+                
+            except requests.HTTPError as http_err:
+                try:
+                    error_data = response.json()
+                    is_transient = error_data.get('error', {}).get('is_transient', False)
+                    error_msg = error_data.get('error', {}).get('error_user_msg', str(http_err))
+                except (ValueError, KeyError):
+                    is_transient = False
+                    error_msg = str(http_err)
+                
+                logger.error(f"HTTP error publishing media: {http_err}")
+                logger.error(f"Error message: {error_msg}")
+                logger.error(f"Response content: {response.text}")
+                
+                # Retry on transient errors or on certain status codes
+                if attempt < max_retries - 1 and (is_transient or response.status_code in [429, 500, 502, 503, 504]):
+                    delay = base_delay * (2 ** attempt)  # Exponential backoff
+                    logger.warning(f"Transient error detected. Retrying in {delay} seconds...")
+                    time.sleep(delay)
+                    continue
+                else:
+                    # Non-transient error or final attempt
+                    raise
+                    
+            except ValueError as json_err:
+                logger.error(f"Invalid JSON response: {json_err}")
+                logger.error(f"Response content: {response.text}")
+                raise
     
     def get_thread_info(self, thread_id):
         """Get thread information."""
@@ -187,6 +271,26 @@ def post_to_threads():
             )
         if media_file:
             logger.info(f"Media file URL validated: {media_file}")
+        
+        # Validate link if provided
+        if link:
+            if not validate_link_url(link):
+                logger.error(f"Invalid link format: {link}")
+                raise ValueError(
+                    f"Link must be a valid URL starting with http:// or https://. "
+                    f"Provided link: {link}"
+                )
+            logger.info(f"Link format validation passed: {link}")
+            
+            # Pre-check link accessibility
+            logger.info("Performing pre-check on link accessibility...")
+            if not check_link_accessibility(link):
+                logger.warning(
+                    f"Link accessibility check failed. The link may be temporarily unavailable. "
+                    f"Proceeding anyway as Threads API may handle this. Link: {link}"
+                )
+            else:
+                logger.info("Link accessibility check successful")
         
         # DRY RUN GUARD
         media_files = [media_file] if media_file else []

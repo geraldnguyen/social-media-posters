@@ -181,6 +181,69 @@ jobs:
         continue-on-error: true
 ```
 
+## Link Attachment Validation
+
+To ensure reliable posting with link attachments, this action performs automatic validation and retry logic:
+
+### Link Format Validation
+- Links must be valid URLs starting with `http://` or `https://`
+- Domain name is required (e.g., `https://example.com`)
+- Query parameters, fragments, and special characters are supported
+
+**Valid examples:**
+- `https://example.com`
+- `https://blog.example.com/article`
+- `https://example.com/page?id=123&sort=date`
+- `http://example.com/article#section`
+
+**Invalid examples:**
+- `example.com` (missing protocol)
+- `ftp://example.com` (unsupported protocol)
+- `https://` (missing domain)
+
+### Link Accessibility Pre-Check
+Before publishing, this action performs a quick accessibility check on your link:
+- Verifies the link is reachable (5-second timeout)
+- Returns "not accessible" warning if the server is temporarily unavailable
+- Automatically proceeds with publishing even if the check fails (allows retry)
+
+### Automatic Retry Logic
+If publishing fails due to transient errors (link validation timeouts, temporary server issues):
+- **Automatic retries**: Up to 3 attempts by default
+- **Exponential backoff**: 2 seconds → 4 seconds → 8 seconds between retries
+- **Smart detection**: Only retries on transient errors, fails immediately on permanent issues
+- Helpful logs show retry attempts and reasons
+
+### Troubleshooting Link Errors
+
+**Error: "The post you're trying to publish has an invalid link attachment"**
+
+Possible causes and solutions:
+1. **Link is temporarily unavailable** 
+   - The link was reachable during pre-check but became unavailable at publish time
+   - Action will automatically retry (check logs for successful retries)
+   - Consider scheduling posts during times when your link server is guaranteed stable
+
+2. **Link format is invalid**
+   - Ensure link starts with `http://` or `https://`
+   - Verify domain name is included (e.g., `https://example.com`)
+   - Check for special characters that might need encoding
+
+3. **Link takes too long to respond**
+   - If link server is slow, pre-check might time out
+   - Action continues with publishing and will retry if needed
+   - Consider optimizing your link server performance
+
+4. **Server blocks HEAD requests** (rare)
+   - Some servers block HEAD requests used for accessibility checks
+   - Pre-check fails but publishing may still work
+   - No action needed; publishing will retry automatically
+
+**Logs to check:**
+- Enable `log-level: "DEBUG"` for detailed information about link validation
+- Look for "Link accessibility check" messages to see pre-check results
+- Look for "Retrying" messages to see if retry logic was triggered
+
 ## Getting Threads Access Token
 
 1. Follow the [Threads API documentation](https://developers.facebook.com/docs/threads)

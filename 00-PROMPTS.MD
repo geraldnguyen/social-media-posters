@@ -422,3 +422,28 @@ Expectation:
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
 - Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
 
+## v1.25.0 - Fix Threads link attachment validation and add retry logic
+
+The `post-to-threads` action encounters intermittent "The post you're trying to publish has an invalid link attachment." errors that usually succeed on retry. This is caused by:
+
+1. **Incorrect link attachment format**: The Threads API expects `link_attachment` as a JSON object with `{"url": "..."}` format, not a raw string
+2. **No link validation**: Missing URL format validation before publishing
+3. **Race conditions**: Links may be temporarily inaccessible during API validation at publish time
+4. **No retry mechanism**: Transient failures are not retried
+
+Requirements:
+- **Link format fix**: Change `link_attachment` parameter to JSON object format when calling Threads API
+- **Link validation**: Implement `validate_link_url()` to validate link is a properly formatted URL (must start with http:// or https://)
+- **Link accessibility check**: Implement `check_link_accessibility()` to pre-check if link is reachable before publishing (with 5s timeout)
+- **Retry logic**: Enhance `publish_media()` method to retry up to 3 times with exponential backoff (2s → 4s → 8s) for transient errors and specific HTTP status codes (429, 5xx)
+- **Enhanced logging**: Add detailed logs for all validation steps and retry attempts
+
+Expectation:
+- Implement the above requirements 
+- Create unit tests for the changes 
+- Then run the tests 
+- If applicable, update the CLI correspondingly to surface the new feature. 
+- Update the Python package-related files to match the new version.
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
+- Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
+

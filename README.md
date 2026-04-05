@@ -414,6 +414,22 @@ If the selected story exposes a `genres` list of `mythology`, `tragedy`, and `su
 Summary: This is a captivating tale of ancient gods and mortals, exploring themes of destiny, sacrifice, and the supernatural forces that govern our world... Tags: #MYTHOLOGY #TRAGEDY #SUPERNATURAL
 ```
 
+## Recent Improvements (v1.25.0)
+
+### 🧵 Threads Link Attachment Reliability
+
+Significantly improved reliability of Threads posts with link attachments:
+
+- **Fixed Format Issue**: Link attachments now sent in correct JSON object format (`{"url": "..."}`)
+- **Link Validation**: All links validated for URL format before publishing
+- **Pre-Check Testing**: Automatic accessibility check with 5-second timeout
+- **Automatic Retries**: Transient errors automatically retried up to 3 times with exponential backoff
+- **Better Error Handling**: Clear distinction between temporary and permanent errors
+
+**Result**: Reduced intermittent "invalid link attachment" errors, especially on first attempt. Retry logic improves success rate for posts with links.
+
+See [Post to Threads README](./post-to-threads/README.md#link-attachment-validation) for detailed documentation.
+
 ## Security Best Practices
 
 1. **Never commit API credentials** to your repository
