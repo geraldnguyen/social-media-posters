@@ -120,7 +120,7 @@ class ThreadsAPI:
         
         if link_attachment:
             # Threads API expects link_attachment as a JSON object, not a string
-            data["link_attachment"] = {"url": link_attachment}
+            data["link_attachment"] = link_attachment
         
         logger.info(f"Making API request to create media container: POST {url}")
         logger.debug(f"Request data: media_type={data.get('media_type')}, text_length={len(text)}, has_media={bool(media_url)}, has_link={bool(link_attachment)}")
