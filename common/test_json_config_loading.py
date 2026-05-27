@@ -31,7 +31,7 @@ class TestJSONConfigLoading(unittest.TestCase):
         social_media_utils._json_config_loaded = False
         
         # Clean up environment variables
-        for key in ['INPUT_FILE', 'TEST_VAR', 'TEST_REQUIRED', 'TEST_OPTIONAL']:
+        for key in ['INPUT_FILE', 'TEST_VAR', 'TEST_REQUIRED', 'TEST_OPTIONAL', 'LOG_LEVEL', 'GITHUB_ACTIONS', 'RUNNER_DEBUG', 'ACTIONS_STEP_DEBUG', 'ACTIONS_RUNNER_DEBUG']:
             os.environ.pop(key, None)
     
     def tearDown(self):
@@ -41,7 +41,7 @@ class TestJSONConfigLoading(unittest.TestCase):
         social_media_utils._json_config_loaded = False
         
         # Clean up environment variables
-        for key in ['INPUT_FILE', 'TEST_VAR', 'TEST_REQUIRED', 'TEST_OPTIONAL']:
+        for key in ['INPUT_FILE', 'TEST_VAR', 'TEST_REQUIRED', 'TEST_OPTIONAL', 'LOG_LEVEL', 'GITHUB_ACTIONS', 'RUNNER_DEBUG', 'ACTIONS_STEP_DEBUG', 'ACTIONS_RUNNER_DEBUG']:
             os.environ.pop(key, None)
     
     def test_load_json_config_file_not_exists(self):
@@ -201,6 +201,25 @@ class TestJSONConfigLoading(unittest.TestCase):
             
             value = get_optional_env_var('MISSING_VAR', 'default_value')
             self.assertEqual(value, 'default_value')
+
+    def test_get_optional_env_var_log_level_defaults_to_debug_in_github_actions_debug_mode(self):
+        """Test LOG_LEVEL defaults to DEBUG in GitHub Actions debug mode."""
+        os.environ['GITHUB_ACTIONS'] = 'true'
+        os.environ['RUNNER_DEBUG'] = '1'
+
+        value = get_optional_env_var('LOG_LEVEL', 'INFO')
+
+        self.assertEqual(value, 'DEBUG')
+
+    def test_get_optional_env_var_log_level_env_takes_precedence_over_github_actions_debug_mode(self):
+        """Test explicit LOG_LEVEL env overrides GitHub Actions debug mode."""
+        os.environ['GITHUB_ACTIONS'] = 'true'
+        os.environ['RUNNER_DEBUG'] = '1'
+        os.environ['LOG_LEVEL'] = 'WARNING'
+
+        value = get_optional_env_var('LOG_LEVEL', 'INFO')
+
+        self.assertEqual(value, 'WARNING')
     
     def test_get_optional_env_var_env_takes_precedence(self):
         """Test that environment variable takes precedence over JSON config."""

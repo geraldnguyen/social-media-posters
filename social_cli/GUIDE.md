@@ -640,7 +640,7 @@ ls -lh image.jpg
 
 #### 5. Debugging
 
-Enable debug logging to see detailed information:
+Enable debug logging to see detailed information. If you run inside GitHub Actions with step debugging enabled, the CLI will automatically default to `DEBUG` unless `LOG_LEVEL` is set explicitly.
 
 ```bash
 social x --post-content "Debug test" --log-level DEBUG
@@ -773,6 +773,8 @@ X_API_SECRET=dev_secret
 LOG_LEVEL=DEBUG
 DRY_RUN=true
 ```
+
+When running in GitHub Actions debug mode, you can usually omit `LOG_LEVEL`; the shared runtime defaults to `DEBUG` when no explicit log level is provided.
 
 Load specific profile:
 

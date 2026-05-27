@@ -249,7 +249,7 @@ social-media-posters/
 All actions share these common features:
 
 - **Error Handling**: Comprehensive error handling with informative messages
-- **Logging**: Configurable logging levels (DEBUG, INFO, WARNING, ERROR)
+- **Logging**: Configurable logging levels (DEBUG, INFO, WARNING, ERROR), with GitHub Actions debug mode defaulting to DEBUG when `LOG_LEVEL` is not set
 - **Validation**: Input validation for content and media files
 - **Outputs**: Returns post ID and URL for further processing
 - **Security**: Secure handling of API credentials via GitHub secrets

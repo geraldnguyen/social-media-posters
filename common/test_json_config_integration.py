@@ -26,7 +26,7 @@ class TestJSONConfigIntegration(unittest.TestCase):
         # Clean up environment variables
         env_vars = ['INPUT_FILE', 'POST_CONTENT', 'X_API_KEY', 'X_API_SECRET', 
                    'X_ACCESS_TOKEN', 'X_ACCESS_TOKEN_SECRET', 'LOG_LEVEL',
-                   'MEDIA_FILES', 'DRY_RUN', 'CONTENT_JSON']
+                   'MEDIA_FILES', 'DRY_RUN', 'CONTENT_JSON', 'GITHUB_ACTIONS', 'RUNNER_DEBUG', 'ACTIONS_STEP_DEBUG', 'ACTIONS_RUNNER_DEBUG']
         for key in env_vars:
             os.environ.pop(key, None)
     
@@ -39,7 +39,7 @@ class TestJSONConfigIntegration(unittest.TestCase):
         # Clean up environment variables
         env_vars = ['INPUT_FILE', 'POST_CONTENT', 'X_API_KEY', 'X_API_SECRET',
                    'X_ACCESS_TOKEN', 'X_ACCESS_TOKEN_SECRET', 'LOG_LEVEL',
-                   'MEDIA_FILES', 'DRY_RUN', 'CONTENT_JSON']
+                   'MEDIA_FILES', 'DRY_RUN', 'CONTENT_JSON', 'GITHUB_ACTIONS', 'RUNNER_DEBUG', 'ACTIONS_STEP_DEBUG', 'ACTIONS_RUNNER_DEBUG']
         for key in env_vars:
             os.environ.pop(key, None)
     

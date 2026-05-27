@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.26.0] - 2026-05-27
+
+### Added
+
+- **GitHub Actions debug auto-detection** - Logging now defaults to `DEBUG` when GitHub Actions step debugging is enabled and no explicit `LOG_LEVEL` is provided.
+
+### Changed
+
+- **Shared env resolution** - `get_optional_env_var("LOG_LEVEL", ...)` now recognizes GitHub Actions debug mode and falls back to `DEBUG` after checking explicit environment and JSON configuration values.
+- **CLI help text** - The `--log-level` option now documents the automatic GitHub Actions debug behavior.
+
+### Testing
+
+- Added unit tests covering GitHub Actions debug detection, explicit `LOG_LEVEL` precedence, and CLI help output.
+
 ## [1.25.0] - 2026-04-05
 
 ### Added

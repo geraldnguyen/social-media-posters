@@ -31,6 +31,7 @@ class TestCLI(unittest.TestCase):
             'LINKEDIN_ACCESS_TOKEN', 'LINKEDIN_AUTHOR_ID',
             'BLUESKY_IDENTIFIER', 'BLUESKY_PASSWORD',
             'THREADS_USER_ID', 'THREADS_ACCESS_TOKEN',
+            'GITHUB_ACTIONS', 'RUNNER_DEBUG', 'ACTIONS_STEP_DEBUG', 'ACTIONS_RUNNER_DEBUG',
         ]
         for var in env_vars_to_clear:
             if var in os.environ:
@@ -69,6 +70,7 @@ class TestCLI(unittest.TestCase):
         self.assertIn('--x-api-key', result.output)
         self.assertIn('--post-content', result.output)
         self.assertIn('--dry-run', result.output)
+        self.assertIn('GitHub Actions debug mode', result.output)
     
     def test_facebook_help(self):
         """Test Facebook command help."""

@@ -82,6 +82,22 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
     return logger
 
 
+def _is_truthy_env_value(value: Optional[str]) -> bool:
+    """Return True when an environment value represents an enabled flag."""
+    return bool(value and value.strip().lower() in ("1", "true", "yes", "on"))
+
+
+def _is_github_actions_debug_mode() -> bool:
+    """Detect whether GitHub Actions debug logging is enabled for the current run."""
+    if not _is_truthy_env_value(os.getenv("GITHUB_ACTIONS")):
+        return False
+
+    return any(
+        _is_truthy_env_value(os.getenv(env_name))
+        for env_name in ("RUNNER_DEBUG", "ACTIONS_STEP_DEBUG", "ACTIONS_RUNNER_DEBUG")
+    )
+
+
 def _convert_json_value_to_string(value: Any) -> str:
     """
     Convert a JSON value to a string format compatible with environment variables.
@@ -139,6 +155,8 @@ def get_optional_env_var(var_name: str, default: str = "") -> str:
     
     Falls back to JSON config if environment variable is not set.
     JSON values are automatically converted to strings to match environment variable behavior.
+    When resolving LOG_LEVEL, GitHub Actions debug mode automatically falls back to DEBUG
+    if no explicit value is provided in the environment or JSON config.
     """
     value = os.getenv(var_name)
     if not value:
@@ -149,7 +167,11 @@ def get_optional_env_var(var_name: str, default: str = "") -> str:
             if json_value is not None:
                 value = _convert_json_value_to_string(json_value)
                 logger.debug(f"Parameter {var_name} loaded from JSON config and converted to string")
-        
+
+        if not value and var_name == "LOG_LEVEL" and _is_github_actions_debug_mode():
+            logger.debug("GitHub Actions debug mode detected; defaulting LOG_LEVEL to DEBUG")
+            value = "DEBUG"
+
         if not value:
             value = default
     return value
