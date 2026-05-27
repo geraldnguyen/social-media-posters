@@ -438,12 +438,16 @@ Requirements:
 - **Retry logic**: Enhance `publish_media()` method to retry up to 3 times with exponential backoff (2s → 4s → 8s) for transient errors and specific HTTP status codes (429, 5xx)
 - **Enhanced logging**: Add detailed logs for all validation steps and retry attempts
 
+## v1.26.0 - Auto-detect GitHub action DEBUG mode to turn on LOG_LEVEL = DEBUG
+
+Auto-detect GitHub action DEBUG mode to turn on LOG_LEVEL = DEBUG
+
 Expectation:
 - Implement the above requirements 
 - Create unit tests for the changes 
 - Then run the tests 
 - If applicable, update the CLI correspondingly to surface the new feature. 
-- Update the Python package-related files to match the new version.
+- Update the Python package-related files to match the new version e.g. `pyproject.toml`, `common\__init__.py`, `social_cli\__init__.py`
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
 - Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
 
