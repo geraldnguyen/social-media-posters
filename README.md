@@ -1,4 +1,8 @@
-# Remote Media Support
+# Social Media Posters
+
+A collection of GitHub Actions and a unified CLI tool for posting content to various social media platforms. Post to X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, and Bluesky from the command line or automate with GitHub Actions.
+
+## Remote Media Support
 
 All actions and the `social` CLI support using remote media files (images, videos, thumbnails, etc.) by specifying an HTTP or HTTPS URL as the media file path. If the remote file is within the configured size limit, it is automatically downloaded and uploaded from the local path.
 
@@ -7,7 +11,8 @@ All actions and the `social` CLI support using remote media files (images, video
 - If the file is too large or cannot be downloaded, the command logs an error and exits
 
 This makes it easy to use media hosted on the internet in your automated social media posts.
-# Resolving Import Errors for Common Utilities
+
+## Resolving Import Errors for Common Utilities
 
 If you encounter import errors such as `Import "social_media_utils" could not be resolved` when running or editing the post-to-* scripts, follow these steps to ensure Python and your editor can find the `common` utilities:
 
@@ -50,9 +55,6 @@ This ensures the script works when run directly.
 
 ---
 By following these steps, you can avoid import errors and keep your code modular and reusable across all post-to-* actions.
-# Social Media Posters
-
-A collection of GitHub Actions and a unified CLI tool for posting content to various social media platforms. Post to X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, and Bluesky from the command line or automate with GitHub Actions.
 
 ## 🚀 CLI Tool (NEW in v1.12.0)
 
