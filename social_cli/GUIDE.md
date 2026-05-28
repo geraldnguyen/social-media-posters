@@ -69,6 +69,13 @@ social --help
 social x --help
 ```
 
+## Remote Media Files
+
+The `social` CLI accepts HTTP or HTTPS URLs for supported media inputs, including post media, video uploads, and thumbnails. If a remote file is within the configured size limit, it is downloaded first and then uploaded from the local path.
+
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5 MB)
+- If a remote file is too large or cannot be downloaded, the command logs an error and stops
+
 ## Platform Setup
 
 ### X (Twitter)

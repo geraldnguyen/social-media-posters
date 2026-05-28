@@ -1,10 +1,10 @@
 # Remote Media Support
 
-All posting scripts in this repository support using remote media files (images, videos, etc.) by specifying an HTTP or HTTPS URL as the media file path. If the remote file is less than a configurable size limit (default: 5MB), the script will automatically download the file and use the downloaded local path for uploading to the social media platform.
+All actions and the `social` CLI support using remote media files (images, videos, thumbnails, etc.) by specifying an HTTP or HTTPS URL as the media file path. If the remote file is within the configured size limit, it is automatically downloaded and uploaded from the local path.
 
-- The maximum allowed download size can be set using the `MAX_DOWNLOAD_SIZE_MB` environment variable. If not set, the default is 5MB.
-- This feature works for all scripts that accept media file paths (e.g., Post to X, Facebook, Instagram, Threads).
-- If the file is too large or cannot be downloaded, the script will log an error and exit.
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5MB)
+- This applies to every action that accepts media inputs, plus the CLI's media and video options
+- If the file is too large or cannot be downloaded, the command logs an error and exits
 
 This makes it easy to use media hosted on the internet in your automated social media posts.
 # Resolving Import Errors for Common Utilities

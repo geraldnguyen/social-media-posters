@@ -12,6 +12,13 @@ This GitHub Action allows you to post content to LinkedIn using the LinkedIn API
 - Full templating support for dynamic content
 - Returns post ID and URL for further processing
 
+## Remote Media Files
+
+All actions and the `social` CLI support HTTP or HTTPS URLs for supported media inputs. If a remote file is within the configured size limit, it is downloaded first and then uploaded from the local path.
+
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5 MB)
+- If a remote file is too large or cannot be downloaded, the action logs an error and stops
+
 ## Template Interpolation
 
 You can use template placeholders in your post content. The following sources are supported:
