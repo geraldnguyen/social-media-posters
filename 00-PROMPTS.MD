@@ -442,6 +442,22 @@ Requirements:
 
 Auto-detect GitHub action DEBUG mode to turn on LOG_LEVEL = DEBUG
 
+## v1.27.0 - Implement URL shortener operation
+
+Implement `tlnw:shorten_url(long_url)` operation.
+
+Requires:
+- TLNW (Tellers Network) Client ID: `CLIENT_ID` env variable
+- TLNW Client Secret: `CLIENT_SECRET` env variable
+
+Process:
+- POST to `https://go.tlnw.uk/shorten` with appropriate `x-client-id` and `x-client-secret` headers, posting `{"url":"<long url>"}`
+- Obtain the shortened URL from the response body e.g. `{"short":"https://go.tlnw.uk/EsMoIJef","created_at":"2026-05-28T03:05:25.827Z","reused":true}` 
+- Return the shortened URL 
+
+Example usage:
+- `@{json.permalink | tlnw:shorten_url}`: pass the value of `json.permalink` through the pipe `|` operator to the `tlnw:shorten_url` function. Return the shortened URL
+
 Expectation:
 - Implement the above requirements 
 - Create unit tests for the changes 
