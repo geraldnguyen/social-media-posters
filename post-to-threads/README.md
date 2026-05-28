@@ -362,7 +362,7 @@ Pipe operators allow you to transform lists before they are rendered:
 ### Selection Operations
 - `random()`: select a random element from a list (throws error if list is null or empty)
 - `attr(name)`: extract the named attribute from each object in a list of objects
-- `tlnw:shorten_url()`: shorten a URL via TLNW shortener (`CLIENT_ID` and `CLIENT_SECRET` required)
+- `tlnw:shorten_url()`: shorten a URL via TLNW shortener (`TLNW_CLIENT_ID` and `TLNW_CLIENT_SECRET` required)
 
 ### Case Transformation Operations
 - `each:case_title()`: convert each element to Title Case (`hello world` → `Hello World`)

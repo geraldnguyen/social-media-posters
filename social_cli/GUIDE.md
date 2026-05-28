@@ -592,8 +592,8 @@ social x --post-content "@{json.short_desc | or json.description | max_length(20
 Shorten long links inline with the TLNW shortener operation:
 
 ```bash
-export CLIENT_ID="your-tlnw-client-id"
-export CLIENT_SECRET="your-tlnw-client-secret"
+export TLNW_CLIENT_ID="your-tlnw-client-id"
+export TLNW_CLIENT_SECRET="your-tlnw-client-secret"
 social x --post-content "Read more: @{json.permalink | tlnw:shorten_url}"
 ```
 

@@ -161,10 +161,10 @@ def shorten_url_with_tlnw(long_url) -> str:
     if not normalized_url:
         raise ValueError("tlnw:shorten_url requires a non-empty URL value")
 
-    client_id = os.getenv('CLIENT_ID', '').strip()
-    client_secret = os.getenv('CLIENT_SECRET', '').strip()
+    client_id = os.getenv('TLNW_CLIENT_ID', '').strip()
+    client_secret = os.getenv('TLNW_CLIENT_SECRET', '').strip()
     if not client_id or not client_secret:
-        raise ValueError("tlnw:shorten_url requires CLIENT_ID and CLIENT_SECRET environment variables")
+        raise ValueError("tlnw:shorten_url requires TLNW_CLIENT_ID and TLNW_CLIENT_SECRET environment variables")
 
     endpoint = 'https://go.tlnw.uk/shorten'
     headers = {

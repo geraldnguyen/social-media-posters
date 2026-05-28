@@ -8,13 +8,13 @@ from templating_utils import process_templated_contents
 class TestTemplatingUtilsTLNWShortener(unittest.TestCase):
     def setUp(self):
         os.environ['CONTENT_JSON'] = 'https://example.com/data.json'
-        os.environ.pop('CLIENT_ID', None)
-        os.environ.pop('CLIENT_SECRET', None)
+        os.environ.pop('TLNW_CLIENT_ID', None)
+        os.environ.pop('TLNW_CLIENT_SECRET', None)
 
     def tearDown(self):
         os.environ.pop('CONTENT_JSON', None)
-        os.environ.pop('CLIENT_ID', None)
-        os.environ.pop('CLIENT_SECRET', None)
+        os.environ.pop('TLNW_CLIENT_ID', None)
+        os.environ.pop('TLNW_CLIENT_SECRET', None)
 
     @patch('templating_utils.requests.post')
     @patch('templating_utils.requests.get')
@@ -24,8 +24,8 @@ class TestTemplatingUtilsTLNWShortener(unittest.TestCase):
         mock_post.return_value = Mock(status_code=200)
         mock_post.return_value.json.return_value = {"short": "https://go.tlnw.uk/EsMoIJef"}
 
-        os.environ['CLIENT_ID'] = 'test-client-id'
-        os.environ['CLIENT_SECRET'] = 'test-client-secret'
+        os.environ['TLNW_CLIENT_ID'] = 'test-client-id'
+        os.environ['TLNW_CLIENT_SECRET'] = 'test-client-secret'
 
         content = "@{json.permalink | tlnw:shorten_url}"
         result, = process_templated_contents(content)
@@ -49,8 +49,8 @@ class TestTemplatingUtilsTLNWShortener(unittest.TestCase):
         mock_post.return_value = Mock(status_code=200)
         mock_post.return_value.json.return_value = {"short": "https://go.tlnw.uk/AbCdEf"}
 
-        os.environ['CLIENT_ID'] = 'test-client-id'
-        os.environ['CLIENT_SECRET'] = 'test-client-secret'
+        os.environ['TLNW_CLIENT_ID'] = 'test-client-id'
+        os.environ['TLNW_CLIENT_SECRET'] = 'test-client-secret'
 
         content = "@{json.permalink | tlnw:shorten_url()}"
         result, = process_templated_contents(content)
@@ -65,7 +65,7 @@ class TestTemplatingUtilsTLNWShortener(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             process_templated_contents("@{json.permalink | tlnw:shorten_url}")
 
-        self.assertIn("requires CLIENT_ID and CLIENT_SECRET", str(cm.exception))
+        self.assertIn("requires TLNW_CLIENT_ID and TLNW_CLIENT_SECRET", str(cm.exception))
 
     @patch('templating_utils.requests.post')
     @patch('templating_utils.requests.get')
@@ -75,8 +75,8 @@ class TestTemplatingUtilsTLNWShortener(unittest.TestCase):
         mock_post.return_value = Mock(status_code=200)
         mock_post.return_value.json.return_value = {"created_at": "2026-05-28T03:05:25.827Z"}
 
-        os.environ['CLIENT_ID'] = 'test-client-id'
-        os.environ['CLIENT_SECRET'] = 'test-client-secret'
+        os.environ['TLNW_CLIENT_ID'] = 'test-client-id'
+        os.environ['TLNW_CLIENT_SECRET'] = 'test-client-secret'
 
         with self.assertRaises(ValueError) as cm:
             process_templated_contents("@{json.permalink | tlnw:shorten_url}")

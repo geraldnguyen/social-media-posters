@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **TLNW URL shortener template operation** - Added `tlnw:shorten_url` pipe operation for templated content.
   - Sends `POST https://go.tlnw.uk/shorten` with `x-client-id` and `x-client-secret` headers.
-  - Uses `CLIENT_ID` and `CLIENT_SECRET` environment variables for TLNW credentials.
+  - Uses `TLNW_CLIENT_ID` and `TLNW_CLIENT_SECRET` environment variables for TLNW credentials.
   - Accepts a URL value from template pipelines and returns the `short` URL from TLNW response.
   - Supports both `tlnw:shorten_url` and `tlnw:shorten_url()` syntax.
 
