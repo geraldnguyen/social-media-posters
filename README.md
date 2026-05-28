@@ -1,13 +1,18 @@
-# Remote Media Support
+# Social Media Posters
 
-All posting scripts in this repository support using remote media files (images, videos, etc.) by specifying an HTTP or HTTPS URL as the media file path. If the remote file is less than a configurable size limit (default: 5MB), the script will automatically download the file and use the downloaded local path for uploading to the social media platform.
+A collection of GitHub Actions and a unified CLI tool for posting content to various social media platforms. Post to X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, and Bluesky from the command line or automate with GitHub Actions.
 
-- The maximum allowed download size can be set using the `MAX_DOWNLOAD_SIZE_MB` environment variable. If not set, the default is 5MB.
-- This feature works for all scripts that accept media file paths (e.g., Post to X, Facebook, Instagram, Threads).
-- If the file is too large or cannot be downloaded, the script will log an error and exit.
+## Remote Media Support
+
+All actions and the `social` CLI support using remote media files (images, videos, thumbnails, etc.) by specifying an HTTP or HTTPS URL as the media file path. If the remote file is within the configured size limit, it is automatically downloaded and uploaded from the local path.
+
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5MB)
+- This applies to every action that accepts media inputs, plus the CLI's media and video options
+- If the file is too large or cannot be downloaded, the command logs an error and exits
 
 This makes it easy to use media hosted on the internet in your automated social media posts.
-# Resolving Import Errors for Common Utilities
+
+## Resolving Import Errors for Common Utilities
 
 If you encounter import errors such as `Import "social_media_utils" could not be resolved` when running or editing the post-to-* scripts, follow these steps to ensure Python and your editor can find the `common` utilities:
 
@@ -50,9 +55,6 @@ This ensures the script works when run directly.
 
 ---
 By following these steps, you can avoid import errors and keep your code modular and reusable across all post-to-* actions.
-# Social Media Posters
-
-A collection of GitHub Actions and a unified CLI tool for posting content to various social media platforms. Post to X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, and Bluesky from the command line or automate with GitHub Actions.
 
 ## 🚀 CLI Tool (NEW in v1.12.0)
 
@@ -377,6 +379,7 @@ All actions include a flexible templating engine that can pull values from envir
 - `or(fallback)` returns the left value if truthy, otherwise the fallback (supports chaining for coalesce behavior)
 - `random()` selects a random element from a list
 - `attr(name)` extracts an attribute from an object
+- `tlnw:shorten_url()` shortens a URL via TLNW (`TLNW_CLIENT_ID` + `TLNW_CLIENT_SECRET` required)
 
 #### New Syntax Features (v1.17.0+)
 
@@ -399,6 +402,11 @@ All actions include a flexible templating engine that can pull values from envir
 
 # Chain multiple fallbacks
 @{json.primary | or json.secondary | or json.tertiary | or 'default'}
+```
+
+**TLNW URL Shortener**: shorten long links inline in template expressions:
+```
+@{json.permalink | tlnw:shorten_url}
 ```
 
 Example:

@@ -447,8 +447,8 @@ Auto-detect GitHub action DEBUG mode to turn on LOG_LEVEL = DEBUG
 Implement `tlnw:shorten_url(long_url)` operation.
 
 Requires:
-- TLNW (Tellers Network) Client ID: `CLIENT_ID` env variable
-- TLNW Client Secret: `CLIENT_SECRET` env variable
+- TLNW (Tellers Network) Client ID: `TLNW_CLIENT_ID` env variable
+- TLNW Client Secret: `TLNW_CLIENT_SECRET` env variable
 
 Process:
 - POST to `https://go.tlnw.uk/shorten` with appropriate `x-client-id` and `x-client-secret` headers, posting `{"url":"<long url>"}`

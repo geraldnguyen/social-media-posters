@@ -69,6 +69,13 @@ social --help
 social x --help
 ```
 
+## Remote Media Files
+
+The `social` CLI accepts HTTP or HTTPS URLs for supported media inputs, including post media, video uploads, and thumbnails. If a remote file is within the configured size limit, it is downloaded first and then uploaded from the local path.
+
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5 MB)
+- If a remote file is too large or cannot be downloaded, the command logs an error and stops
+
 ## Platform Setup
 
 ### X (Twitter)
@@ -578,6 +585,16 @@ social facebook --post-content "@{json.title | or json.headline | or 'Untitled'}
 
 # Combine with other operations
 social x --post-content "@{json.short_desc | or json.description | max_length(200, '...')}"
+```
+
+#### TLNW URL Shortener
+
+Shorten long links inline with the TLNW shortener operation:
+
+```bash
+export TLNW_CLIENT_ID="your-tlnw-client-id"
+export TLNW_CLIENT_SECRET="your-tlnw-client-secret"
+social x --post-content "Read more: @{json.permalink | tlnw:shorten_url}"
 ```
 
 #### Complete Example

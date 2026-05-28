@@ -12,6 +12,13 @@ This GitHub Action allows you to post content to LinkedIn using the LinkedIn API
 - Full templating support for dynamic content
 - Returns post ID and URL for further processing
 
+## Remote Media Files
+
+All actions and the `social` CLI support HTTP or HTTPS URLs for supported media inputs. If a remote file is within the configured size limit, it is downloaded first and then uploaded from the local path.
+
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5 MB)
+- If a remote file is too large or cannot be downloaded, the action logs an error and stops
+
 ## Template Interpolation
 
 You can use template placeholders in your post content. The following sources are supported:
@@ -198,6 +205,7 @@ You can post-process array values inside a template expression using pipe operat
 ### Selection Operations
 - `random()`: select a random element from a list (throws error if list is null or empty)
 - `attr(name)`: extract the named attribute from each object in a list of objects
+- `tlnw:shorten_url()`: shorten a URL via TLNW shortener (`TLNW_CLIENT_ID` and `TLNW_CLIENT_SECRET` required)
 
 ### Case Transformation Operations
 - `each:case_title()`: convert each element to Title Case (`hello world` → `Hello World`)

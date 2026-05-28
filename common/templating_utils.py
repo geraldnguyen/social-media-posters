@@ -152,6 +152,45 @@ def builtin_value(key: str) -> str:
     return val
 
 
+def shorten_url_with_tlnw(long_url) -> str:
+    """Shorten a URL using the TLNW shortener service."""
+    if long_url is None:
+        raise ValueError("tlnw:shorten_url requires a non-empty URL value")
+
+    normalized_url = str(long_url).strip()
+    if not normalized_url:
+        raise ValueError("tlnw:shorten_url requires a non-empty URL value")
+
+    client_id = os.getenv('TLNW_CLIENT_ID', '').strip()
+    client_secret = os.getenv('TLNW_CLIENT_SECRET', '').strip()
+    if not client_id or not client_secret:
+        raise ValueError("tlnw:shorten_url requires TLNW_CLIENT_ID and TLNW_CLIENT_SECRET environment variables")
+
+    endpoint = 'https://go.tlnw.uk/shorten'
+    headers = {
+        'x-client-id': client_id,
+        'x-client-secret': client_secret,
+    }
+    payload = {'url': normalized_url}
+    logger.debug("Calling TLNW shortener endpoint for URL: %s", normalized_url)
+
+    try:
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()
+        response_json = response.json()
+    except requests.RequestException as e:
+        raise ValueError(f"tlnw:shorten_url request failed: {e}") from e
+    except ValueError as e:
+        raise ValueError(f"tlnw:shorten_url returned invalid JSON: {e}") from e
+
+    short_url = response_json.get('short') if isinstance(response_json, dict) else None
+    if not isinstance(short_url, str) or not short_url.strip():
+        raise ValueError("tlnw:shorten_url response did not include a valid 'short' URL")
+
+    logger.debug("TLNW shortener produced URL: %s", short_url)
+    return short_url.strip()
+
+
 def _process_content_with_json_root(content: str, json_root) -> str:
     """Internal function to process templated content with a given JSON root."""
     logger.debug("Processing templated content (length: %d)", len(content))
@@ -230,7 +269,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         logger.debug("Parsing function call: %s", expr)
         
         # Try matching with parentheses first
-        call_match = re.match(r'^([a-zA-Z_][\w\-]*)\((.*)\)$', expr)
+        call_match = re.match(r'^([a-zA-Z_][\w:\-]*)\((.*)\)$', expr)
         if call_match:
             func_name = call_match.group(1)
             arg_str = call_match.group(2).strip()
@@ -274,7 +313,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         # Try matching without parentheses (v1.17.0 feature)
         # Format: function_name 'arg1' arg2 'arg3'
         # or: function_name json.xxx json.yyy
-        no_paren_match = re.match(r'^([a-zA-Z_][\w\-]*)\s+(.+)$', expr)
+        no_paren_match = re.match(r'^([a-zA-Z_][\w:\-]*)\s+(.+)$', expr)
         if no_paren_match:
             func_name = no_paren_match.group(1)
             args_str = no_paren_match.group(2).strip()
@@ -311,6 +350,12 @@ def _process_content_with_json_root(content: str, json_root) -> str:
             
             logger.debug("Parsed function (no parens) %s with %d arguments: %s", func_name, len(args), args)
             return func_name, args
+
+        bare_function_match = re.match(r'^([a-zA-Z_][\w:\-]*)$', expr)
+        if bare_function_match:
+            func_name = bare_function_match.group(1)
+            logger.debug("Parsed bare function call: %s", func_name)
+            return func_name, []
         
         logger.debug("Not a function call, returning as-is: %s", expr)
         return expr, None
@@ -517,6 +562,9 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                         raise ValueError(f"attr() attribute '{attr_name}' not found in object")
                     value = value[attr_name]
                     logger.debug("Applied attr('%s')", attr_name)
+                elif func_name == 'tlnw:shorten_url':
+                    value = shorten_url_with_tlnw(value)
+                    logger.debug("Applied tlnw:shorten_url to value")
                 elif func_name == 'or':
                     # v1.17.0: or operation - return left-hand-side if truthy, else evaluate and return right-hand-side
                     def is_truthy(val):
