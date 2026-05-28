@@ -377,6 +377,7 @@ All actions include a flexible templating engine that can pull values from envir
 - `or(fallback)` returns the left value if truthy, otherwise the fallback (supports chaining for coalesce behavior)
 - `random()` selects a random element from a list
 - `attr(name)` extracts an attribute from an object
+- `tlnw:shorten_url()` shortens a URL via TLNW (`CLIENT_ID` + `CLIENT_SECRET` required)
 
 #### New Syntax Features (v1.17.0+)
 
@@ -399,6 +400,11 @@ All actions include a flexible templating engine that can pull values from envir
 
 # Chain multiple fallbacks
 @{json.primary | or json.secondary | or json.tertiary | or 'default'}
+```
+
+**TLNW URL Shortener**: shorten long links inline in template expressions:
+```
+@{json.permalink | tlnw:shorten_url}
 ```
 
 Example:

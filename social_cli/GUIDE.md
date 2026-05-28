@@ -580,6 +580,16 @@ social facebook --post-content "@{json.title | or json.headline | or 'Untitled'}
 social x --post-content "@{json.short_desc | or json.description | max_length(200, '...')}"
 ```
 
+#### TLNW URL Shortener
+
+Shorten long links inline with the TLNW shortener operation:
+
+```bash
+export CLIENT_ID="your-tlnw-client-id"
+export CLIENT_SECRET="your-tlnw-client-secret"
+social x --post-content "Read more: @{json.permalink | tlnw:shorten_url}"
+```
+
 #### Complete Example
 
 ```bash

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.27.0] - 2026-05-28
+
+### Added
+
+- **TLNW URL shortener template operation** - Added `tlnw:shorten_url` pipe operation for templated content.
+  - Sends `POST https://go.tlnw.uk/shorten` with `x-client-id` and `x-client-secret` headers.
+  - Uses `CLIENT_ID` and `CLIENT_SECRET` environment variables for TLNW credentials.
+  - Accepts a URL value from template pipelines and returns the `short` URL from TLNW response.
+  - Supports both `tlnw:shorten_url` and `tlnw:shorten_url()` syntax.
+
+### Testing
+
+- Added unit tests for TLNW shortener operation success path, optional-parentheses usage, missing credentials, and invalid API response handling.
+
+### Documentation
+
+- Updated templating documentation in `README.md` and `social_cli/GUIDE.md` with TLNW shortener usage and required environment variables.
+
 ## [1.26.0] - 2026-05-27
 
 ### Added

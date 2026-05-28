@@ -493,6 +493,7 @@ Post-process array values using pipe operations:
 ### Selection Operations
 - `random()` - select a random element (throws error if list is null/empty)
 - `attr(name)` - extract named attribute from objects
+- `tlnw:shorten_url()` - shorten a URL via TLNW shortener (`CLIENT_ID` and `CLIENT_SECRET` required)
 
 ### Case Transformation Operations
 - `each:case_title()` - Title Case
