@@ -245,6 +245,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         return segments
 
     def split_logical_or(expression: str):
+        """Split an expression by top-level `||` delimiters."""
         segments = []
         current = []
         in_single = False
@@ -481,6 +482,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         return bool(val)
 
     def resolve_source_value(source_name: str, key_expr: str):
+        """Resolve a value from env/builtin/json sources."""
         key_expr = key_expr.strip()
         if source_name == 'env':
             return os.getenv(key_expr, '')
@@ -493,6 +495,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         return _NOT_FOUND
 
     def resolve_value_expression(expr: str, default_source: str = None, preserve_not_found: bool = False):
+        """Resolve a value expression, optionally using a default source prefix."""
         expr = expr.strip()
         if not expr:
             return ''
@@ -516,6 +519,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         return expr
 
     def is_function_expression(expr: str) -> bool:
+        """Return True when an expression is a supported function expression."""
         func_name, func_arg = parse_function_call(expr)
         if func_arg is None:
             return False
@@ -527,6 +531,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         return func_name in supported_bare_functions
 
     def evaluate_pipeline_expression(segment: str, source_name: str, initial_value=_NOT_FOUND):
+        """Evaluate a single `|` pipeline segment."""
         parts = split_pipeline(segment)
         if not parts:
             return _NOT_FOUND
@@ -546,6 +551,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         return value
 
     def evaluate_double_pipe_expression(source_name: str, expression_text: str):
+        """Evaluate an expression supporting `||` short-circuit semantics."""
         or_segments = split_logical_or(expression_text)
         if not or_segments:
             return _NOT_FOUND
