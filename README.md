@@ -377,6 +377,7 @@ All actions include a flexible templating engine that can pull values from envir
 
 #### Advanced Operations (v1.17.0+)
 - `or(fallback)` returns the left value if truthy, otherwise the fallback (supports chaining for coalesce behavior)
+- `||` operator provides short-circuit fallback evaluation in pipeline form
 - `random()` selects a random element from a list
 - `attr(name)` extracts an attribute from an object
 - `tlnw:shorten_url()` shortens a URL via TLNW (`TLNW_CLIENT_ID` + `TLNW_CLIENT_SECRET` required)
@@ -402,6 +403,15 @@ All actions include a flexible templating engine that can pull values from envir
 
 # Chain multiple fallbacks
 @{json.primary | or json.secondary | or json.tertiary | or 'default'}
+```
+
+**Short-circuit fallback with `||` (v1.28.0+)**: `||` can be used where `|` is used and returns the left value immediately when truthy:
+```
+# If youtube_link is truthy, it is returned and RHS is skipped
+@{json.youtube_link || json.permalink}
+
+# RHS can be a function expression and receives the non-truthy LHS
+@{json.youtube_link || or json.permalink}
 ```
 
 **TLNW URL Shortener**: shorten long links inline in template expressions:

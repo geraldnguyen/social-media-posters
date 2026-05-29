@@ -587,6 +587,18 @@ social facebook --post-content "@{json.title | or json.headline | or 'Untitled'}
 social x --post-content "@{json.short_desc | or json.description | max_length(200, '...')}"
 ```
 
+#### Double Pipe `||` Short-circuit Fallback (v1.28.0+)
+
+Use `||` where you would use `|` to short-circuit fallback evaluation:
+
+```bash
+# If youtube_link is truthy, it is returned and RHS is skipped
+social x --post-content "Watch: @{json.youtube_link || json.permalink}"
+
+# RHS can also be a function expression and receives non-truthy LHS
+social facebook --post-content "@{json.youtube_link || or json.permalink}"
+```
+
 #### TLNW URL Shortener
 
 Shorten long links inline with the TLNW shortener operation:
@@ -874,7 +886,7 @@ Use it:
 
 ## Version Information
 
-Current version: 1.13.0
+Current version: 1.28.0
 
 Check your installed version:
 
