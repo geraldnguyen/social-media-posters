@@ -458,6 +458,16 @@ Process:
 Example usage:
 - `@{json.permalink | tlnw:shorten_url}`: pass the value of `json.permalink` through the pipe `|` operator to the `tlnw:shorten_url` function. Return the shortened URL
 
+## v1.28.0 - Introduce the double pipe `||` operator
+
+The `||` operator can be used in all places that the `|` operator is used.
+
+If the LHS is not truthy, the `||` behaves like the `or` function. In this case, the RHS can be an value exppression e.g. `json.attribute`, `'literal string'` and need not be an `or` expression. If the RHS is a function expression (`or` expressioon included), the actual non-truthy value of the LHS is passed to that function expression as it is currently implemented.
+
+But if the LHS value is truthy, then its value is returned immediately instead of passing along to the next expression in the RHS.
+
+
+
 Expectation:
 - Implement the above requirements 
 - Create unit tests for the changes 
