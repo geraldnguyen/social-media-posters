@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.28.0] - 2026-05-29
+
+### Added
+
+- Added support for the `||` operator in template expressions.
+  - `||` is available anywhere `|` is used in templating pipelines.
+  - When the left-hand value is truthy, `||` short-circuits and returns that value immediately.
+  - When the left-hand value is not truthy, the right-hand side is evaluated as either:
+    - a value expression (for example `json.permalink` or `'fallback'`), or
+    - a function expression (for example `or json.permalink`) that receives the original non-truthy value.
+
+### Testing
+
+- Added unit tests in `common/test_templating_utils_v1_28_0.py` covering:
+  - truthy and falsy `||` behavior,
+  - value-expression fallbacks,
+  - function-expression fallbacks,
+  - `||` short-circuiting across right-hand-side pipelines,
+  - chained `||` expressions.
+
 ## [1.27.0] - 2026-05-28
 
 ### Added

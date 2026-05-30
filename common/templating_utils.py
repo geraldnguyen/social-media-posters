@@ -203,12 +203,27 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         in_double = False
         depth = 0
 
-        for char in expression:
+        i = 0
+        while i < len(expression):
+            char = expression[i]
+            if (
+                char == '|'
+                and i + 1 < len(expression)
+                and expression[i + 1] == '|'
+                and not in_single
+                and not in_double
+                and depth == 0
+            ):
+                current.extend(['|', '|'])
+                i += 2
+                continue
+
             if char == '|' and not in_single and not in_double and depth == 0:
                 segment = ''.join(current).strip()
                 if segment:
                     segments.append(segment)
                 current = []
+                i += 1
                 continue
 
             current.append(char)
@@ -221,24 +236,39 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                 depth += 1
             elif char == ')' and not in_single and not in_double and depth > 0:
                 depth -= 1
+            i += 1
 
         segment = ''.join(current).strip()
         if segment:
             segments.append(segment)
 
         return segments
+
+    def split_logical_or(expression: str):
+        """Split an expression by top-level `||` delimiters."""
         segments = []
         current = []
         in_single = False
         in_double = False
         depth = 0
 
-        for char in expression:
-            if char == '|' and not in_single and not in_double and depth == 0:
+        i = 0
+        while i < len(expression):
+            char = expression[i]
+
+            if (
+                char == '|'
+                and i + 1 < len(expression)
+                and expression[i + 1] == '|'
+                and not in_single
+                and not in_double
+                and depth == 0
+            ):
                 segment = ''.join(current).strip()
                 if segment:
                     segments.append(segment)
                 current = []
+                i += 2
                 continue
 
             current.append(char)
@@ -251,6 +281,7 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                 depth += 1
             elif char == ')' and not in_single and not in_double and depth > 0:
                 depth -= 1
+            i += 1
 
         segment = ''.join(current).strip()
         if segment:
@@ -439,6 +470,118 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         
         # Otherwise, it's a literal string
         return arg
+
+    def is_truthy(val):
+        """Check if a value is truthy (not null, not empty, not blank)."""
+        if val is None:
+            return False
+        if isinstance(val, str):
+            return val.strip() != ''
+        if isinstance(val, (list, tuple, dict)):
+            return len(val) > 0
+        return bool(val)
+
+    def resolve_source_value(source_name: str, key_expr: str):
+        """Resolve a value from env/builtin/json sources."""
+        key_expr = key_expr.strip()
+        if source_name == 'env':
+            return os.getenv(key_expr, '')
+        if source_name == 'builtin':
+            return builtin_value(key_expr)
+        if source_name == 'json':
+            if json_root is None:
+                return _NOT_FOUND
+            return extract_json_path(json_root, key_expr)
+        return _NOT_FOUND
+
+    def resolve_value_expression(expr: str, default_source: str = None, preserve_not_found: bool = False):
+        """Resolve a value expression, optionally using a default source prefix."""
+        expr = expr.strip()
+        if not expr:
+            return ''
+
+        if len(expr) >= 2 and ((expr[0] == expr[-1] == '"') or (expr[0] == expr[-1] == "'")):
+            return strip_quotes(expr)
+
+        prefixed_match = re.match(r'^(env|builtin|json)\.(.+)$', expr)
+        if prefixed_match:
+            resolved = resolve_source_value(prefixed_match.group(1), prefixed_match.group(2))
+            if resolved is _NOT_FOUND and not preserve_not_found:
+                return ''
+            return resolved
+
+        if default_source:
+            resolved = resolve_source_value(default_source, expr)
+            if resolved is _NOT_FOUND and not preserve_not_found:
+                return ''
+            return resolved
+
+        return expr
+
+    def is_function_expression(expr: str) -> bool:
+        """Return True when an expression is a supported function expression."""
+        func_name, func_arg = parse_function_call(expr)
+        if func_arg is None:
+            return False
+        if '(' in expr or ' ' in expr:
+            return True
+        supported_bare_functions = {
+            'join', 'max_length', 'join_while', 'random', 'attr', 'tlnw:shorten_url', 'or'
+        }
+        return func_name in supported_bare_functions
+
+    def evaluate_pipeline_expression(segment: str, source_name: str, initial_value=_NOT_FOUND):
+        """Evaluate a single `|` pipeline segment."""
+        parts = split_pipeline(segment)
+        if not parts:
+            return _NOT_FOUND
+
+        if initial_value is _NOT_FOUND:
+            head = parts[0]
+            value = resolve_value_expression(head, source_name, preserve_not_found=True)
+            if value is _NOT_FOUND:
+                return _NOT_FOUND
+            operations = parts[1:]
+        else:
+            value = initial_value
+            operations = parts
+
+        if operations:
+            value = apply_operations(value, operations, json_root)
+        return value
+
+    def evaluate_double_pipe_expression(source_name: str, expression_text: str):
+        """Evaluate an expression supporting `||` short-circuit semantics."""
+        or_segments = split_logical_or(expression_text)
+        if not or_segments:
+            return _NOT_FOUND
+
+        value = evaluate_pipeline_expression(or_segments[0], source_name)
+        if value is _NOT_FOUND:
+            if len(or_segments) == 1:
+                return _NOT_FOUND
+            value = ''
+
+        if len(or_segments) == 1:
+            return value
+
+        for rhs_segment in or_segments[1:]:
+            if is_truthy(value):
+                return value
+
+            rhs_segment = rhs_segment.strip()
+            if not rhs_segment:
+                continue
+
+            rhs_parts = split_pipeline(rhs_segment)
+            if rhs_parts and is_function_expression(rhs_parts[0]):
+                value = evaluate_pipeline_expression(rhs_segment, source_name, initial_value=value)
+            else:
+                value = evaluate_pipeline_expression(rhs_segment, source_name)
+                if value is _NOT_FOUND:
+                    value = ''
+
+        return value
     
     def apply_operations(value, operations, json_root=None):
         logger.debug("Applying %d operations to value (type: %s)", len(operations), type(value).__name__)
@@ -567,16 +710,6 @@ def _process_content_with_json_root(content: str, json_root) -> str:
                     logger.debug("Applied tlnw:shorten_url to value")
                 elif func_name == 'or':
                     # v1.17.0: or operation - return left-hand-side if truthy, else evaluate and return right-hand-side
-                    def is_truthy(val):
-                        """Check if a value is truthy (not null, not empty, not blank)."""
-                        if val is None:
-                            return False
-                        if isinstance(val, str):
-                            return val.strip() != ''
-                        if isinstance(val, (list, tuple, dict)):
-                            return len(val) > 0
-                        return bool(val)
-                    
                     if is_truthy(value):
                         logger.debug("or: Left-hand-side is truthy, keeping value: %s", str(value)[:100])
                     else:
@@ -603,42 +736,10 @@ def _process_content_with_json_root(content: str, json_root) -> str:
         source, expression = match.group(1), match.group(2)
         logger.debug("Processing placeholder: source=%s, expression=%s", source, expression)
 
-        segments = split_pipeline(expression)
-        logger.debug("Split expression into %d segments: %s", len(segments), segments)
-        if not segments:
-            logger.warning("Empty placeholder expression for source '%s'", source)
+        val = evaluate_double_pipe_expression(source, expression)
+        if val is _NOT_FOUND:
+            logger.warning("Could not resolve %s.%s, leaving placeholder as-is.", source, expression)
             return match.group(0)
-
-        key = segments[0]
-        operations = segments[1:]
-        logger.debug("Key: %s, Operations: %s", key, operations)
-
-        if source == 'env':
-            val = os.getenv(key, '')
-            logger.debug("Resolved env.%s to '%s'", key, val)
-        elif source == 'builtin':
-            val = builtin_value(key)
-            logger.debug("Resolved builtin.%s to '%s'", key, val)
-        elif source == 'json':
-            data = json_root
-            logger.debug("Using JSON root for lookup: %s", data is not None)
-            if data is None:
-                logger.warning("No JSON data available for %s.%s", source, key)
-                return match.group(0)
-            val = extract_json_path(data, key)
-            # v1.17.0: Check if path was not found (sentinel value)
-            if val is _NOT_FOUND:
-                logger.warning("Could not resolve %s.%s, leaving placeholder as-is.", source, key)
-                return match.group(0)
-            # v1.17.0: Allow empty strings and None to be processed by operations (e.g., 'or')
-            logger.debug("Resolved %s.%s to '%s'", source, key, str(val)[:100])
-        else:
-            logger.warning("Unknown placeholder source: %s", source)
-            return match.group(0)
-
-        if operations:
-            logger.debug("Applying %d operations to resolved value", len(operations))
-            val = apply_operations(val, operations, json_root)
 
         result = str(val)
         logger.debug("Placeholder replacement result: '%s'", result[:100])
