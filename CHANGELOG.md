@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.29.0] - 2026-06-10
+
+### Fixed
+- **Intermittent network timeouts** - Increased default request timeouts to improve reliability in slow network conditions.
+  - Increased TLNW URL shortener timeout from 10s to 30s.
+  - Increased remote JSON fetching (`CONTENT_JSON`) timeout from 10s to 30s.
+  - Increased media download timeout from 10s to 30s.
+  - Increased Bluesky metadata and thumbnail download timeouts to 30s.
+  - Increased Threads link accessibility check timeout from 5s to 15s.
+
 ## [1.28.0] - 2026-05-29
 
 ### Added

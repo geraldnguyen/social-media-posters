@@ -477,3 +477,23 @@ Expectation:
 - Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
 - Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
 
+## v1.29.0 - Increase network timeouts for better reliability
+
+The application encountered intermittent "Read timed out" errors during network operations, particularly during URL shortening and media downloads.
+
+Requirements:
+- **Global Timeout Increase**: Standardize and increase network timeouts from 10 seconds to **30 seconds** for the following operations:
+    - TLNW URL shortening (`tlnw:shorten_url`)
+    - Remote JSON data fetching (`CONTENT_JSON`)
+    - Media file downloads from URLs
+    - Bluesky link metadata and thumbnail fetching
+- **Threads Specific Adjustment**: Increase the Threads link accessibility pre-check timeout from 5 seconds to **15 seconds**.
+- **Test Alignment**: Update all relevant unit tests to expect and verify the new timeout values.
+- **Consistency**: Ensure consistent timeout behavior across all shared utility modules and platform-specific scripts.
+
+Expectation:
+- Implement the above requirements
+- Update unit tests and ensure they pass
+- Update relevant documentation and versioning files
+
+
