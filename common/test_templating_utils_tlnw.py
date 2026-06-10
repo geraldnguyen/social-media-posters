@@ -38,7 +38,7 @@ class TestTemplatingUtilsTLNWShortener(unittest.TestCase):
                 'x-client-secret': 'test-client-secret',
             },
             json={'url': 'https://example.com/very/long/url'},
-            timeout=10,
+            timeout=30,
         )
 
     @patch('templating_utils.requests.post')

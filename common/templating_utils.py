@@ -67,7 +67,7 @@ def get_json_data():
 
     try:
         logger.info("Fetching JSON from URL: %s", url)
-        resp = requests.get(url, timeout=10)
+        resp = requests.get(url, timeout=30)
         logger.debug("HTTP response status: %d", resp.status_code)
         resp.raise_for_status()
         data = resp.json()
@@ -175,7 +175,7 @@ def shorten_url_with_tlnw(long_url) -> str:
     logger.debug("Calling TLNW shortener endpoint for URL: %s", normalized_url)
 
     try:
-        response = requests.post(endpoint, headers=headers, json=payload, timeout=10)
+        response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         response_json = response.json()
     except requests.RequestException as e:

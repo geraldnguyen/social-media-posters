@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 def fetch_link_metadata(url: str) -> dict:
     """Fetch metadata (title, description, image) from a URL for a link card."""
     try:
-        response = requests.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+        response = requests.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
         response.raise_for_status()
         
         soup = BeautifulSoup(response.content, 'lxml')
@@ -174,7 +174,7 @@ def post_to_bluesky():
                 # If there's an image, download and upload it
                 if metadata['image_url']:
                     try:
-                        img_response = requests.get(metadata['image_url'], timeout=10)
+                        img_response = requests.get(metadata['image_url'], timeout=30)
                         img_response.raise_for_status()
                         
                         # Upload the thumbnail image

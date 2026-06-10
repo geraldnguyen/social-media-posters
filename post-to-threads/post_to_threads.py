@@ -63,7 +63,7 @@ def validate_link_url(link):
         logger.warning(f"Error validating link URL: {e}")
         return False
 
-def check_link_accessibility(link, timeout=5):
+def check_link_accessibility(link, timeout=15):
     """Pre-check if a link is accessible before publishing.
     
     Args:

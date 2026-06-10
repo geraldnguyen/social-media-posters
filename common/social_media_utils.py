@@ -323,7 +323,7 @@ def download_file_if_url(file_path, max_download_size_mb=5):
     local_path = file_path
     if file_path.startswith("http://") or file_path.startswith("https://"):
         try:
-            resp = requests.get(file_path, stream=True, timeout=10)
+            resp = requests.get(file_path, stream=True, timeout=30)
             resp.raise_for_status()
             content_length = resp.headers.get('Content-Length')
             if content_length and int(content_length) > max_bytes:
