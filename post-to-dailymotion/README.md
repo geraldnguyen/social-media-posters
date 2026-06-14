@@ -43,7 +43,7 @@ You need to set up Dailymotion API access:
 
 1. Go to the [Dailymotion Developer Portal](https://developer.dailymotion.com/)
 2. Create a new App to get your **API Key (Client ID)** and **API Secret (Client Secret)**
-3. Ensure your App has the necessary permissions for video uploads
+3. Generate a **Refresh Token** for your account. See the [Refresh Token Guide](./REFRESH_TOKEN_GUIDE.md) for instructions.
 
 ## Usage
 
@@ -55,6 +55,7 @@ You need to set up Dailymotion API access:
   with:
     client-id: ${{ secrets.DAILYMOTION_CLIENT_ID }}
     client-secret: ${{ secrets.DAILYMOTION_CLIENT_SECRET }}
+    refresh-token: ${{ secrets.DAILYMOTION_REFRESH_TOKEN }}
     channel: "news"
     video-file: "path/to/video.mp4"
     title: "My Awesome Video Title"
@@ -67,6 +68,8 @@ You need to set up Dailymotion API access:
 |-----------|-------------|----------|---------|
 | `client-id` | Dailymotion API Client ID | Yes | - |
 | `client-secret` | Dailymotion API Client Secret | Yes | - |
+| `refresh-token` | Dailymotion OAuth Refresh Token | Yes | - |
+| `channel-id` | Dailymotion Channel ID (e.g. "me" or specific user ID) | No | `me` |
 | `channel` | Dailymotion Channel (category) for the video (e.g., news, sport, tech) | Yes | - |
 | `video-file` | Path to video file (local or URL) | Yes | - |
 | `title` | Video title | Yes | - |

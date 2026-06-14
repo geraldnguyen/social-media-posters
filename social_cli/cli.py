@@ -288,8 +288,12 @@ def update_youtube(**kwargs):
               help='Dailymotion API Client ID')
 @click.option('--dailymotion-client-secret', callback=set_env_from_option, 
               help='Dailymotion API Client Secret')
+@click.option('--dailymotion-refresh-token', callback=set_env_from_option, 
+              help='Dailymotion OAuth Refresh Token')
+@click.option('--dailymotion-channel-id', callback=set_env_from_option, 
+              help='Dailymotion Channel ID (e.g. "me" or specific user ID)')
 @click.option('--dailymotion-channel', callback=set_env_from_option, 
-              help='Dailymotion Channel (category)')
+              help='Dailymotion Category/Channel (e.g. "news", "tech")')
 @click.option('--video-file', callback=set_env_from_option, 
               help='Path or URL to video file')
 @click.option('--video-title', callback=set_env_from_option, 

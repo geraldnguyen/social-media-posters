@@ -12,6 +12,13 @@ inputs:
   client-secret:
     description: 'Dailymotion API Client Secret'
     required: true
+  refresh-token:
+    description: 'Dailymotion OAuth Refresh Token'
+    required: true
+  channel-id:
+    description: 'Dailymotion Channel ID (e.g. "me" or specific user ID)'
+    required: false
+    default: 'me'
   channel:
     description: 'Dailymotion Channel (category) for the video'
     required: true
@@ -73,6 +80,8 @@ runs:
       env:
         DAILYMOTION_CLIENT_ID: ${{ inputs.client-id }}
         DAILYMOTION_CLIENT_SECRET: ${{ inputs.client-secret }}
+        DAILYMOTION_REFRESH_TOKEN: ${{ inputs.refresh-token }}
+        DAILYMOTION_CHANNEL_ID: ${{ inputs.channel-id }}
         DAILYMOTION_CHANNEL: ${{ inputs.channel }}
         VIDEO_FILE: ${{ inputs.video-file }}
         VIDEO_TITLE: ${{ inputs.title }}

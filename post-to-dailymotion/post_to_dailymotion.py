@@ -43,24 +43,24 @@ from social_media_utils import (
 class DailymotionAPI:
     """Dailymotion API client."""
     
-    def __init__(self, client_id: str, client_secret: str, channel_id: Optional[str] = None):
-        """Initialize Dailymotion API client with client credentials."""
+    def __init__(self, client_id: str, client_secret: str, refresh_token: str, channel_id: Optional[str] = None):
+        """Initialize Dailymotion API client with refresh token flow."""
         self.client_id = client_id
         self.client_secret = client_secret
+        self.refresh_token = refresh_token
         self.channel_id = channel_id or "me"
         self.access_token = None
         self.api_base_url = "https://api.dailymotion.com"
-        self.partner_api_base_url = "https://partner.api.dailymotion.com"
         
     def authenticate(self):
-        """Authenticate using client credentials flow."""
-        logger.info("Authenticating with Dailymotion using client credentials")
-        url = f"{self.partner_api_base_url}/oauth/v1/token"
+        """Authenticate using refresh token grant type."""
+        logger.info("Refreshing Dailymotion access token")
+        url = f"{self.api_base_url}/oauth/token"
         data = {
-            "grant_type": "client_credentials",
+            "grant_type": "refresh_token",
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "scope": "manage_videos"
+            "refresh_token": self.refresh_token
         }
         
         try:
@@ -69,9 +69,12 @@ class DailymotionAPI:
             response.raise_for_status()
             auth_data = response.json()
             self.access_token = auth_data.get("access_token")
-            logger.info("Successfully authenticated with Dailymotion")
+            # Update refresh token if a new one is provided
+            if auth_data.get("refresh_token"):
+                self.refresh_token = auth_data.get("refresh_token")
+            logger.info("Successfully refreshed Dailymotion access token")
         except Exception as e:
-            logger.error(f"Failed to authenticate with Dailymotion: {e}")
+            logger.error(f"Failed to refresh Dailymotion access token: {e}")
             raise
 
     def get_headers(self):
@@ -111,9 +114,10 @@ class DailymotionAPI:
 
     def create_video(self, file_url: str, metadata: Dict[str, Any]) -> str:
         """Create a video object on Dailymotion."""
-        logger.info(f"Creating video object on Dailymotion for channel: {self.channel_id}")
+        logger.info(f"Creating video object on Dailymotion")
         
-        url = f"{self.partner_api_base_url}/rest/user/{self.channel_id}/videos"
+        # Standard API endpoint
+        url = f"{self.api_base_url}/me/videos"
             
         logger.debug(f"Creating video at URL: {url}")
         
@@ -153,6 +157,7 @@ def post_to_dailymotion():
         # Get API credentials
         client_id = get_required_env_var("DAILYMOTION_CLIENT_ID")
         client_secret = get_required_env_var("DAILYMOTION_CLIENT_SECRET")
+        refresh_token = get_required_env_var("DAILYMOTION_REFRESH_TOKEN")
         channel_id = get_optional_env_var("DAILYMOTION_CHANNEL_ID", "me")
         
         # Get video details
@@ -230,7 +235,7 @@ def post_to_dailymotion():
         dry_run_guard("Dailymotion", f"Video: {title}", [local_video_file], dry_run_request)
         
         # Create API client
-        api = DailymotionAPI(client_id, client_secret, channel_id)
+        api = DailymotionAPI(client_id, client_secret, refresh_token, channel_id)
         
         # Step 1: Get upload URL
         upload_url = api.get_upload_url()
