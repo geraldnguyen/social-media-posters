@@ -467,16 +467,6 @@ If the LHS is not truthy, the `||` behaves like the `or` function. In this case,
 But if the LHS value is truthy, then its value is returned immediately instead of passing along to the next expression in the RHS.
 
 
-
-Expectation:
-- Implement the above requirements 
-- Create unit tests for the changes 
-- Then run the tests 
-- If applicable, update the CLI correspondingly to surface the new feature. 
-- Update the Python package-related files to match the new version e.g. `pyproject.toml`, `common\__init__.py`, `social_cli\__init__.py`
-- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
-- Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
-
 ## v1.29.0 - Increase network timeouts for better reliability
 
 The application encountered intermittent "Read timed out" errors during network operations, particularly during URL shortening and media downloads.
@@ -491,9 +481,27 @@ Requirements:
 - **Test Alignment**: Update all relevant unit tests to expect and verify the new timeout values.
 - **Consistency**: Ensure consistent timeout behavior across all shared utility modules and platform-specific scripts.
 
+
+## v1.30.0 - Create post-to-dailymotion action and CLI command
+
+- Use client-credential OAUTH2 flow: https://developers.dailymotion.com/docs/authenticate-using-client-credentials
+- Upload video: https://developers.dailymotion.com/docs/upload-videos
+- Use reasonable default for video fields (https://developers.dailymotion.com/reference/video-fields) but requires the following explicitly
+  + is_created_for_kids: true/false
+  + channel: category
+  + description
+  + title
+  + tags: optional
+
+
+
 Expectation:
-- Implement the above requirements
-- Update unit tests and ensure they pass
-- Update relevant documentation and versioning files
+- Implement the above requirements 
+- Create unit tests for the changes 
+- Then run the tests 
+- If applicable, update the CLI correspondingly to surface the new feature. 
+- Update the Python package-related files to match the new version e.g. `pyproject.toml`, `common\__init__.py`, `social_cli\__init__.py`
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
+- Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
 
 

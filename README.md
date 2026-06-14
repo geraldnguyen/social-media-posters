@@ -126,6 +126,14 @@ Upload videos and update video metadata on YouTube using the YouTube Data API v3
 - Custom thumbnails and playlist integration
 - Media support: Video files (local or remote URLs)
 
+### 🎬 [Post to Dailymotion](./post-to-dailymotion)
+Upload videos to Dailymotion using the Dailymotion API.
+- Supports video uploads with metadata
+- **Schedule video publishing** with ISO 8601 or offset format ("+1d", "+2h", "+30m")
+- Support for remote video URLs
+- Category and "made for kids" flag support
+- Media support: Video files (local or remote URLs)
+
 ## Quick Start
 
 1. Choose the social media platform(s) you want to post to
@@ -238,6 +246,11 @@ social-media-posters/
 │   ├── requirements.txt
 │   ├── test_post_to_youtube.py
 │   └── README.md
+├── post-to-dailymotion/     # Dailymotion video upload action
+│   ├── action.yml
+│   ├── post_to_dailymotion.py
+│   ├── requirements.txt
+│   ├── test_post_to_dailymotion.py
 │   └── README.md
 ├── common/                 # Shared utilities
 │   ├── __init__.py
@@ -527,6 +540,7 @@ jobs:
 | Threads | Threads account, approved Threads App |
 | LinkedIn | LinkedIn Developer Account, App with Share on LinkedIn product |
 | YouTube | Google Cloud Project, YouTube Data API v3, Service Account or OAuth 2.0 |
+| Dailymotion | Dailymotion Developer App, API Key and Secret |
 
 ## Rate Limits
 

@@ -282,5 +282,30 @@ def update_youtube(**kwargs):
     import_and_run_post_script('post-to-youtube', 'update_youtube', 'update_youtube')
 
 
+@main.command()
+@add_common_options
+@click.option('--dailymotion-client-id', callback=set_env_from_option, 
+              help='Dailymotion API Client ID')
+@click.option('--dailymotion-client-secret', callback=set_env_from_option, 
+              help='Dailymotion API Client Secret')
+@click.option('--dailymotion-channel', callback=set_env_from_option, 
+              help='Dailymotion Channel (category)')
+@click.option('--video-file', callback=set_env_from_option, 
+              help='Path or URL to video file')
+@click.option('--video-title', callback=set_env_from_option, 
+              help='Video title')
+@click.option('--video-description', callback=set_env_from_option, 
+              help='Video description')
+@click.option('--video-tags', callback=set_env_from_option, 
+              help='Video tags (comma-separated)')
+@click.option('--video-publish-at', callback=set_env_from_option, 
+              help='Schedule publish date/time. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
+@click.option('--video-made-for-kids', callback=set_env_from_option, 
+              help='Video is made for kids (true/false)')
+def dailymotion(**kwargs):
+    """Upload video to Dailymotion."""
+    import_and_run_post_script('post-to-dailymotion', 'post_to_dailymotion', 'post_to_dailymotion')
+
+
 if __name__ == '__main__':
     main()

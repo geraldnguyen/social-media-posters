@@ -1,0 +1,88 @@
+name: 'Post to Dailymotion'
+description: 'Upload videos to Dailymotion using the Dailymotion API'
+author: 'Gerald Nguyen'
+branding:
+  icon: 'video'
+  color: 'blue'
+
+inputs:
+  client-id:
+    description: 'Dailymotion API Client ID'
+    required: true
+  client-secret:
+    description: 'Dailymotion API Client Secret'
+    required: true
+  channel:
+    description: 'Dailymotion Channel (category) for the video'
+    required: true
+  video-file:
+    description: 'Path to video file (local or URL)'
+    required: true
+  title:
+    description: 'Video title'
+    required: true
+  description:
+    description: 'Video description'
+    required: false
+  tags:
+    description: 'Comma-separated list of video tags'
+    required: false
+  publish-at:
+    description: 'Schedule video publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m").'
+    required: false
+  made-for-kids:
+    description: 'Whether the video is made for kids (true/false)'
+    required: false
+    default: 'false'
+  log-level:
+    description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
+    required: false
+    default: 'INFO'
+  content-json:
+    description: 'JSON API URL and path for dynamic content templating (e.g. https://example.com/data.json | items[RANDOM])'
+    required: false
+  time-zone:
+    description: 'Time zone for date/time placeholders (e.g. UTC, UTC+7)'
+    required: false
+  dry-run:
+    description: 'Dry run mode. If true, the content will be printed but not posted.'
+    required: false
+    default: 'false'
+
+outputs:
+  video-id:
+    description: 'ID of the uploaded video'
+  video-url:
+    description: 'URL of the uploaded video'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r ${{ github.action_path }}/requirements.txt
+    
+    - name: Post to Dailymotion
+      shell: bash
+      env:
+        DAILYMOTION_CLIENT_ID: ${{ inputs.client-id }}
+        DAILYMOTION_CLIENT_SECRET: ${{ inputs.client-secret }}
+        DAILYMOTION_CHANNEL: ${{ inputs.channel }}
+        VIDEO_FILE: ${{ inputs.video-file }}
+        VIDEO_TITLE: ${{ inputs.title }}
+        VIDEO_DESCRIPTION: ${{ inputs.description }}
+        VIDEO_TAGS: ${{ inputs.tags }}
+        VIDEO_PUBLISH_AT: ${{ inputs.publish-at }}
+        VIDEO_MADE_FOR_KIDS: ${{ inputs.made-for-kids }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+        CONTENT_JSON: ${{ inputs.content-json }}
+        TIME_ZONE: ${{ inputs.time-zone }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        python ${{ github.action_path }}/post_to_dailymotion.py

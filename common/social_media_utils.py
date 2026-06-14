@@ -57,7 +57,7 @@ def load_json_config() -> Optional[Dict[str, Any]]:
         with open(input_file, 'r', encoding='utf-8') as f:
             config = json.load(f)
         logger.info(f"Loaded configuration from JSON file: {input_file}")
-        logger.debug(f"JSON config keys: {list(config.keys()) if isinstance(config, dict) else 'not a dict'}")
+        logger.debug(f"JSON config content: {json.dumps(config, indent=2)}")
         _json_config_cache = config
         return config
     except json.JSONDecodeError as e:

@@ -138,6 +138,18 @@ YOUTUBE_OAUTH_CLIENT_SECRET=your_client_secret
 YOUTUBE_OAUTH_REFRESH_TOKEN=your_refresh_token
 ```
 
+### Dailymotion
+
+1. Create a Dailymotion App at https://developer.dailymotion.com
+2. Get your API Key (Client ID) and API Secret (Client Secret)
+3. Set up environment variables:
+
+```bash
+DAILYMOTION_CLIENT_ID=your_client_id
+DAILYMOTION_CLIENT_SECRET=your_client_secret
+DAILYMOTION_CHANNEL=news
+```
+
 ### Bluesky
 
 1. Create a Bluesky account at https://bsky.app
@@ -402,6 +414,32 @@ social youtube \
   --video-thumbnail "thumbnail.jpg" \
   --playlist-id "PLxxxxxx" \
   --video-category-id "27"
+```
+
+### Dailymotion Examples
+
+#### Example 1: Upload Video
+
+```bash
+social dailymotion \
+  --video-file "my-video.mp4" \
+  --video-title "My Amazing Video" \
+  --video-description "This is a description" \
+  --dailymotion-channel "news" \
+  --dailymotion-client-id "your_id" \
+  --dailymotion-client-secret "your_secret"
+```
+
+#### Example 2: Schedule Video Upload
+
+```bash
+social dailymotion \
+  --video-file "https://example.com/video.mp4" \
+  --video-title "Scheduled Release" \
+  --video-description "Coming soon!" \
+  --video-publish-at "2026-12-31T10:00:00Z" \
+  --dailymotion-channel "tech" \
+  --dry-run
 ```
 
 ### Bluesky Examples
@@ -886,7 +924,7 @@ Use it:
 
 ## Version Information
 
-Current version: 1.28.0
+Current version: 1.30.0
 
 Check your installed version:
 

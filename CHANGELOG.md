@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.0] - 2026-06-13
+
+### Added
+- **Dailymotion support** - Added new `post-to-dailymotion` GitHub Action and `dailymotion` CLI command.
+  - Supports video uploads using Dailymotion API.
+  - Implements Client Credentials OAuth2 flow for authentication.
+  - Supports video metadata: title, description, tags, channel (category), and "made for kids" flag.
+  - Supports scheduled publishing using `publish-at` (ISO 8601 or offset format).
+  - Supports remote video file downloads (URLs).
+  - Full templating support for video title and description.
+  - Dry-run mode for verification before posting.
+
 ## [1.29.0] - 2026-06-10
 
 ### Fixed

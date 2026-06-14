@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "social-media-posters"
-version = "1.29.0"
+version = "1.30.0"
 description = "CLI and GitHub Actions for posting to various social media platforms"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -12,7 +12,7 @@ license = {text = "MIT"}
 authors = [
     {name = "Gerald Nguyen"}
 ]
-keywords = ["social-media", "automation", "cli", "github-actions", "twitter", "facebook", "instagram", "threads", "linkedin", "youtube", "bluesky"]
+keywords = ["social-media", "automation", "cli", "github-actions", "twitter", "facebook", "instagram", "threads", "linkedin", "youtube", "bluesky", "dailymotion"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -46,6 +46,7 @@ youtube = [
     "google-auth-oauthlib>=1.1.0",
     "google-auth-httplib2>=0.1.1",
 ]
+dailymotion = []
 all = [
     "tweepy>=4.14.0",
     "facebook-sdk>=3.1.0",
