@@ -107,6 +107,23 @@ class TestDailymotionAPI(unittest.TestCase):
         args, kwargs = mock_post.call_args
         self.assertEqual(args[0], "https://api.dailymotion.com/me/videos")
 
+    @patch('requests.post')
+    def test_add_to_playlist(self, mock_post):
+        """Test adding video to playlist."""
+        self.api.access_token = "test_token"
+        mock_response = MagicMock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.status_code = 200
+        mock_response.text = '{}'
+        mock_post.return_value = mock_response
+        
+        self.api.add_to_playlist("p12345", "v12345")
+        
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], "https://api.dailymotion.com/playlist/p12345/videos")
+        self.assertEqual(kwargs['data']['ids'], "v12345")
+
 class TestPostToDailymotion(unittest.TestCase):
     """Test cases for post_to_dailymotion function."""
     
@@ -136,7 +153,9 @@ class TestPostToDailymotion(unittest.TestCase):
             "VIDEO_MADE_FOR_KIDS": "false",
             "VIDEO_TAGS": "tag1,tag2",
             "VIDEO_PUBLISH_AT": "",
-            "DRY_RUN": "false"
+            "DRY_RUN": "false",
+            "DAILYMOTION_CHANNEL_ID": "me",
+            "DAILYMOTION_PLAYLIST_ID": "plist123"
         }.get(var, default)
         
         mock_download.return_value = "video.mp4"
@@ -157,6 +176,7 @@ class TestPostToDailymotion(unittest.TestCase):
         mock_api.get_upload_url.assert_called_once()
         mock_api.upload_file.assert_called_once_with("https://upload.url", "video.mp4")
         mock_api.create_video.assert_called_once()
+        mock_api.add_to_playlist.assert_called_once_with("plist123", "x12345")
         
         metadata = mock_api.create_video.call_args[0][1]
         self.assertEqual(metadata['title'], "Test Title")

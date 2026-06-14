@@ -144,7 +144,39 @@ class DailymotionAPI:
                 logger.debug(f"Error response body: {e.response.text}")
             raise
 
+    def add_to_playlist(self, playlist_id: str, video_id: str) -> None:
+        """Add a video to a playlist."""
+        logger.info(f"Adding video {video_id} to playlist: {playlist_id}")
+        url = f"{self.api_base_url}/playlist/{playlist_id}/videos"
+        
+        data = {
+            "ids": video_id
+        }
+        
+        try:
+            response = requests.post(url, headers=self.get_headers(), data=data, timeout=30)
+            logger.debug(f"Dailymotion add_to_playlist response: {response.status_code} - {response.text}")
+            response.raise_for_status()
+            logger.info(f"Video successfully added to playlist {playlist_id}")
+        except Exception as e:
+            logger.error(f"Failed to add video to Dailymotion playlist: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.debug(f"Error response body: {e.response.text}")
+            raise
 
+    def update_video(self, video_id: str, metadata: Dict[str, Any]) -> None:
+        """Update video metadata."""
+        logger.info(f"Updating video metadata for ID: {video_id}")
+        url = f"{self.api_base_url}/video/{video_id}"
+        
+        try:
+            response = requests.post(url, headers=self.get_headers(), data=metadata, timeout=30)
+            logger.debug(f"Dailymotion update_video response: {response.status_code} - {response.text}")
+            response.raise_for_status()
+            logger.info(f"Video updated successfully")
+        except Exception as e:
+            logger.error(f"Failed to update video on Dailymotion: {e}")
+            raise
 
 def post_to_dailymotion():
     """Main function to post content to Dailymotion."""
@@ -159,6 +191,7 @@ def post_to_dailymotion():
         client_secret = get_required_env_var("DAILYMOTION_CLIENT_SECRET")
         refresh_token = get_required_env_var("DAILYMOTION_REFRESH_TOKEN")
         channel_id = get_optional_env_var("DAILYMOTION_CHANNEL_ID", "me")
+        playlist_id = get_optional_env_var("DAILYMOTION_PLAYLIST_ID", "")
         
         # Get video details
         video_file = get_required_env_var("VIDEO_FILE")
@@ -225,7 +258,8 @@ def post_to_dailymotion():
             'is_created_for_kids': is_created_for_kids,
             'tags': tags,
             'published': metadata["published"],
-            'channel_id': channel_id
+            'channel_id': channel_id,
+            'playlist_id': playlist_id
         }
         if publish_at:
             dry_run_request['publish_date'] = metadata["publish_date"]
@@ -245,6 +279,10 @@ def post_to_dailymotion():
         
         # Step 3: Create video
         video_id = api.create_video(file_url, metadata)
+        
+        # Step 4: Add to playlist if requested
+        if playlist_id:
+            api.add_to_playlist(playlist_id, video_id)
         
         # Output for GitHub Actions
         video_url = f"https://www.dailymotion.com/video/{video_id}"

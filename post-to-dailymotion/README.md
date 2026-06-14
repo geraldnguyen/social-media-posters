@@ -5,6 +5,7 @@ This GitHub Action allows you to upload videos to Dailymotion using the Dailymot
 ## Features
 
 - **Upload videos** to Dailymotion with metadata support (title, description, tags, channel, etc.)
+- **Playlist support**: Automatically add uploaded videos to a specified playlist
 - Support for both local video files and remote URLs
 - Schedule video publishing for future dates/times
 - Full templating support for dynamic content
@@ -71,6 +72,7 @@ You need to set up Dailymotion API access:
 | `refresh-token` | Dailymotion OAuth Refresh Token | Yes | - |
 | `channel-id` | Dailymotion Channel ID (e.g. "me" or specific user ID) | No | `me` |
 | `channel` | Dailymotion Channel (category) for the video (e.g., news, sport, tech) | Yes | - |
+| `playlist-id` | Dailymotion Playlist ID to add the video to | No | - |
 | `video-file` | Path to video file (local or URL) | Yes | - |
 | `title` | Video title | Yes | - |
 | `description` | Video description | No | - |
