@@ -484,7 +484,7 @@ Requirements:
 
 ## v1.30.0 - Create post-to-dailymotion action and CLI command
 
-- Use client-credential OAUTH2 flow: https://developers.dailymotion.com/docs/authenticate-using-client-credentials
+- Use password/refresh_token OAUTH2 flow: https://developers.dailymotion.com/reference/api-generate-refresh-token
 - Upload video: https://developers.dailymotion.com/docs/upload-videos
 - Use reasonable default for video fields (https://developers.dailymotion.com/reference/video-fields) but requires the following explicitly
   + is_created_for_kids: true/false
