@@ -84,7 +84,7 @@ def main():
     """Social media posting CLI tool.
     
     Post content to various social media platforms from the command line.
-    Supports X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, and Bluesky.
+    Supports X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, Bluesky, Dailymotion, and Mastodon.
     """
     pass
 
@@ -311,6 +311,21 @@ def update_youtube(**kwargs):
 def dailymotion(**kwargs):
     """Upload video to Dailymotion."""
     import_and_run_post_script('post-to-dailymotion', 'post_to_dailymotion', 'post_to_dailymotion')
+
+
+@main.command()
+@add_common_options
+@click.option('--mastodon-server', callback=set_env_from_option, 
+              help='Mastodon server URL or hostname (e.g. "me.dm" or "mastodon.social")')
+@click.option('--mastodon-access-token', callback=set_env_from_option, 
+              help='Mastodon access token')
+@click.option('--post-link', callback=set_env_from_option, 
+              help='Link to attach/append to the post')
+@click.option('--scheduled-publish-time', callback=set_env_from_option,
+              help='Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
+def mastodon(**kwargs):
+    """Post to Mastodon."""
+    import_and_run_post_script('post-to-mastodon', 'post_to_mastodon', 'post_to_mastodon')
 
 
 if __name__ == '__main__':

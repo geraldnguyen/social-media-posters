@@ -493,15 +493,20 @@ Requirements:
   + title
   + tags: optional
 
+## v1.31.0 - Create post-to-mastodon action and CLI command ✅ COMPLETED
+
+- It should support configurable server address e.g. `me.dm` ✅
+- It should support instant posting as well as scheduled posting ✅
+- It should support text, image, text and image, as well as link sharing ✅
 
 
 Expectation:
-- Implement the above requirements 
-- Create unit tests for the changes 
-- Then run the tests 
-- If applicable, update the CLI correspondingly to surface the new feature. 
-- Update the Python package-related files to match the new version e.g. `pyproject.toml`, `common\__init__.py`, `social_cli\__init__.py`
-- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes 
-- Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version.
+- Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅
+- Create unit tests for the changes ✅
+- Then run the tests ✅
+- If applicable, update the CLI correspondingly to surface the new feature. ✅
+- Update the Python package-related files to match the new version e.g. `pyproject.toml`, `common\__init__.py`, `social_cli\__init__.py` ✅
+- Before handover, update all relevant .MD file (in the same action folder, and on the parent folder) documenting the new functionality changes ✅
+- Update the Python package-related files (__init__.py, pyproject.toml, CHANGELOG.md) to match the new version. ✅
 
 

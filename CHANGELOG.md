@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.31.0] - 2026-06-17
+
+### Added
+- **Mastodon support** - Added new `post-to-mastodon` GitHub Action and `mastodon` CLI command.
+  - Supports status updates (toots) using the Mastodon REST API.
+  - Supports configurable Mastodon server address (e.g., `me.dm`, `mastodon.social`).
+  - Supports uploading multiple media files (images or videos) using API v2 with automatic fallback to API v1.
+  - Supports scheduled publishing using `scheduled-publish-time` (ISO 8601 or offset formats like `+1d`, `+2h`, `+30m`).
+  - Full templating support for post content using standard templating utilities.
+  - Supports dry-run mode and detailed logging for troubleshooting.
+  - Proper cleanup of temporary downloaded media files.
+
 ## [1.30.0] - 2026-06-13
 
 ### Added

@@ -134,6 +134,14 @@ Upload videos to Dailymotion using the Dailymotion API.
 - Category and "made for kids" flag support
 - Media support: Video files (local or remote URLs)
 
+### 🐘 [Post to Mastodon](./post-to-mastodon)
+Post status updates (toots) to Mastodon using the Mastodon REST API.
+- Supports text posts with media and links
+- **Schedule posts** with ISO 8601 or offset format ("+1d", "+2h", "+30m")
+- Supports multiple media attachments (images/videos) using API v2 with API v1 fallback
+- Supports custom Mastodon server instances (e.g., `mastodon.social`, `me.dm`)
+- Media support: Image and video files (local or remote URLs)
+
 ## Quick Start
 
 1. Choose the social media platform(s) you want to post to
@@ -251,6 +259,12 @@ social-media-posters/
 │   ├── post_to_dailymotion.py
 │   ├── requirements.txt
 │   ├── test_post_to_dailymotion.py
+│   └── README.md
+├── post-to-mastodon/        # Mastodon posting action
+│   ├── action.yml
+│   ├── post_to_mastodon.py
+│   ├── requirements.txt
+│   ├── test_post_to_mastodon.py
 │   └── README.md
 ├── common/                 # Shared utilities
 │   ├── __init__.py
@@ -541,6 +555,7 @@ jobs:
 | LinkedIn | LinkedIn Developer Account, App with Share on LinkedIn product |
 | YouTube | Google Cloud Project, YouTube Data API v3, Service Account or OAuth 2.0 |
 | Dailymotion | Dailymotion Developer App, API Key and Secret |
+| Mastodon | Mastodon account on any instance, Access Token with write:statuses and write:media scopes |
 
 ## Rate Limits
 
