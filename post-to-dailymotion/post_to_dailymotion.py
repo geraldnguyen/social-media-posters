@@ -147,14 +147,10 @@ class DailymotionAPI:
     def add_to_playlist(self, playlist_id: str, video_id: str) -> None:
         """Add a video to a playlist."""
         logger.info(f"Adding video {video_id} to playlist: {playlist_id}")
-        url = f"{self.api_base_url}/playlist/{playlist_id}/videos"
-        
-        data = {
-            "ids": video_id
-        }
-        
+        url = f"{self.api_base_url}/playlist/{playlist_id}/videos/{video_id}"
+
         try:
-            response = requests.post(url, headers=self.get_headers(), data=data, timeout=30)
+            response = requests.post(url, headers=self.get_headers(), timeout=30)
             logger.debug(f"Dailymotion add_to_playlist response: {response.status_code} - {response.text}")
             response.raise_for_status()
             logger.info(f"Video successfully added to playlist {playlist_id}")
