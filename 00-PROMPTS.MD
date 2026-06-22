@@ -499,6 +499,16 @@ Requirements:
 - It should support instant posting as well as scheduled posting ✅
 - It should support text, image, text and image, as well as link sharing ✅
 
+## v1.32.0 - Save post response to json file
+
+- Applicable to ALL current and future social posting action and CLI
+- If `SAVE_RESPONSE` environment variable or `--save-response` option is specified, the response from social site will be save to a `<social>-response.json` file.
+- The following info is saved:
+  + success: true|false
+  + error: brief error, if there were failure in posting
+  + post_id: extracted post or video ID from the social response
+  + post_url: extracted post or video URL if it is available
+
 
 Expectation:
 - Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅

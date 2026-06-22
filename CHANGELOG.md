@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.0] - 2026-06-22
+
+### Added
+- **Save post response to JSON** - Added optional response persistence for all current posting actions and CLI commands.
+  - New shared helper saves a `<social>-response.json` file when `SAVE_RESPONSE=true` (or equivalent truthy values).
+  - Saved payload includes:
+    - `success` (`true`/`false`)
+    - `error` (brief error text on failures)
+    - `post_id` (or video/comment identifier when available)
+    - `post_url` (when available)
+- **CLI option** - Added `--save-response` to common CLI options so every command can enable response file output.
+- **GitHub Action input** - Added `save-response` input to all action manifests and mapped it to `SAVE_RESPONSE`.
+
+### Changed
+- Integrated response persistence into all posting flows across:
+  - X, Facebook (posts + comments), Instagram (both methods), Threads, LinkedIn, Bluesky, YouTube, Dailymotion, and Mastodon.
+- Added failure-path persistence before centralized error handling so failures can also emit response files when enabled.
+- Updated package versions to `1.32.0` in:
+  - `pyproject.toml`
+  - `common/__init__.py`
+  - `social_cli/__init__.py`
+
+### Testing
+- Added new unit tests in `common/test_save_post_response.py` to cover:
+  - save enabled/disabled behavior,
+  - failure payload shape,
+  - normalized output file naming.
+- Updated CLI tests to verify `--save-response` appears in help and sets `SAVE_RESPONSE=true`.
+
+### Documentation
+- Updated parent and action-level documentation to include `SAVE_RESPONSE` / `--save-response` behavior and output file format.
+
 ## [1.31.0] - 2026-06-17
 
 ### Added

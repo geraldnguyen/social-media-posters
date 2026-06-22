@@ -14,6 +14,7 @@ This GitHub Action allows you to upload videos and update video metadata on YouT
 - Configurable logging levels
 - Dry-run mode for testing
 - Returns video ID and URL for further processing
+- Optional response summary file (`youtube-response.json`) via `save-response` / `SAVE_RESPONSE`
 
 ## Remote Media Files
 
@@ -169,6 +170,7 @@ If you're developing within the social-media-posters repository:
 | `content-json` | JSON API URL and path for dynamic templating | No | - |
 | `time-zone` | Time zone for date/time placeholders | No | UTC |
 | `dry-run` | Dry run mode (true/false) | No | false |
+| `save-response` | Save response summary to `youtube-response.json` (`success`, `error`, `post_id`, `post_url`) | No | false |
 
 \* Either `video-file` and `title` must be provided for video uploads
 

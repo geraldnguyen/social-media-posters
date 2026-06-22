@@ -34,7 +34,8 @@ from social_media_utils import (
     log_success,
     parse_media_files,
     parse_scheduled_time,
-    is_value_empty_or_na
+    is_value_empty_or_na,
+    save_post_response,
 )
 
 
@@ -377,6 +378,7 @@ def post_to_facebook():
                     f.write(f"comment-id={comment_id}\n")
                     f.write(f"comment-url={comment_url}\n")
             
+            save_post_response("facebook", success=True, post_id=comment_id, post_url=comment_url)
             log_success("Facebook Comment", comment_id)
             logger.info(f"Comment URL: {comment_url}")
             return
@@ -531,12 +533,14 @@ def post_to_facebook():
                 if scheduled_publish_time:
                     f.write(f"scheduled-time={scheduled_time_str}\n")
         
+        save_post_response("facebook", success=True, post_id=post_id, post_url=post_url)
         log_success("Facebook Page", post_id)
         logger.info(f"Post URL: {post_url}")
         if scheduled_publish_time:
             logger.info(f"Post scheduled for: {scheduled_time_str}")
         
     except Exception as e:
+        save_post_response("facebook", success=False, error=str(e))
         handle_api_error(e, "Facebook Page")
 
 

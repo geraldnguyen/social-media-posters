@@ -36,6 +36,8 @@ def set_boolean_env_from_flag(ctx, param, value):
 common_options = [
     click.option('--dry-run', is_flag=True, callback=set_boolean_env_from_flag, 
                  help='Run in dry-run mode without posting'),
+    click.option('--save-response', is_flag=True, callback=set_boolean_env_from_flag,
+                 help='Save social API response summary to <social>-response.json'),
     click.option('--input-file', callback=set_env_from_option, 
                  help='Path to JSON input file'),
     click.option('--content-json', callback=set_env_from_option, 

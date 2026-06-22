@@ -30,7 +30,8 @@ from social_media_utils import (
     get_optional_env_var,
     validate_post_content,
     handle_api_error,
-    log_success
+    log_success,
+    save_post_response,
 )
 
 from templating_utils import process_templated_contents
@@ -354,10 +355,12 @@ def post_to_instagram():
                 f.write(f"post-id={media_id}\n")
                 f.write(f"post-url={post_url}\n")
         
+        save_post_response("instagram", success=True, post_id=media_id, post_url=post_url)
         log_success("Instagram", media_id)
         logger.info(f"Post URL: {post_url}")
         
     except Exception as e:
+        save_post_response("instagram", success=False, error=str(e))
         handle_api_error(e, "Instagram")
 
 

@@ -177,6 +177,53 @@ def get_optional_env_var(var_name: str, default: str = "") -> str:
     return value
 
 
+def save_post_response(
+    social: str,
+    success: bool,
+    error: Optional[str] = None,
+    post_id: Optional[str] = None,
+    post_url: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Save posting result details to ``<social>-response.json`` when SAVE_RESPONSE is enabled.
+
+    Args:
+        social: Social key used to generate output file name (e.g. ``x``, ``facebook``)
+        success: Whether posting succeeded
+        error: Brief error message for failed attempts
+        post_id: Extracted post/video identifier
+        post_url: Extracted post/video URL
+
+    Returns:
+        The output file path when a response is saved, otherwise None.
+    """
+    if not _is_truthy_env_value(get_optional_env_var("SAVE_RESPONSE", "")):
+        return None
+
+    social_key = re.sub(r"[^a-z0-9]+", "-", (social or "response").strip().lower()).strip("-")
+    if not social_key:
+        social_key = "response"
+
+    output_file = f"{social_key}-response.json"
+    payload = {
+        "success": bool(success),
+        "error": error if error else None,
+        "post_id": post_id if post_id else None,
+        "post_url": post_url if post_url else None,
+    }
+
+    try:
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+
+        logger.info(f"Saved response details to {output_file}")
+        logger.debug(f"Saved response payload for {social_key}: {json.dumps(payload, ensure_ascii=False)}")
+        return output_file
+    except Exception as exc:
+        logger.error(f"Failed to save response file {output_file}: {exc}")
+        return None
+
+
 # --- DRY RUN GUARD ---
 def dry_run_guard(platform: str, content: str, media_files: list, request_body: dict):
     """

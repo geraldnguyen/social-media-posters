@@ -12,6 +12,25 @@ All actions and the `social` CLI support using remote media files (images, video
 
 This makes it easy to use media hosted on the internet in your automated social media posts.
 
+## Save Post Response Files
+
+All actions and the `social` CLI can optionally save a response summary JSON file after each posting attempt.
+
+- Enable with environment variable `SAVE_RESPONSE=true`
+- Or enable in CLI with `--save-response`
+- The output file is named `<social>-response.json` (for example: `x-response.json`, `facebook-response.json`, `youtube-response.json`)
+
+Saved response payload format:
+
+```json
+{
+  "success": true,
+  "error": null,
+  "post_id": "1234567890",
+  "post_url": "https://example.com/post/1234567890"
+}
+```
+
 ## Resolving Import Errors for Common Utilities
 
 If you encounter import errors such as `Import "social_media_utils" could not be resolved` when running or editing the post-to-* scripts, follow these steps to ensure Python and your editor can find the `common` utilities:
@@ -281,6 +300,7 @@ All actions share these common features:
 - **Logging**: Configurable logging levels (DEBUG, INFO, WARNING, ERROR), with GitHub Actions debug mode defaulting to DEBUG when `LOG_LEVEL` is not set
 - **Validation**: Input validation for content and media files
 - **Outputs**: Returns post ID and URL for further processing
+- **Response Persistence**: Optional `<social>-response.json` output via `SAVE_RESPONSE` / `--save-response`
 - **Security**: Secure handling of API credentials via GitHub secrets
 
 ### Configuration Options

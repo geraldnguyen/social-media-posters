@@ -76,6 +76,34 @@ The `social` CLI accepts HTTP or HTTPS URLs for supported media inputs, includin
 - Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5 MB)
 - If a remote file is too large or cannot be downloaded, the command logs an error and stops
 
+## Save Response Files
+
+Use `--save-response` with any command to write a response summary JSON file:
+
+```bash
+social x --post-content "Hello" --save-response
+```
+
+Output file naming:
+- `<social>-response.json` (examples: `x-response.json`, `facebook-response.json`, `youtube-response.json`)
+
+Saved payload shape:
+
+```json
+{
+  "success": true,
+  "error": null,
+  "post_id": "12345",
+  "post_url": "https://example.com/post/12345"
+}
+```
+
+You can also enable this behavior via environment variable:
+
+```bash
+export SAVE_RESPONSE=true
+```
+
 ## Platform Setup
 
 ### X (Twitter)

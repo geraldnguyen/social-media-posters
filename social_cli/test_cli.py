@@ -26,6 +26,7 @@ class TestCLI(unittest.TestCase):
         self.env_backup = {}
         env_vars_to_clear = [
             'POST_CONTENT', 'DRY_RUN', 'LOG_LEVEL', 'INPUT_FILE',
+            'SAVE_RESPONSE',
             'X_API_KEY', 'X_API_SECRET', 'X_ACCESS_TOKEN', 'X_ACCESS_TOKEN_SECRET',
             'FB_PAGE_ID', 'FB_ACCESS_TOKEN', 'IG_USER_ID', 'IG_ACCESS_TOKEN',
             'LINKEDIN_ACCESS_TOKEN', 'LINKEDIN_AUTHOR_ID',
@@ -70,6 +71,7 @@ class TestCLI(unittest.TestCase):
         self.assertIn('--x-api-key', result.output)
         self.assertIn('--post-content', result.output)
         self.assertIn('--dry-run', result.output)
+        self.assertIn('--save-response', result.output)
         self.assertIn('GitHub Actions debug mode', result.output)
     
     def test_facebook_help(self):
@@ -225,13 +227,15 @@ class TestCLI(unittest.TestCase):
                 '--input-file', 'config.json',
                 '--content-json', 'https://api.example.com/data.json',
                 '--media-files', 'image1.jpg,image2.png',
-                '--max-download-size-mb', '10'
+                '--max-download-size-mb', '10',
+                '--save-response'
             ])
             
             self.assertEqual(os.environ.get('INPUT_FILE'), 'config.json')
             self.assertEqual(os.environ.get('CONTENT_JSON'), 'https://api.example.com/data.json')
             self.assertEqual(os.environ.get('MEDIA_FILES'), 'image1.jpg,image2.png')
             self.assertEqual(os.environ.get('MAX_DOWNLOAD_SIZE_MB'), '10')
+            self.assertEqual(os.environ.get('SAVE_RESPONSE'), 'true')
     
     def test_missing_credentials_error(self):
         """Test that missing credentials produce appropriate error."""

@@ -37,7 +37,8 @@ from social_media_utils import (
     log_success,
     download_file_if_url,
     dry_run_guard,
-    parse_scheduled_time
+    parse_scheduled_time,
+    save_post_response,
 )
 
 class DailymotionAPI:
@@ -287,10 +288,12 @@ def post_to_dailymotion():
                 f.write(f"video-id={video_id}\n")
                 f.write(f"video-url={video_url}\n")
         
+        save_post_response("dailymotion", success=True, post_id=video_id, post_url=video_url)
         log_success("Dailymotion", video_id)
         logger.info(f"Video URL: {video_url}")
         
     except Exception as e:
+        save_post_response("dailymotion", success=False, error=str(e))
         handle_api_error(e, "Dailymotion")
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ This GitHub Action allows you to post content to X (formerly Twitter) using the 
 - Attach media files (images, videos)
 - Configurable logging levels
 - Returns post ID and URL for further processing
+- Optional response summary file (`x-response.json`) via `save-response` / `SAVE_RESPONSE`
 
 ## Remote Media Files
 
@@ -95,6 +96,7 @@ If you're developing within the social-media-posters repository:
 | `content` | Content to post to X (max 280 characters) | Yes | - |
 | `media-files` | Comma-separated list of media file paths | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
+| `save-response` | Save response summary to `x-response.json` (`success`, `error`, `post_id`, `post_url`) | No | false |
 
 ## Outputs
 

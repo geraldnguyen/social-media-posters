@@ -27,6 +27,7 @@ This GitHub Action allows you to post content to Bluesky using the official AT P
 - Configurable logging levels
 - Template interpolation support
 - Returns post URI, CID, and URL for further processing
+- Optional response summary file (`bluesky-response.json`) via `save-response` / `SAVE_RESPONSE`
 
 ## Remote Media Files
 
@@ -97,6 +98,7 @@ If you're developing within the social-media-posters repository:
 | `content-json` | JSON API URL and path for dynamic content templating | No | - |
 | `time-zone` | Time zone for date/time placeholders | No | - |
 | `dry-run` | Dry run mode - print but don't post | No | false |
+| `save-response` | Save response summary to `bluesky-response.json` (`success`, `error`, `post_id`, `post_url`) | No | false |
 
 ## Outputs
 

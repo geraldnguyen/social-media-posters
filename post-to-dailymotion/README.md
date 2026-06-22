@@ -12,6 +12,7 @@ This GitHub Action allows you to upload videos to Dailymotion using the Dailymot
 - Configurable logging levels
 - Dry-run mode for testing
 - Returns video ID and URL for further processing
+- Optional response summary file (`dailymotion-response.json`) via `save-response` / `SAVE_RESPONSE`
 
 ## Remote Media Files
 
@@ -83,6 +84,7 @@ You need to set up Dailymotion API access:
 | `content-json` | JSON API URL and path for dynamic content templating | No | - |
 | `time-zone` | Time zone for date/time placeholders | No | - |
 | `dry-run` | Dry run mode. If true, prints content but does not post | No | `false` |
+| `save-response` | Save response summary to `dailymotion-response.json` (`success`, `error`, `post_id`, `post_url`) | No | `false` |
 
 ### Outputs
 

@@ -12,6 +12,7 @@ This GitHub Action allows you to post content (toots) to Mastodon using the Mast
 - Template interpolation support
 - Proper cleanup of temporary downloaded media files
 - Returns post ID and post URL for further processing
+- Optional response summary file (`mastodon-response.json`) via `save-response` / `SAVE_RESPONSE`
 
 ## Template Interpolation
 
@@ -64,6 +65,7 @@ To use this action, you need:
 | `content-json` | JSON API URL and path for dynamic content templating | No | |
 | `time-zone` | Time zone for date/time placeholders (e.g. UTC, UTC+7) | No | |
 | `dry-run` | Dry-run mode. If true, the content will be printed but not posted | No | `false` |
+| `save-response` | Save response summary to `mastodon-response.json` (`success`, `error`, `post_id`, `post_url`) | No | `false` |
 
 ## Outputs
 

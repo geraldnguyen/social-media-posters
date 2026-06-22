@@ -60,6 +60,7 @@ This GitHub Action allows you to post content to Instagram using the Instagram G
 - Template interpolation support
 - Configurable logging levels
 - Returns post ID and URL for further processing
+- Optional response summary file (`instagram-response.json`) via `save-response` / `SAVE_RESPONSE`
 - **Videos**: Can use local files (resumable upload) or public URLs
 - **Images**: Require publicly accessible URLs
 
@@ -181,6 +182,7 @@ If you're developing within the social-media-posters repository:
 | `media-file` | Publicly accessible URL to single image or video file (use either media-file OR media-files) | No* | - |
 | `media-files` | Comma-separated list of publicly accessible media URLs for carousel (max 10, use either media-file OR media-files) | No* | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
+| `save-response` | Save response summary to `instagram-response.json` (`success`, `error`, `post_id`, `post_url`) | No | false |
 
 *Either `media-file` or `media-files` must be provided, but not both.
 

@@ -26,6 +26,7 @@ This GitHub Action allows you to post content to Threads using the Threads API.
 - Include links in posts
 - Configurable logging levels
 - Returns post ID and URL for further processing
+- Optional response summary file (`threads-response.json`) via `save-response` / `SAVE_RESPONSE`
 
 ## Remote Media Files
 
@@ -94,6 +95,7 @@ If you're developing within the social-media-posters repository:
 | `media-file` | Publicly accessible URL to image or video file | No | - |
 | `link` | Link to attach to the post | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
+| `save-response` | Save response summary to `threads-response.json` (`success`, `error`, `post_id`, `post_url`) | No | false |
 
 ## Outputs
 

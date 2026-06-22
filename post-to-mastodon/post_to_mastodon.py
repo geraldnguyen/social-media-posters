@@ -31,7 +31,8 @@ from social_media_utils import (
     log_success,
     parse_media_files,
     parse_scheduled_time,
-    dry_run_guard
+    dry_run_guard,
+    save_post_response,
 )
 
 # Module-level logger
@@ -184,11 +185,14 @@ def post_to_mastodon():
             with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                 f.write(f"post-id={post_id}\n")
                 f.write(f"post-url={post_url}\n")
+
+        save_post_response("mastodon", success=True, post_id=post_id, post_url=post_url)
                 
         log_success("Mastodon", post_id)
         logger.info(f"Post URL: {post_url}")
         
     except Exception as e:
+        save_post_response("mastodon", success=False, error=str(e))
         handle_api_error(e, "Mastodon")
     finally:
         # Cleanup downloaded media files

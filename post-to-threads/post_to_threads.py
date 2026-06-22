@@ -32,7 +32,8 @@ from social_media_utils import (
     validate_post_content,
     handle_api_error,
     log_success,
-    dry_run_guard
+    dry_run_guard,
+    save_post_response,
 )
 
 
@@ -348,10 +349,12 @@ def post_to_threads():
                 f.write(f"post-id={thread_id}\n")
                 f.write(f"post-url={post_url}\n")
         
+        save_post_response("threads", success=True, post_id=thread_id, post_url=post_url)
         log_success("Threads", thread_id)
         logger.info(f"Post URL: {post_url}")
         
     except Exception as e:
+        save_post_response("threads", success=False, error=str(e))
         logger.error(f"Error occurred during Threads posting: {str(e)}")
         logger.error(f"Error type: {type(e).__name__}")
         import traceback

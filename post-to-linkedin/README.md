@@ -11,6 +11,7 @@ This GitHub Action allows you to post content to LinkedIn using the LinkedIn API
 - Dry-run mode for testing
 - Full templating support for dynamic content
 - Returns post ID and URL for further processing
+- Optional response summary file (`linkedin-response.json`) via `save-response` / `SAVE_RESPONSE`
 
 ## Remote Media Files
 
@@ -122,6 +123,7 @@ If you're developing within the social-media-posters repository:
 | `content-json` | JSON API URL and path for dynamic content templating | No | - |
 | `time-zone` | Time zone for date/time placeholders (e.g. UTC, UTC+7) | No | - |
 | `dry-run` | Dry run mode. If true, content is printed but not posted | No | false |
+| `save-response` | Save response summary to `linkedin-response.json` (`success`, `error`, `post_id`, `post_url`) | No | false |
 
 ## Outputs
 

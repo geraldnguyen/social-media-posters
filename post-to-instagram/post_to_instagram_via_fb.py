@@ -34,7 +34,8 @@ from social_media_utils import (
     validate_post_content,
     handle_api_error,
     log_success,
-    parse_scheduled_time
+    parse_scheduled_time,
+    save_post_response,
 )
 
 from templating_utils import process_templated_contents
@@ -563,12 +564,14 @@ def post_to_instagram_via_fb():
                 if scheduled_publish_time:
                     f.write(f"scheduled-time={scheduled_time_str}\n")
         
+        save_post_response("instagram", success=True, post_id=media_id, post_url=post_url)
         log_success("Instagram (via Facebook)", media_id)
         logger.info(f"Post URL: {post_url}")
         if scheduled_publish_time:
             logger.info(f"Post scheduled for: {scheduled_time_str}")
         
     except Exception as e:
+        save_post_response("instagram", success=False, error=str(e))
         handle_api_error(e, "Instagram (via Facebook)")
 
 

@@ -37,7 +37,8 @@ from social_media_utils import (
     handle_api_error,
     log_success,
     dry_run_guard,
-    is_value_empty_or_na
+    is_value_empty_or_na,
+    save_post_response,
 )
 
 # Google API imports
@@ -412,10 +413,12 @@ def update_youtube():
                 f.write(f"video-id={video_id}\n")
                 f.write(f"video-url={video_url}\n")
         
+        save_post_response("youtube", success=True, post_id=video_id, post_url=video_url)
         log_success("YouTube Update", video_id)
         logger.info(f"Video URL: {video_url}")
         
     except Exception as e:
+        save_post_response("youtube", success=False, error=str(e))
         handle_api_error(e, "YouTube Update")
 
 

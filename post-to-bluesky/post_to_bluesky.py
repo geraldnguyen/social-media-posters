@@ -31,7 +31,8 @@ from social_media_utils import (
     validate_post_content,
     handle_api_error,
     log_success,
-    parse_media_files
+    parse_media_files,
+    save_post_response,
 )
 
 
@@ -224,10 +225,12 @@ def post_to_bluesky():
                 f.write(f"post-cid={post_cid}\n")
                 f.write(f"post-url={post_url}\n")
         
+        save_post_response("bluesky", success=True, post_id=post_uri, post_url=post_url)
         log_success("Bluesky", post_uri)
         logger.info(f"Post URL: {post_url}")
         
     except Exception as e:
+        save_post_response("bluesky", success=False, error=str(e))
         handle_api_error(e, "Bluesky")
 
 

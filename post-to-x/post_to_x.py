@@ -30,7 +30,8 @@ from social_media_utils import (
     validate_post_content,
     handle_api_error,
     log_success,
-    parse_media_files
+    parse_media_files,
+    save_post_response,
 )
 
 
@@ -130,10 +131,12 @@ def post_to_x():
                 f.write(f"post-id={post_id}\n")
                 f.write(f"post-url={post_url}\n")
 
+        save_post_response("x", success=True, post_id=post_id, post_url=post_url)
         log_success("X", post_id)
         logger.info(f"Post URL: {post_url}")
         
     except Exception as e:
+        save_post_response("x", success=False, error=str(e))
         handle_api_error(e, "X")
 
 

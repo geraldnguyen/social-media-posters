@@ -29,6 +29,7 @@ This GitHub Action allows you to post content to a Facebook Page or comment on a
 - **Schedule posts for future publication** with flexible time formats
 - Configurable logging levels
 - Returns post/comment ID and URL for further processing
+- Optional response summary file (`facebook-response.json`) via `save-response` / `SAVE_RESPONSE`
 
 ## Remote Media Files
 
@@ -226,6 +227,7 @@ If you're developing within the social-media-posters repository:
 | `post-title` | Title for video/reel posts (v1.22.0+, only used for video files) | No | - |
 | `scheduled-publish-time` | Schedule post for future publication (posts only, not supported for comments). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
+| `save-response` | Save response summary to `facebook-response.json` (`success`, `error`, `post_id`, `post_url`) | No | false |
 
 *`page-id` is required when creating a new post, but not required when posting a comment (use `fb-post-id` instead).
 
