@@ -220,7 +220,8 @@ def post_to_dailymotion():
         description = get_optional_env_var("VIDEO_DESCRIPTION", "")
         
         # Process templated content
-        title, description = process_templated_contents(title, description)
+        link = get_optional_env_var("POST_LINK", "")
+        title, description, link = process_templated_contents(title, description, link)
         
         if not title:
             logger.error("VIDEO_TITLE is required for Dailymotion uploads")
@@ -287,10 +288,11 @@ def post_to_dailymotion():
             dry_run_request['scheduled_publish_at'] = publish_at
 
         # Get link-in-comment options before dry run guard
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a comment
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
         pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
-        if link_in_comment:
-            dry_run_request['link_in_comment'] = link_in_comment
+        if link_in_comment and link:
+            dry_run_request['link_in_comment'] = link  # actual URL
             dry_run_request['pin_link_comment'] = pin_link_comment
 
         # DRY RUN GUARD
@@ -323,16 +325,18 @@ def post_to_dailymotion():
         log_success("Dailymotion", video_id)
         logger.info(f"Video URL: {video_url}")
 
-        # Post link as a comment if LINK_IN_COMMENT is set
-        if link_in_comment:
-            logger.info(f"Posting link as comment on Dailymotion video {video_id}: {link_in_comment}")
+        # Post POST_LINK as a comment if LINK_IN_COMMENT flag is set
+        if link_in_comment and link:
+            logger.info(f"Posting link as comment on Dailymotion video {video_id}: {link}")
             try:
-                comment_id = api.post_comment(video_id, link_in_comment)
+                comment_id = api.post_comment(video_id, link)
                 logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
                 if pin_link_comment:
                     logger.warning("Pinning comments is not supported by the Dailymotion API.")
             except Exception as comment_exc:
                 logger.warning(f"Failed to post link as comment on Dailymotion: {comment_exc}")
+        elif link_in_comment and not link:
+            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
         
     except Exception as e:
         save_post_response("dailymotion", success=False, error=str(e))

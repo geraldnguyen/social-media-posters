@@ -404,7 +404,8 @@ def post_to_instagram_via_fb():
             sys.exit(1)
         
         # Process templated content
-        content, media_input = process_templated_contents(content, media_input)
+        link = get_optional_env_var("POST_LINK", "")
+        content, media_input, link = process_templated_contents(content, media_input, link)
         
         # Parse media files - for Instagram via FB, we handle URLs differently
         # Videos use resumable upload (local file or hosted URL), images need to stay as URLs
@@ -470,10 +471,11 @@ def post_to_instagram_via_fb():
         if scheduled_publish_time:
             dry_run_request['scheduled_for'] = scheduled_time_str
         # Get link-in-comment options before dry run guard
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a comment
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
         pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
-        if link_in_comment:
-            dry_run_request['link_in_comment'] = link_in_comment
+        if link_in_comment and link:
+            dry_run_request['link_in_comment'] = link  # actual URL
             dry_run_request['pin_link_comment'] = pin_link_comment
         dry_run_guard("Instagram (via Facebook)", content, media_files_raw, dry_run_request)
         
@@ -595,16 +597,18 @@ def post_to_instagram_via_fb():
         if scheduled_publish_time:
             logger.info(f"Post scheduled for: {scheduled_time_str}")
 
-        # Post link as a comment if LINK_IN_COMMENT is set
-        if link_in_comment:
-            logger.info(f"Posting link as comment on Instagram post {media_id}: {link_in_comment}")
+        # Post POST_LINK as a comment if LINK_IN_COMMENT flag is set
+        if link_in_comment and link:
+            logger.info(f"Posting link as comment on Instagram post {media_id}: {link}")
             try:
-                comment_id = ig_api.post_comment(media_id, link_in_comment)
+                comment_id = ig_api.post_comment(media_id, link)
                 logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
                 if pin_link_comment:
                     logger.warning("Pinning comments is not supported by the Instagram Graph API.")
             except Exception as comment_exc:
                 logger.warning(f"Failed to post link as comment on Instagram: {comment_exc}")
+        elif link_in_comment and not link:
+            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
         
     except Exception as e:
         save_post_response("instagram", success=False, error=str(e))

@@ -424,7 +424,8 @@ def post_to_facebook():
                     published = False
         
         # Get link-in-comment options (must be before post_data construction)
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a comment
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
         pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
 
         # Prepare post data
@@ -450,8 +451,8 @@ def post_to_facebook():
         dry_run_request['privacy'] = 'scheduled' if scheduled_publish_time else privacy_mode
         if scheduled_publish_time:
             dry_run_request['scheduled_for'] = scheduled_time_str
-        if link_in_comment:
-            dry_run_request['link_in_comment'] = link_in_comment
+        if link_in_comment and link:
+            dry_run_request['link_in_comment'] = link  # show the actual URL in dry-run
             dry_run_request['pin_link_comment'] = pin_link_comment
         dry_run_guard("Facebook Page", content, media_files, dry_run_request)
 
@@ -547,17 +548,19 @@ def post_to_facebook():
         if scheduled_publish_time:
             logger.info(f"Post scheduled for: {scheduled_time_str}")
 
-        # Post link as a comment if LINK_IN_COMMENT is set (only for published posts, not scheduled)
-        if link_in_comment and not scheduled_publish_time:
-            logger.info(f"Posting link as comment on Facebook post {post_id}: {link_in_comment}")
+        # Post POST_LINK as a comment if LINK_IN_COMMENT flag is set (only for published posts)
+        if link_in_comment and link and not scheduled_publish_time:
+            logger.info(f"Posting link as comment on Facebook post {post_id}: {link}")
             try:
-                comment_id = post_comment(post_id, access_token, link_in_comment)
+                comment_id = post_comment(post_id, access_token, link)
                 logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
                 if pin_link_comment:
                     logger.warning("Pinning comments is not supported by the Facebook Graph API.")
             except Exception as comment_exc:
                 logger.warning(f"Failed to post link as comment on Facebook: {comment_exc}")
-        elif link_in_comment and scheduled_publish_time:
+        elif link_in_comment and not link:
+            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
+        elif link_in_comment and link and scheduled_publish_time:
             logger.info("LINK_IN_COMMENT is set but post is scheduled; comment will not be posted now.")
         
     except Exception as e:

@@ -122,10 +122,10 @@ def post_to_bluesky():
                 }
         
         # Get link-in-comment options (needed before dry_run link handling)
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a reply
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
         pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
 
-        # Add link information only if not posting link as a comment
         if link and not link_in_comment:
             dry_run_request['link'] = link
             dry_run_request['embed_type'] = 'external'
@@ -133,8 +133,8 @@ def post_to_bluesky():
                 'type': 'app.bsky.embed.external',
                 'note': 'Will attempt to fetch metadata to create a link card'
             }
-        if link_in_comment:
-            dry_run_request['link_in_comment'] = link_in_comment
+        if link_in_comment and link:
+            dry_run_request['link_in_comment'] = link  # actual URL
             dry_run_request['pin_link_comment'] = pin_link_comment
 
         dry_run_guard("Bluesky", content, media_files, dry_run_request)
@@ -236,21 +236,23 @@ def post_to_bluesky():
         log_success("Bluesky", post_uri)
         logger.info(f"Post URL: {post_url}")
 
-        # Post link as a reply if LINK_IN_COMMENT is set
-        if link_in_comment:
-            logger.info(f"Posting link as reply on Bluesky post {post_uri}: {link_in_comment}")
+        # Post POST_LINK as a reply if LINK_IN_COMMENT flag is set
+        if link_in_comment and link:
+            logger.info(f"Posting link as reply on Bluesky post {post_uri}: {link}")
             try:
                 root_ref = models.ComAtprotoRepoStrongRef.Main(
                     uri=response.uri,
                     cid=response.cid
                 )
                 reply_ref = models.AppBskyFeedPost.ReplyRef(root=root_ref, parent=root_ref)
-                client.send_post(text=link_in_comment, reply_to=reply_ref)
+                client.send_post(text=link, reply_to=reply_ref)
                 logger.info("Link reply posted successfully on Bluesky.")
                 if pin_link_comment:
                     logger.warning("Pinning replies is not supported by the Bluesky AT Protocol API.")
             except Exception as comment_exc:
                 logger.warning(f"Failed to post link as reply on Bluesky: {comment_exc}")
+        elif link_in_comment and not link:
+            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
         
     except Exception as e:
         save_post_response("bluesky", success=False, error=str(e))

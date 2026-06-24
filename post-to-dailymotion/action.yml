@@ -63,7 +63,7 @@ inputs:
     required: false
     default: 'false'
   link-in-comment:
-    description: 'Post the provided link as a comment on the published video (optional).'
+    description: 'If true, POST_LINK is posted as a comment after the video is published (true/false).'
     required: false
   pin-link-comment:
     description: 'Pin the link comment so it stays visible (platform support varies). Requires link-in-comment.'
@@ -113,3 +113,4 @@ runs:
         PIN_LINK_COMMENT: ${{ inputs.pin-link-comment }}
       run: |
         python ${{ github.action_path }}/post_to_dailymotion.py
+

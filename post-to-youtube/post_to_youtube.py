@@ -336,7 +336,8 @@ def post_to_youtube():
         description = get_optional_env_var("VIDEO_DESCRIPTION", "")
         
         # Process all templated strings using the same JSON root
-        title, description, content = process_templated_contents(title, description, content)
+        link = get_optional_env_var("POST_LINK", "")
+        title, description, content, link = process_templated_contents(title, description, content, link)
         
         if video_file:
             # VIDEO UPLOAD MODE
@@ -420,10 +421,11 @@ def post_to_youtube():
                 dry_run_request['playlist_id'] = playlist_id
 
             # Get link-in-comment options before dry run guard
-            link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+            # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a comment
+            link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
             pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
-            if link_in_comment:
-                dry_run_request['link_in_comment'] = link_in_comment
+            if link_in_comment and link:
+                dry_run_request['link_in_comment'] = link  # actual URL
                 dry_run_request['pin_link_comment'] = pin_link_comment
             
             # DRY RUN GUARD
@@ -481,9 +483,9 @@ def post_to_youtube():
             log_success("YouTube", video_id)
             logger.info(f"Video URL: {video_url}")
 
-            # Post link as a comment if LINK_IN_COMMENT is set (only for public/unlisted videos)
-            if link_in_comment and privacy_status != "private":
-                logger.info(f"Posting link as comment on YouTube video {video_id}: {link_in_comment}")
+            # Post POST_LINK as a comment if LINK_IN_COMMENT flag is set (public/unlisted only)
+            if link_in_comment and link and privacy_status != "private":
+                logger.info(f"Posting link as comment on YouTube video {video_id}: {link}")
                 try:
                     comment_result = api.youtube.commentThreads().insert(
                         part="snippet",
@@ -492,7 +494,7 @@ def post_to_youtube():
                                 "videoId": video_id,
                                 "topLevelComment": {
                                     "snippet": {
-                                        "textOriginal": link_in_comment
+                                        "textOriginal": link
                                     }
                                 }
                             }
@@ -504,7 +506,9 @@ def post_to_youtube():
                         logger.warning("Pinning comments is not supported by the YouTube Data API v3.")
                 except Exception as comment_exc:
                     logger.warning(f"Failed to post link as comment on YouTube: {comment_exc}")
-            elif link_in_comment and privacy_status == "private":
+            elif link_in_comment and not link:
+                logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
+            elif link_in_comment and link and privacy_status == "private":
                 logger.info("LINK_IN_COMMENT is set but video is private/scheduled; comment will not be posted now.")
             
         else:

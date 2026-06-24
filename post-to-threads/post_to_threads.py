@@ -278,7 +278,8 @@ def post_to_threads():
             logger.info(f"Media file URL validated: {media_file}")
         
         # Get link-in-comment options early (needed before link validation and dry run)
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a reply
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
         pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
 
         # Validate link if provided and not being redirected to a comment
@@ -309,8 +310,8 @@ def post_to_threads():
         }
         if link and not link_in_comment:
             dry_run_request['link'] = link
-        if link_in_comment:
-            dry_run_request['link_in_comment'] = link_in_comment
+        if link_in_comment and link:
+            dry_run_request['link_in_comment'] = link  # actual URL
             dry_run_request['pin_link_comment'] = pin_link_comment
         logger.info("Checking dry run guard...")
         dry_run_guard("Threads", content, media_files, dry_run_request)
@@ -365,13 +366,13 @@ def post_to_threads():
         log_success("Threads", thread_id)
         logger.info(f"Post URL: {post_url}")
 
-        # Post link as a comment (reply) if LINK_IN_COMMENT is set
-        if link_in_comment:
-            logger.info(f"Posting link as reply on Threads post {thread_id}: {link_in_comment}")
+        # Post POST_LINK as a reply if LINK_IN_COMMENT flag is set
+        if link_in_comment and link:
+            logger.info(f"Posting link as reply on Threads post {thread_id}: {link}")
             try:
                 comment_creation_id = threads_api.create_media_container(
                     user_id=user_id,
-                    text=link_in_comment,
+                    text=link,
                     reply_to_id=thread_id
                 )
                 time.sleep(2)
@@ -381,6 +382,8 @@ def post_to_threads():
                     logger.warning("Pinning replies is not supported by the Threads API.")
             except Exception as comment_exc:
                 logger.warning(f"Failed to post link as reply on Threads: {comment_exc}")
+        elif link_in_comment and not link:
+            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
         
     except Exception as e:
         save_post_response("threads", success=False, error=str(e))

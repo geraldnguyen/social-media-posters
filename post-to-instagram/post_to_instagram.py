@@ -269,7 +269,8 @@ def post_to_instagram():
         
                 
         # Process templated content (Instagram doesn't support links in posts)
-        content, media_file, media_files_input = process_templated_contents(content, media_file, media_files_input)
+        link = get_optional_env_var("POST_LINK", "")
+        content, media_file, media_files_input, link = process_templated_contents(content, media_file, media_files_input, link)
 
 
         # Parse media files (Instagram requires URLs, so no downloading)
@@ -319,10 +320,11 @@ def post_to_instagram():
             'is_carousel': len(media_files) > 1
         }
         # Get link-in-comment options before dry run guard
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a comment
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
         pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
-        if link_in_comment:
-            dry_run_request['link_in_comment'] = link_in_comment
+        if link_in_comment and link:
+            dry_run_request['link_in_comment'] = link  # actual URL
             dry_run_request['pin_link_comment'] = pin_link_comment
         dry_run_guard("Instagram", content, media_files, dry_run_request)
         
@@ -391,16 +393,18 @@ def post_to_instagram():
         log_success("Instagram", media_id)
         logger.info(f"Post URL: {post_url}")
 
-        # Post link as a comment if LINK_IN_COMMENT is set
-        if link_in_comment:
-            logger.info(f"Posting link as comment on Instagram post {media_id}: {link_in_comment}")
+        # Post POST_LINK as a comment if LINK_IN_COMMENT flag is set
+        if link_in_comment and link:
+            logger.info(f"Posting link as comment on Instagram post {media_id}: {link}")
             try:
-                comment_id = ig_api.post_comment(media_id, link_in_comment)
+                comment_id = ig_api.post_comment(media_id, link)
                 logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
                 if pin_link_comment:
                     logger.warning("Pinning comments is not supported by the Instagram Graph API.")
             except Exception as comment_exc:
                 logger.warning(f"Failed to post link as comment on Instagram: {comment_exc}")
+        elif link_in_comment and not link:
+            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
         
     except Exception as e:
         save_post_response("instagram", success=False, error=str(e))

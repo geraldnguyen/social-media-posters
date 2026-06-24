@@ -46,7 +46,7 @@ inputs:
     required: false
     default: 'false'
   link-in-comment:
-    description: 'Post the provided link as a comment on the published post (optional, not applied to scheduled posts).'
+    description: 'If true, POST_LINK is posted as a comment after the main post instead of being attached to it. Not applied to scheduled posts (true/false).'
     required: false
   pin-link-comment:
     description: 'Pin the link comment so it stays visible (platform support varies). Requires link-in-comment.'

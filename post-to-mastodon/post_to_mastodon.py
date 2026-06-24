@@ -97,7 +97,8 @@ def post_to_mastodon():
         content, link = process_templated_contents(content, link)
 
         # Get link-in-comment options (needed before link is appended to content)
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a reply
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
         pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
 
         # If there's a link and not posting it as a comment, append it to the content for Mastodon
@@ -143,8 +144,8 @@ def post_to_mastodon():
                     'size_kb': round(file_size / 1024, 2) if file_size > 0 else 0
                 })
 
-        if link_in_comment:
-            dry_run_request['link_in_comment'] = link_in_comment
+        if link_in_comment and link:
+            dry_run_request['link_in_comment'] = link  # actual URL
             dry_run_request['pin_link_comment'] = pin_link_comment
 
         dry_run_guard("Mastodon", content, media_files, dry_run_request)
@@ -199,12 +200,12 @@ def post_to_mastodon():
         log_success("Mastodon", post_id)
         logger.info(f"Post URL: {post_url}")
 
-        # Post link as a reply if LINK_IN_COMMENT is set (only for non-scheduled posts)
-        if link_in_comment and not scheduled_at:
-            logger.info(f"Posting link as reply on Mastodon post {post_id}: {link_in_comment}")
+        # Post POST_LINK as a reply if LINK_IN_COMMENT flag is set (only for non-scheduled)
+        if link_in_comment and link and not scheduled_at:
+            logger.info(f"Posting link as reply on Mastodon post {post_id}: {link}")
             try:
                 reply_payload = {
-                    "status": link_in_comment,
+                    "status": link,
                     "in_reply_to_id": post_id
                 }
                 reply_response = requests.post(url, json=reply_payload, headers=headers, timeout=30)
@@ -215,7 +216,9 @@ def post_to_mastodon():
                     logger.warning("Pinning replies is not supported by the Mastodon API.")
             except Exception as comment_exc:
                 logger.warning(f"Failed to post link as reply on Mastodon: {comment_exc}")
-        elif link_in_comment and scheduled_at:
+        elif link_in_comment and not link:
+            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
+        elif link_in_comment and link and scheduled_at:
             logger.info("LINK_IN_COMMENT is set but post is scheduled; comment will not be posted now.")
         
     except Exception as e:

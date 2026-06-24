@@ -239,7 +239,8 @@ def post_to_linkedin():
         }
 
         # Get link-in-comment options (needed before dry_run_request link handling)
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a comment
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
         pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
 
         # Only add link to dry_run_request if not posting it as a comment
@@ -261,8 +262,8 @@ def post_to_linkedin():
                 })
             dry_run_request["media_files"] = media_info
 
-        if link_in_comment:
-            dry_run_request["link_in_comment"] = link_in_comment
+        if link_in_comment and link:
+            dry_run_request["link_in_comment"] = link  # actual URL
             dry_run_request["pin_link_comment"] = pin_link_comment
 
         # DRY RUN GUARD
@@ -301,16 +302,18 @@ def post_to_linkedin():
         log_success("LinkedIn", post_id)
         logger.info(f"Post URL: {post_url}")
 
-        # Post link as a comment if LINK_IN_COMMENT is set
-        if link_in_comment and post_id:
-            logger.info(f"Posting link as comment on LinkedIn post {post_id}: {link_in_comment}")
+        # Post POST_LINK as a comment if LINK_IN_COMMENT flag is set
+        if link_in_comment and link and post_id:
+            logger.info(f"Posting link as comment on LinkedIn post {post_id}: {link}")
             try:
-                comment_id = api.post_comment(author_id, post_id, link_in_comment)
+                comment_id = api.post_comment(author_id, post_id, link)
                 logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
                 if pin_link_comment:
                     logger.warning("Pinning comments is not supported by the LinkedIn API.")
             except Exception as comment_exc:
                 logger.warning(f"Failed to post link as comment on LinkedIn: {comment_exc}")
+        elif link_in_comment and not link:
+            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
         
     except Exception as e:
         save_post_response("linkedin", success=False, error=str(e))
