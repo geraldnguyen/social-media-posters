@@ -172,6 +172,39 @@ class LinkedInAPI:
             logger.error(f"Response content: {response.text}")
             raise
 
+    def post_comment(self, author_id, post_urn, comment_text):
+        """Post a comment on a LinkedIn post.
+
+        Args:
+            author_id: LinkedIn author URN (person or organization)
+            post_urn: LinkedIn post URN
+            comment_text: Comment text
+
+        Returns:
+            Comment ID from the response headers
+        """
+        url = f"{self.base_url}/socialActions/{post_urn}/comments"
+        comment_data = {
+            "actor": author_id,
+            "message": {
+                "text": comment_text
+            }
+        }
+        logger.info(f"Making API request to post comment: POST {url}")
+        logger.debug(f"Comment data: {json.dumps(comment_data, indent=2)}")
+        response = requests.post(url, headers=self.headers, json=comment_data)
+        logger.info(f"API response status: {response.status_code}")
+        try:
+            response.raise_for_status()
+            # LinkedIn returns the comment URN in the X-RestLi-Id header
+            comment_id = response.headers.get("X-RestLi-Id", "")
+            logger.info(f"Comment posted successfully: {comment_id}")
+            return comment_id
+        except requests.HTTPError as http_err:
+            logger.error(f"HTTP error posting comment: {http_err}")
+            logger.error(f"Response content: {response.text}")
+            raise
+
 
 def post_to_linkedin():
     """Main function to post content to LinkedIn."""
@@ -222,7 +255,14 @@ def post_to_linkedin():
                     "extension": Path(file_path).suffix
                 })
             dry_run_request["media_files"] = media_info
-        
+
+        # Get link-in-comment options before dry run guard
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+        if link_in_comment:
+            dry_run_request["link_in_comment"] = link_in_comment
+            dry_run_request["pin_link_comment"] = pin_link_comment
+
         # DRY RUN GUARD
         dry_run_guard("LinkedIn", content, media_files, dry_run_request)
         
@@ -258,6 +298,17 @@ def post_to_linkedin():
         save_post_response("linkedin", success=True, post_id=post_id, post_url=post_url)
         log_success("LinkedIn", post_id)
         logger.info(f"Post URL: {post_url}")
+
+        # Post link as a comment if LINK_IN_COMMENT is set
+        if link_in_comment and post_id:
+            logger.info(f"Posting link as comment on LinkedIn post {post_id}: {link_in_comment}")
+            try:
+                comment_id = api.post_comment(author_id, post_id, link_in_comment)
+                logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
+                if pin_link_comment:
+                    logger.warning("Pinning comments is not supported by the LinkedIn API.")
+            except Exception as comment_exc:
+                logger.warning(f"Failed to post link as comment on LinkedIn: {comment_exc}")
         
     except Exception as e:
         save_post_response("linkedin", success=False, error=str(e))

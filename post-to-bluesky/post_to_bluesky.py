@@ -130,6 +130,13 @@ def post_to_bluesky():
                 'note': 'Will attempt to fetch metadata to create a link card'
             }
         
+        # Get link-in-comment options before dry run guard
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+        if link_in_comment:
+            dry_run_request['link_in_comment'] = link_in_comment
+            dry_run_request['pin_link_comment'] = pin_link_comment
+
         dry_run_guard("Bluesky", content, media_files, dry_run_request)
         
         # Authenticate using the AT Protocol SDK
@@ -228,6 +235,22 @@ def post_to_bluesky():
         save_post_response("bluesky", success=True, post_id=post_uri, post_url=post_url)
         log_success("Bluesky", post_uri)
         logger.info(f"Post URL: {post_url}")
+
+        # Post link as a reply if LINK_IN_COMMENT is set
+        if link_in_comment:
+            logger.info(f"Posting link as reply on Bluesky post {post_uri}: {link_in_comment}")
+            try:
+                root_ref = models.ComAtprotoRepoStrongRef.Main(
+                    uri=response.uri,
+                    cid=response.cid
+                )
+                reply_ref = models.AppBskyFeedPost.ReplyRef(root=root_ref, parent=root_ref)
+                client.send_post(text=link_in_comment, reply_to=reply_ref)
+                logger.info("Link reply posted successfully on Bluesky.")
+                if pin_link_comment:
+                    logger.warning("Pinning replies is not supported by the Bluesky AT Protocol API.")
+            except Exception as comment_exc:
+                logger.warning(f"Failed to post link as reply on Bluesky: {comment_exc}")
         
     except Exception as e:
         save_post_response("bluesky", success=False, error=str(e))

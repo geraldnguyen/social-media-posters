@@ -101,7 +101,7 @@ class ThreadsAPI:
         self.access_token = access_token
         self.base_url = "https://graph.threads.net"
     
-    def create_media_container(self, user_id, text, media_url=None, link_attachment=None):
+    def create_media_container(self, user_id, text, media_url=None, link_attachment=None, reply_to_id=None):
         """Create a media container for Threads post."""
         url = f"{self.base_url}/{user_id}/threads"
         
@@ -122,6 +122,10 @@ class ThreadsAPI:
         if link_attachment:
             # Threads API expects link_attachment as a JSON object, not a string
             data["link_attachment"] = link_attachment
+
+        if reply_to_id:
+            data["reply_to_id"] = reply_to_id
+            logger.debug(f"Creating reply to thread: {reply_to_id}")
         
         logger.info(f"Making API request to create media container: POST {url}")
         logger.debug(f"Request data: media_type={data.get('media_type')}, text_length={len(text)}, has_media={bool(media_url)}, has_link={bool(link_attachment)}")
@@ -300,6 +304,12 @@ def post_to_threads():
             'media_url': media_file,
             'link': link
         }
+        # Get link-in-comment options before dry run guard
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+        if link_in_comment:
+            dry_run_request['link_in_comment'] = link_in_comment
+            dry_run_request['pin_link_comment'] = pin_link_comment
         logger.info("Checking dry run guard...")
         dry_run_guard("Threads", content, media_files, dry_run_request)
         
@@ -352,6 +362,23 @@ def post_to_threads():
         save_post_response("threads", success=True, post_id=thread_id, post_url=post_url)
         log_success("Threads", thread_id)
         logger.info(f"Post URL: {post_url}")
+
+        # Post link as a comment (reply) if LINK_IN_COMMENT is set
+        if link_in_comment:
+            logger.info(f"Posting link as reply on Threads post {thread_id}: {link_in_comment}")
+            try:
+                comment_creation_id = threads_api.create_media_container(
+                    user_id=user_id,
+                    text=link_in_comment,
+                    reply_to_id=thread_id
+                )
+                time.sleep(2)
+                comment_id = threads_api.publish_media(user_id, comment_creation_id)
+                logger.info(f"Link reply posted successfully. Comment ID: {comment_id}")
+                if pin_link_comment:
+                    logger.warning("Pinning replies is not supported by the Threads API.")
+            except Exception as comment_exc:
+                logger.warning(f"Failed to post link as reply on Threads: {comment_exc}")
         
     except Exception as e:
         save_post_response("threads", success=False, error=str(e))

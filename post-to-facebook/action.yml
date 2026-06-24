@@ -45,6 +45,13 @@ inputs:
     description: 'Save post response summary to facebook-response.json (success, error, post_id, post_url).'
     required: false
     default: 'false'
+  link-in-comment:
+    description: 'Post the provided link as a comment on the published post (optional, not applied to scheduled posts).'
+    required: false
+  pin-link-comment:
+    description: 'Pin the link comment so it stays visible (platform support varies). Requires link-in-comment.'
+    required: false
+    default: 'false'
   scheduled-publish-time:
     description: 'Schedule post for future publication (posts only, not supported for comments). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")'
     required: false
@@ -90,5 +97,7 @@ runs:
         DRY_RUN: ${{ inputs.dry-run }}
         SAVE_RESPONSE: ${{ inputs.save-response }}
         SCHEDULED_PUBLISH_TIME: ${{ inputs.scheduled-publish-time }}
+        LINK_IN_COMMENT: ${{ inputs.link-in-comment }}
+        PIN_LINK_COMMENT: ${{ inputs.pin-link-comment }}
       run: |
         python ${{ github.action_path }}/post_to_facebook.py

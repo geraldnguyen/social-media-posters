@@ -418,6 +418,13 @@ def post_to_youtube():
             
             if playlist_id:
                 dry_run_request['playlist_id'] = playlist_id
+
+            # Get link-in-comment options before dry run guard
+            link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+            pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+            if link_in_comment:
+                dry_run_request['link_in_comment'] = link_in_comment
+                dry_run_request['pin_link_comment'] = pin_link_comment
             
             # DRY RUN GUARD
             dry_run_guard("YouTube", f"Video: {title}", [local_video_file], dry_run_request)
@@ -473,6 +480,32 @@ def post_to_youtube():
             save_post_response("youtube", success=True, post_id=video_id, post_url=video_url)
             log_success("YouTube", video_id)
             logger.info(f"Video URL: {video_url}")
+
+            # Post link as a comment if LINK_IN_COMMENT is set (only for public/unlisted videos)
+            if link_in_comment and privacy_status != "private":
+                logger.info(f"Posting link as comment on YouTube video {video_id}: {link_in_comment}")
+                try:
+                    comment_result = api.youtube.commentThreads().insert(
+                        part="snippet",
+                        body={
+                            "snippet": {
+                                "videoId": video_id,
+                                "topLevelComment": {
+                                    "snippet": {
+                                        "textOriginal": link_in_comment
+                                    }
+                                }
+                            }
+                        }
+                    ).execute()
+                    comment_id = comment_result.get("id")
+                    logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
+                    if pin_link_comment:
+                        logger.warning("Pinning comments is not supported by the YouTube Data API v3.")
+                except Exception as comment_exc:
+                    logger.warning(f"Failed to post link as comment on YouTube: {comment_exc}")
+            elif link_in_comment and privacy_status == "private":
+                logger.info("LINK_IN_COMMENT is set but video is private/scheduled; comment will not be posted now.")
             
         else:
             # COMMUNITY POST MODE (Note: Community posts via API are limited)

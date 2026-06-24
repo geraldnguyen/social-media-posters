@@ -111,9 +111,16 @@ def post_to_x():
         # Upload media if provided
         media_ids = upload_media(client, media_files) if media_files else None
 
+        # Get link-in-comment options before dry run guard
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+
         # DRY RUN GUARD
         from social_media_utils import dry_run_guard
         request_body = {"text": content, "media_ids": media_ids}
+        if link_in_comment:
+            request_body["link_in_comment"] = link_in_comment
+            request_body["pin_link_comment"] = pin_link_comment
         dry_run_guard("X", content, media_files, request_body)
 
         # Create the post
@@ -134,6 +141,21 @@ def post_to_x():
         save_post_response("x", success=True, post_id=post_id, post_url=post_url)
         log_success("X", post_id)
         logger.info(f"Post URL: {post_url}")
+
+        # Post link as a comment if LINK_IN_COMMENT is set
+        if link_in_comment:
+            logger.info(f"Posting link as comment on X post {post_id}: {link_in_comment}")
+            try:
+                reply_response = client.create_tweet(
+                    text=link_in_comment,
+                    reply={"in_reply_to_tweet_id": post_id}
+                )
+                comment_id = reply_response.data['id']  # type: ignore
+                logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
+                if pin_link_comment:
+                    logger.warning("Pinning replies is not supported by the X API. The link comment will not be pinned.")
+            except Exception as comment_exc:
+                logger.warning(f"Failed to post link as comment on X: {comment_exc}")
         
     except Exception as e:
         save_post_response("x", success=False, error=str(e))

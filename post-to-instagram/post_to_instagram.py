@@ -140,6 +140,32 @@ class InstagramAPI:
                 logger.error("API request failed without response body: %s", str(e))
             raise
 
+    def post_comment(self, media_id, message):
+        """Post a comment on an Instagram media.
+        
+        Args:
+            media_id: Instagram media ID
+            message: Comment text
+            
+        Returns:
+            Comment ID
+        """
+        url = f"{self.base_url}/{media_id}/comments"
+        data = {
+            "message": message,
+            "access_token": self.access_token
+        }
+        try:
+            response = requests.post(url, data=data)
+            response.raise_for_status()
+            return response.json().get("id")
+        except requests.exceptions.RequestException as e:
+            try:
+                logger.error("API response: %s", e.response.text)
+            except Exception:
+                logger.error("Post comment request failed without response body: %s", str(e))
+            raise
+
     def check_container_status(self, container_id, max_wait=300):
         """Poll the creation container until it's ready for publishing."""
         start = time.time()
@@ -292,6 +318,12 @@ def post_to_instagram():
             'media_urls': media_files,  # media_files now contains the URLs directly
             'is_carousel': len(media_files) > 1
         }
+        # Get link-in-comment options before dry run guard
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+        if link_in_comment:
+            dry_run_request['link_in_comment'] = link_in_comment
+            dry_run_request['pin_link_comment'] = pin_link_comment
         dry_run_guard("Instagram", content, media_files, dry_run_request)
         
         # Create media container(s)
@@ -358,6 +390,17 @@ def post_to_instagram():
         save_post_response("instagram", success=True, post_id=media_id, post_url=post_url)
         log_success("Instagram", media_id)
         logger.info(f"Post URL: {post_url}")
+
+        # Post link as a comment if LINK_IN_COMMENT is set
+        if link_in_comment:
+            logger.info(f"Posting link as comment on Instagram post {media_id}: {link_in_comment}")
+            try:
+                comment_id = ig_api.post_comment(media_id, link_in_comment)
+                logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
+                if pin_link_comment:
+                    logger.warning("Pinning comments is not supported by the Instagram Graph API.")
+            except Exception as comment_exc:
+                logger.warning(f"Failed to post link as comment on Instagram: {comment_exc}")
         
     except Exception as e:
         save_post_response("instagram", success=False, error=str(e))

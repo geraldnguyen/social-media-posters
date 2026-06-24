@@ -93,6 +93,13 @@ inputs:
     description: 'Save post response summary to youtube-response.json (success, error, post_id, post_url).'
     required: false
     default: 'false'
+  link-in-comment:
+    description: 'Post the provided link as a comment on the published video (optional, not applied to private/scheduled videos).'
+    required: false
+  pin-link-comment:
+    description: 'Pin the link comment so it stays visible (platform support varies). Requires link-in-comment.'
+    required: false
+    default: 'false'
 
 outputs:
   video-id:
@@ -142,5 +149,7 @@ runs:
         TIME_ZONE: ${{ inputs.time-zone }}
         DRY_RUN: ${{ inputs.dry-run }}
         SAVE_RESPONSE: ${{ inputs.save-response }}
+        LINK_IN_COMMENT: ${{ inputs.link-in-comment }}
+        PIN_LINK_COMMENT: ${{ inputs.pin-link-comment }}
       run: |
         python ${{ github.action_path }}/post_to_youtube.py

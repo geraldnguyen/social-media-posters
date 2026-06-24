@@ -175,6 +175,30 @@ class DailymotionAPI:
             logger.error(f"Failed to update video on Dailymotion: {e}")
             raise
 
+    def post_comment(self, video_id: str, message: str) -> Optional[str]:
+        """Post a comment on a Dailymotion video.
+
+        Args:
+            video_id: Dailymotion video ID
+            message: Comment text
+
+        Returns:
+            Comment ID if available
+        """
+        logger.info(f"Posting comment on Dailymotion video {video_id}")
+        url = f"{self.api_base_url}/video/{video_id}/comments"
+        data = {"message": message}
+        try:
+            response = requests.post(url, headers=self.get_headers(), data=data, timeout=30)
+            logger.debug(f"Dailymotion post_comment response: {response.status_code} - {response.text}")
+            response.raise_for_status()
+            comment_id = response.json().get("id")
+            logger.info(f"Comment posted successfully. ID: {comment_id}")
+            return comment_id
+        except Exception as e:
+            logger.error(f"Failed to post comment on Dailymotion video {video_id}: {e}")
+            raise
+
 def post_to_dailymotion():
     """Main function to post content to Dailymotion."""
     # Setup logging
@@ -262,6 +286,13 @@ def post_to_dailymotion():
             dry_run_request['publish_date'] = metadata["publish_date"]
             dry_run_request['scheduled_publish_at'] = publish_at
 
+        # Get link-in-comment options before dry run guard
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+        if link_in_comment:
+            dry_run_request['link_in_comment'] = link_in_comment
+            dry_run_request['pin_link_comment'] = pin_link_comment
+
         # DRY RUN GUARD
         dry_run_guard("Dailymotion", f"Video: {title}", [local_video_file], dry_run_request)
         
@@ -291,6 +322,17 @@ def post_to_dailymotion():
         save_post_response("dailymotion", success=True, post_id=video_id, post_url=video_url)
         log_success("Dailymotion", video_id)
         logger.info(f"Video URL: {video_url}")
+
+        # Post link as a comment if LINK_IN_COMMENT is set
+        if link_in_comment:
+            logger.info(f"Posting link as comment on Dailymotion video {video_id}: {link_in_comment}")
+            try:
+                comment_id = api.post_comment(video_id, link_in_comment)
+                logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
+                if pin_link_comment:
+                    logger.warning("Pinning comments is not supported by the Dailymotion API.")
+            except Exception as comment_exc:
+                logger.warning(f"Failed to post link as comment on Dailymotion: {comment_exc}")
         
     except Exception as e:
         save_post_response("dailymotion", success=False, error=str(e))

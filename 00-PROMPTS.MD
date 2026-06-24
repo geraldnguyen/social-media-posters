@@ -509,6 +509,12 @@ Requirements:
   + post_id: extracted post or video ID from the social response
   + post_url: extracted post or video URL if it is available
 
+## v1.33.0 - Support Link-in-comment posting
+
+- Applicable to ALL current and future social posting action and CLI
+- If `LINK_IN_COMMENT` environment variable or `--link-in-comment` option is specified, the CLI/action will post the content (text and/or image and/or video included), then attach the provided link as comment to the post.
+- If `PIN_LINK_COMMENT` environment variable or `--pin-link-comment` option is also specified, pin the link comment so that it stays visible on top of the post.
+- This option does not affect the `SAVE_RESPONSE` implementation where it continues saving the post-content's response to file, not post-comment's response. 
 
 Expectation:
 - Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅

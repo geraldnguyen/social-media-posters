@@ -138,7 +138,14 @@ def post_to_mastodon():
                     'size_bytes': file_size,
                     'size_kb': round(file_size / 1024, 2) if file_size > 0 else 0
                 })
-        
+
+        # Get link-in-comment options before dry run guard
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+        if link_in_comment:
+            dry_run_request['link_in_comment'] = link_in_comment
+            dry_run_request['pin_link_comment'] = pin_link_comment
+
         dry_run_guard("Mastodon", content, media_files, dry_run_request)
         
         # Upload media files if provided
@@ -190,6 +197,25 @@ def post_to_mastodon():
                 
         log_success("Mastodon", post_id)
         logger.info(f"Post URL: {post_url}")
+
+        # Post link as a reply if LINK_IN_COMMENT is set (only for non-scheduled posts)
+        if link_in_comment and not scheduled_at:
+            logger.info(f"Posting link as reply on Mastodon post {post_id}: {link_in_comment}")
+            try:
+                reply_payload = {
+                    "status": link_in_comment,
+                    "in_reply_to_id": post_id
+                }
+                reply_response = requests.post(url, json=reply_payload, headers=headers, timeout=30)
+                reply_response.raise_for_status()
+                comment_id = reply_response.json().get("id")
+                logger.info(f"Link reply posted successfully. Comment ID: {comment_id}")
+                if pin_link_comment:
+                    logger.warning("Pinning replies is not supported by the Mastodon API.")
+            except Exception as comment_exc:
+                logger.warning(f"Failed to post link as reply on Mastodon: {comment_exc}")
+        elif link_in_comment and scheduled_at:
+            logger.info("LINK_IN_COMMENT is set but post is scheduled; comment will not be posted now.")
         
     except Exception as e:
         save_post_response("mastodon", success=False, error=str(e))

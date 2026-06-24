@@ -250,6 +250,13 @@ def dry_run_guard(platform: str, content: str, media_files: list, request_body: 
             print(f"   {request_body['link']}")
             if 'link_note' in request_body:
                 print(f"   Note: {request_body['link_note']}")
+
+        # Print link-in-comment information
+        if request_body.get('link_in_comment'):
+            print(f"\n💬 LINK IN COMMENT:")
+            print(f"   {request_body['link_in_comment']}")
+            if request_body.get('pin_link_comment'):
+                print(f"   Pin: Requested (platform support may vary)")
         
         # Print media files with details
         if media_files:

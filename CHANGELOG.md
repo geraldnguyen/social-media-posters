@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.0] - 2026-06-24
+
+### Added
+- **Link-in-comment posting** - Added optional post-then-comment workflow for all current posting actions and CLI commands.
+  - If `LINK_IN_COMMENT` (env var) or `--link-in-comment` (CLI option) is specified, the CLI/action will publish the main content first, then attach the provided link as a comment/reply on the post.
+  - If `PIN_LINK_COMMENT` (env var) or `--pin-link-comment` (CLI flag) is also specified, a best-effort attempt is made to pin the link comment. For platforms where the API does not support comment pinning, a warning is logged and execution continues.
+  - The `SAVE_RESPONSE` feature continues to save the main post response only, not the comment.
+  - Link-in-comment is skipped (with a log message) for scheduled posts (Facebook, Mastodon, YouTube private/scheduled).
+- **Threads reply support** - `ThreadsAPI.create_media_container()` now accepts an optional `reply_to_id` parameter to create a reply thread.
+- **LinkedIn comment support** - New `LinkedInAPI.post_comment()` method to post comments on published posts.
+- **Instagram comment support** - New `InstagramAPI.post_comment()` and `InstagramFBAPI.post_comment()` methods to add comments via the Graph API.
+- **Dailymotion comment support** - New `DailymotionAPI.post_comment()` method to post comments on uploaded videos.
+- **Dry-run output** - `dry_run_guard` now displays `LINK IN COMMENT` and `Pin` information when those options are set.
+- **CLI options** - Added `--link-in-comment` and `--pin-link-comment` to common CLI options so every command can leverage the feature.
+- **GitHub Action inputs** - Added `link-in-comment` and `pin-link-comment` inputs to all action manifests and mapped them to `LINK_IN_COMMENT` / `PIN_LINK_COMMENT`.
+
+### Changed
+- Integrated link-in-comment logic into all posting flows across:
+  - X (reply tweet), Facebook (Graph API comment), Threads (reply container), LinkedIn (socialActions comment), Instagram (Graph API comment for both original and via-FB scripts), Bluesky (AT Protocol reply), Mastodon (reply status), YouTube (commentThreads.insert), and Dailymotion (video comment).
+- Updated package versions to `1.33.0` in:
+  - `pyproject.toml`
+  - `common/__init__.py`
+  - `social_cli/__init__.py`
+
+### Testing
+- Added `common/test_link_in_comment.py` with unit tests covering:
+  - Dry-run guard displays link-in-comment and pin-link-comment info
+  - Link-in-comment not triggered when env var is absent
+  - Link-in-comment triggered when env var is set
+
 ## [1.32.0] - 2026-06-22
 
 ### Added
