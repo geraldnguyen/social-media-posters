@@ -95,9 +95,13 @@ def post_to_mastodon():
         
         # Process templated content and link using the same JSON root
         content, link = process_templated_contents(content, link)
-        
-        # If there's a link, append it to the content for Mastodon
-        if link:
+
+        # Get link-in-comment options (needed before link is appended to content)
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+
+        # If there's a link and not posting it as a comment, append it to the content for Mastodon
+        if link and not link_in_comment:
             content = f"{content}\n\n{link}" if content else link
 
         # Validate content (Mastodon default character limit is 500 characters)
@@ -139,9 +143,6 @@ def post_to_mastodon():
                     'size_kb': round(file_size / 1024, 2) if file_size > 0 else 0
                 })
 
-        # Get link-in-comment options before dry run guard
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
-        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
         if link_in_comment:
             dry_run_request['link_in_comment'] = link_in_comment
             dry_run_request['pin_link_comment'] = pin_link_comment

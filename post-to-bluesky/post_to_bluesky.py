@@ -121,18 +121,18 @@ def post_to_bluesky():
                     'note': f'{image_count} image(s) will be embedded (max 4 supported)'
                 }
         
-        # Add link information
-        if link:
+        # Get link-in-comment options (needed before dry_run link handling)
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+
+        # Add link information only if not posting link as a comment
+        if link and not link_in_comment:
             dry_run_request['link'] = link
             dry_run_request['embed_type'] = 'external'
             dry_run_request['embed_details'] = {
                 'type': 'app.bsky.embed.external',
                 'note': 'Will attempt to fetch metadata to create a link card'
             }
-        
-        # Get link-in-comment options before dry run guard
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
-        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
         if link_in_comment:
             dry_run_request['link_in_comment'] = link_in_comment
             dry_run_request['pin_link_comment'] = pin_link_comment
@@ -174,8 +174,8 @@ def post_to_bluesky():
         embed = None
         if images:
             embed = models.AppBskyEmbedImages.Main(images=images)
-        elif link:
-            # Attempt to create a link card embed
+        elif link and not link_in_comment:
+            # Attempt to create a link card embed (only when not posting link as comment)
             metadata = fetch_link_metadata(link)
             if metadata:
                 thumb_blob = None

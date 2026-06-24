@@ -184,6 +184,33 @@ class TestThreadsAPIReplyToId(unittest.TestCase):
 
         self.assertNotIn("reply_to_id", captured_data)
 
+    def test_create_media_container_no_link_attachment_when_link_in_comment(self):
+        """When link_in_comment is set, link_attachment should NOT be passed to container."""
+        from post_to_threads import ThreadsAPI
+
+        api = ThreadsAPI(access_token="fake_token")
+        captured_data = {}
+
+        def mock_post(url, data):
+            captured_data.update(data)
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"id": "container_no_link"}
+            mock_response.raise_for_status = MagicMock()
+            return mock_response
+
+        # Simulate the calling code: when link_in_comment is set, caller passes None
+        link = "https://example.com/my-article"
+        link_in_comment = "https://example.com/my-article"  # same URL goes to comment
+        with patch("requests.post", side_effect=mock_post):
+            api.create_media_container(
+                user_id="user123",
+                text="Check this out!",
+                link_attachment=link if (link and not link_in_comment) else None
+            )
+
+        self.assertNotIn("link_attachment", captured_data)
+
 
 class TestLinkedInAPIPostComment(unittest.TestCase):
     """Validate LinkedInAPI.post_comment method."""

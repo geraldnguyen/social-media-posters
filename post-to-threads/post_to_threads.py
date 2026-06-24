@@ -277,8 +277,12 @@ def post_to_threads():
         if media_file:
             logger.info(f"Media file URL validated: {media_file}")
         
-        # Validate link if provided
-        if link:
+        # Get link-in-comment options early (needed before link validation and dry run)
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+
+        # Validate link if provided and not being redirected to a comment
+        if link and not link_in_comment:
             if not validate_link_url(link):
                 logger.error(f"Invalid link format: {link}")
                 raise ValueError(
@@ -302,11 +306,9 @@ def post_to_threads():
         dry_run_request = {
             'text': content,
             'media_url': media_file,
-            'link': link
         }
-        # Get link-in-comment options before dry run guard
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
-        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+        if link and not link_in_comment:
+            dry_run_request['link'] = link
         if link_in_comment:
             dry_run_request['link_in_comment'] = link_in_comment
             dry_run_request['pin_link_comment'] = pin_link_comment
@@ -320,14 +322,14 @@ def post_to_threads():
                 media_type = "IMAGE"
             elif media_file.lower().endswith(('.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv')):
                 media_type = "VIDEO"
-        logger.info(f"Creating media container with type: {media_type}, has_link: {bool(link)}")
+        logger.info(f"Creating media container with type: {media_type}, has_link: {bool(link and not link_in_comment)}")
         
-        # Create media container
+        # Create media container (link_attachment only if not posting link as comment)
         creation_id = threads_api.create_media_container(
             user_id=user_id,
             text=content,
             media_url=media_file if media_file else None,
-            link_attachment=link if link else None
+            link_attachment=link if (link and not link_in_comment) else None
         )
         
         logger.info(f"Thread container created with ID: {creation_id}")

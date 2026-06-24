@@ -237,8 +237,13 @@ def post_to_linkedin():
             "text": content,
             "text_length": len(content)
         }
-        
-        if link:
+
+        # Get link-in-comment options (needed before dry_run_request link handling)
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+
+        # Only add link to dry_run_request if not posting it as a comment
+        if link and not link_in_comment:
             dry_run_request["link"] = link
             dry_run_request["link_note"] = "LinkedIn will automatically fetch link preview"
         
@@ -256,9 +261,6 @@ def post_to_linkedin():
                 })
             dry_run_request["media_files"] = media_info
 
-        # Get link-in-comment options before dry run guard
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
-        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
         if link_in_comment:
             dry_run_request["link_in_comment"] = link_in_comment
             dry_run_request["pin_link_comment"] = pin_link_comment
@@ -283,8 +285,8 @@ def post_to_linkedin():
                 else:
                     logger.warning(f"Unsupported media type for LinkedIn: {file_ext}")
         
-        # Create the post
-        post_id = api.create_post(author_id, content, media_assets if media_assets else None, link if link else None)
+        # Create the post (link only attached if not posting it as a comment)
+        post_id = api.create_post(author_id, content, media_assets if media_assets else None, link if (link and not link_in_comment) else None)
         
         # LinkedIn post URLs are in the format: https://www.linkedin.com/feed/update/{post_id}
         post_url = f"https://www.linkedin.com/feed/update/{post_id}" if post_id else ""

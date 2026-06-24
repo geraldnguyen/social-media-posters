@@ -423,12 +423,17 @@ def post_to_facebook():
                     logger.info("Scheduling requires post to be initially unpublished. Setting published=False.")
                     published = False
         
+        # Get link-in-comment options (must be before post_data construction)
+        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
+        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+
         # Prepare post data
         post_data = {
             'message': content
         }
 
-        if link:
+        # Only attach link to post if not posting it as a comment
+        if link and not link_in_comment:
             post_data['link'] = link
         if not published:
             post_data['published'] = 'false'
@@ -436,10 +441,6 @@ def post_to_facebook():
         # Add scheduled publish time to post data if provided
         if scheduled_publish_time:
             post_data['scheduled_publish_time'] = str(scheduled_publish_time)
-
-        # Get link-in-comment options before dry run guard
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "")
-        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
 
         # DRY RUN GUARD
         from social_media_utils import dry_run_guard
