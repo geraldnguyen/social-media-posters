@@ -430,7 +430,8 @@ def post_to_facebook():
 
         # Prepare post data
         post_data = {
-            'message': content
+            'message': content,
+            'published': str(published).lower()
         }
 
         # Only attach link to post if not posting it as a comment
