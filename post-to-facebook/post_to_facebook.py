@@ -39,7 +39,7 @@ from social_media_utils import (
 )
 
 
-GRAPH_API_VERSION = "v23.0"
+GRAPH_API_VERSION = "v25.0"
 GRAPH_API_BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 
 
