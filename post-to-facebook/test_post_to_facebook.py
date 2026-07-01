@@ -853,11 +853,14 @@ class TestTextFormatPreset(unittest.TestCase):
                 break
         self.assertTrue(called, 'text_format_preset_id was not sent to Graph API')
 
+    @patch('post_to_facebook.upload_photo')
+    @patch('post_to_facebook.process_templated_contents')
+    @patch('post_to_facebook.parse_media_files')
     @patch('post_to_facebook.get_optional_env_var')
     @patch('post_to_facebook.get_required_env_var')
     @patch('post_to_facebook.setup_logging')
-    def test_text_format_preset_rejects_media_files(self, mock_logging, mock_required, mock_optional):
-        """Background posts must not include media files."""
+    def test_text_format_preset_rejects_media_files(self, mock_logging, mock_required, mock_optional, mock_parse_media, mock_template, mock_upload):
+        """Background posts with media should skip text_format_preset_id and continue."""
         mock_logging.return_value = MagicMock()
 
         mock_required.side_effect = lambda k: {
@@ -871,14 +874,21 @@ class TestTextFormatPreset(unittest.TestCase):
             'MEDIA_FILES': 'image.jpg'
         }.get(k, default)
 
-        with self.assertRaises(SystemExit):
-            post_content()
+        mock_template.return_value = ('Short text', '')
+        mock_parse_media.return_value = ['image.jpg']
+        mock_upload.return_value = 'post_abc'
 
+        # Should not raise; should return the mocked post id
+        result = post_content()
+        self.assertEqual(result, 'post_abc')
+
+    @patch('post_to_facebook._graph_api_post')
+    @patch('post_to_facebook.process_templated_contents')
     @patch('post_to_facebook.get_optional_env_var')
     @patch('post_to_facebook.get_required_env_var')
     @patch('post_to_facebook.setup_logging')
-    def test_text_format_preset_rejects_link_unless_link_in_comment(self, mock_logging, mock_required, mock_optional):
-        """Background posts cannot include links unless LINK_IN_COMMENT is set."""
+    def test_text_format_preset_rejects_link_unless_link_in_comment(self, mock_logging, mock_required, mock_optional, mock_template, mock_api_post):
+        """Background posts cannot include links unless LINK_IN_COMMENT is set; skip preset instead of failing."""
         mock_logging.return_value = MagicMock()
 
         mock_required.side_effect = lambda k: {
@@ -893,14 +903,23 @@ class TestTextFormatPreset(unittest.TestCase):
             'LINK_IN_COMMENT': ''
         }.get(k, default)
 
-        with self.assertRaises(SystemExit):
-            post_content()
+        mock_template.return_value = ('Short text', 'https://example.com')
+        mock_api_post.return_value = {'id': 'post_abc'}
 
+        result = post_content()
+
+        # Ensure post created and text_format_preset_id was not included in the data
+        self.assertEqual(result, 'post_abc')
+        called_with_preset = any('text_format_preset_id' in call[1].get('data', {}) for call in mock_api_post.call_args_list)
+        self.assertFalse(called_with_preset)
+
+    @patch('post_to_facebook._graph_api_post')
+    @patch('post_to_facebook.process_templated_contents')
     @patch('post_to_facebook.get_optional_env_var')
     @patch('post_to_facebook.get_required_env_var')
     @patch('post_to_facebook.setup_logging')
-    def test_text_format_preset_enforces_130_char_limit(self, mock_logging, mock_required, mock_optional):
-        """Background posts longer than 130 characters should be rejected."""
+    def test_text_format_preset_enforces_130_char_limit(self, mock_logging, mock_required, mock_optional, mock_template, mock_api_post):
+        """When content exceeds 130 characters, skip text_format_preset_id and continue posting."""
         mock_logging.return_value = MagicMock()
 
         long_text = 'x' * 200
@@ -916,8 +935,13 @@ class TestTextFormatPreset(unittest.TestCase):
             'POST_LINK': ''
         }.get(k, default)
 
-        with self.assertRaises(SystemExit):
-            post_content()
+        mock_template.return_value = (long_text, '')
+        mock_api_post.return_value = {'id': 'post_long'}
+
+        result = post_content()
+        self.assertEqual(result, 'post_long')
+        called_with_preset = any('text_format_preset_id' in call[1].get('data', {}) for call in mock_api_post.call_args_list)
+        self.assertFalse(called_with_preset)
 
 
 if __name__ == '__main__':

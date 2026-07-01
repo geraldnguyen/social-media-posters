@@ -372,17 +372,21 @@ def post_content() -> str:
     # TEXT_FORMAT_PRESET_ID (background text posts)
     text_format_preset_id = get_optional_env_var("TEXT_FORMAT_PRESET_ID", "").strip()
 
-    # Enforce constraints for background text posts
+    # Determine whether to apply the text format preset. If any condition for
+    # background text posts is violated, log a warning and skip applying the
+    # preset, but continue with posting.
+    apply_text_format_preset = False
     if text_format_preset_id:
+        apply_text_format_preset = True
         if media_files:
-            logger.error("Background text posts (text_format_preset_id) cannot include images or videos.")
-            sys.exit(1)
+            logger.warning("Background text posts (text_format_preset_id) cannot include images or videos. Skipping text_format_preset_id.")
+            apply_text_format_preset = False
         if link and not link_in_comment:
-            logger.error("Background text posts (text_format_preset_id) cannot include links. Use LINK_IN_COMMENT to attach link as a comment.")
-            sys.exit(1)
+            logger.warning("Background text posts (text_format_preset_id) cannot include links. Use LINK_IN_COMMENT to attach link as a comment. Skipping text_format_preset_id.")
+            apply_text_format_preset = False
         if len(content) > 130:
-            logger.error("Post content exceeds maximum length of 130 characters")
-            sys.exit(1)
+            logger.warning("Post content exceeds maximum length of 130 characters; skipping text_format_preset_id.")
+            apply_text_format_preset = False
 
     # Build post payload
     post_data = {
@@ -390,7 +394,7 @@ def post_content() -> str:
         'published': str(published).lower(),
     }
 
-    if text_format_preset_id:
+    if apply_text_format_preset:
         post_data['text_format_preset_id'] = text_format_preset_id
 
     if link and not link_in_comment:
