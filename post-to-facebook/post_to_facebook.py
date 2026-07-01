@@ -433,7 +433,7 @@ def post_to_facebook():
         post_data = {
             'message': content,
             'published': str(published).lower(),
-            'text_format_preset_id': '696971568609418'
+            # 'text_format_preset_id': '696971568609418'
         }
 
         # Only attach link to post if not posting it as a comment
