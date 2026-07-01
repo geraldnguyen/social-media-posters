@@ -27,6 +27,9 @@ inputs:
   post-title:
     description: 'Title for video/reel posts (optional, only used for video files)'
     required: false
+  text-format-preset-id:
+    description: 'Facebook Text Format Preset ID for background text posts (optional). When provided, enforces background-post rules: no media, 130-char limit. Use with LINK_IN_COMMENT to attach links as comments.'
+    required: false
   log-level:
     description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
     required: false
@@ -91,6 +94,7 @@ runs:
         MEDIA_FILES: ${{ inputs.media-files }}
         POST_LINK: ${{ inputs.link }}
         POST_TITLE: ${{ inputs.post-title }}
+        TEXT_FORMAT_PRESET_ID: ${{ inputs.text-format-preset-id }}
         LOG_LEVEL: ${{ inputs.log-level }}
         CONTENT_JSON: ${{ inputs.content-json }}
         TIME_ZONE: ${{ inputs.time-zone }}
