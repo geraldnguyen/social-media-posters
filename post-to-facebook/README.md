@@ -224,6 +224,7 @@ If you're developing within the social-media-posters repository:
 | `fb-post-id` | Facebook Post ID to comment on (if provided, will post as comment instead of new post) | No | - |
 | `media-files` | Comma-separated list of media file paths (for posts) or URLs (for comments) | No | - |
 | `link` | Link to attach to the post or include in comment text | No | - |
+| `text-format-preset-id` | Facebook text format preset id for background text posts (text-only, pages only, max 130 chars) | No | - |
 | `post-title` | Title for video/reel posts (v1.22.0+, only used for video files) | No | - |
 | `scheduled-publish-time` | Schedule post for future publication (posts only, not supported for comments). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |

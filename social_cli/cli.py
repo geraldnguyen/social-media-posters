@@ -122,6 +122,8 @@ def x(**kwargs):
               help='Link to attach to the post or include in comment text')
 @click.option('--post-title', callback=set_env_from_option,
               help='Title for video/reel posts (optional, only used for video files)')
+@click.option('--text-format-preset-id', callback=set_env_from_option,
+              help='Text format preset id for Facebook background text posts (text-only, pages only, max 130 chars)')
 @click.option('--post-privacy', callback=set_env_from_option, 
               help='Post privacy (public or private)')
 @click.option('--scheduled-publish-time', callback=set_env_from_option,

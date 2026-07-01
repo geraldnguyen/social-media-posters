@@ -21,7 +21,8 @@ from post_to_facebook import (
     _upload_video_resumable,
     upload_photo,
     _graph_api_post,
-    post_comment
+    post_comment,
+    post_content
 )
 
 
@@ -793,6 +794,130 @@ class TestExpandedFileExtensions(unittest.TestCase):
         for ext in new_extensions:
             with self.subTest(extension=ext):
                 self.assertIn(ext, video_exts)
+
+
+class TestTextFormatPreset(unittest.TestCase):
+    """Test cases for TEXT_FORMAT_PRESET_ID background post support (v1.34.0)."""
+
+    @patch('post_to_facebook._graph_api_post')
+    @patch('post_to_facebook.process_templated_contents')
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.setup_logging')
+    def test_text_format_preset_included_for_background_post(self, mock_logging, mock_required, mock_optional, mock_template, mock_api_post):
+        """When TEXT_FORMAT_PRESET_ID is provided, it should be included in post data."""
+        mock_logging.return_value = MagicMock()
+
+        # Required env vars
+        def required_side_effect(key):
+            return {
+                'FB_ACCESS_TOKEN': 'token_123',
+                'POST_CONTENT': 'A short background post',
+                'FB_PAGE_ID': 'page_123'
+            }[key]
+
+        mock_required.side_effect = required_side_effect
+
+        # Optional env vars
+        def optional_side_effect(key, default=''):
+            mapping = {
+                'POST_PRIVACY': 'public',
+                'POST_LINK': '',
+                'POST_TITLE': '',
+                'TEXT_FORMAT_PRESET_ID': '696971568609418',
+                'LINK_IN_COMMENT': '',
+                'PIN_LINK_COMMENT': '',
+                'MEDIA_FILES': '',
+                'SCHEDULED_PUBLISH_TIME': ''
+            }
+            return mapping.get(key, default)
+
+        mock_optional.side_effect = optional_side_effect
+        mock_template.return_value = ('A short background post', '')
+        mock_api_post.return_value = {'id': 'post_abc'}
+
+        # Execute
+        result = None
+        try:
+            result = post_content()
+        except SystemExit:
+            self.fail('post_content unexpectedly exited')
+
+        # Verify the Graph API was called to create a feed post with text_format_preset_id
+        self.assertEqual(result, 'post_abc')
+        called = False
+        for call_item in mock_api_post.call_args_list:
+            data = call_item[1].get('data', {})
+            if data.get('text_format_preset_id') == '696971568609418':
+                called = True
+                break
+        self.assertTrue(called, 'text_format_preset_id was not sent to Graph API')
+
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.setup_logging')
+    def test_text_format_preset_rejects_media_files(self, mock_logging, mock_required, mock_optional):
+        """Background posts must not include media files."""
+        mock_logging.return_value = MagicMock()
+
+        mock_required.side_effect = lambda k: {
+            'FB_ACCESS_TOKEN': 'token',
+            'POST_CONTENT': 'Short text',
+            'FB_PAGE_ID': 'page'
+        }[k]
+
+        mock_optional.side_effect = lambda k, default='': {
+            'TEXT_FORMAT_PRESET_ID': 'p',
+            'MEDIA_FILES': 'image.jpg'
+        }.get(k, default)
+
+        with self.assertRaises(SystemExit):
+            post_content()
+
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.setup_logging')
+    def test_text_format_preset_rejects_link_unless_link_in_comment(self, mock_logging, mock_required, mock_optional):
+        """Background posts cannot include links unless LINK_IN_COMMENT is set."""
+        mock_logging.return_value = MagicMock()
+
+        mock_required.side_effect = lambda k: {
+            'FB_ACCESS_TOKEN': 'token',
+            'POST_CONTENT': 'Short text',
+            'FB_PAGE_ID': 'page'
+        }[k]
+
+        mock_optional.side_effect = lambda k, default='': {
+            'TEXT_FORMAT_PRESET_ID': 'p',
+            'POST_LINK': 'https://example.com',
+            'LINK_IN_COMMENT': ''
+        }.get(k, default)
+
+        with self.assertRaises(SystemExit):
+            post_content()
+
+    @patch('post_to_facebook.get_optional_env_var')
+    @patch('post_to_facebook.get_required_env_var')
+    @patch('post_to_facebook.setup_logging')
+    def test_text_format_preset_enforces_130_char_limit(self, mock_logging, mock_required, mock_optional):
+        """Background posts longer than 130 characters should be rejected."""
+        mock_logging.return_value = MagicMock()
+
+        long_text = 'x' * 200
+        mock_required.side_effect = lambda k: {
+            'FB_ACCESS_TOKEN': 'token',
+            'POST_CONTENT': long_text,
+            'FB_PAGE_ID': 'page'
+        }[k]
+
+        mock_optional.side_effect = lambda k, default='': {
+            'TEXT_FORMAT_PRESET_ID': 'p',
+            'MEDIA_FILES': '',
+            'POST_LINK': ''
+        }.get(k, default)
+
+        with self.assertRaises(SystemExit):
+            post_content()
 
 
 if __name__ == '__main__':

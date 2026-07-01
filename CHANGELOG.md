@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.33.0] - 2026-06-24
 
+## [1.34.0] - 2026-07-01
+
+### Added
+- **Facebook background text posts** - Support `text_format_preset_id` for Facebook Page text posts.
+  - Background posts must be text-only (no images or videos) and are limited to **130 characters**.
+  - Background posts cannot include links in the post body; use `LINK_IN_COMMENT` / `--link-in-comment` to attach a link as a comment instead.
+  - The `TEXT_FORMAT_PRESET_ID` / `--text-format-preset-id` option is available in the action inputs and the `social` CLI `facebook` command.
+
+### Changed
+- Bumped package version to `1.34.0`.
+
+
 ### Added
 - **Link-in-comment posting** - Added optional post-then-comment workflow for all current posting actions and CLI commands.
   - If `LINK_IN_COMMENT` (env var) or `--link-in-comment` (CLI option) is specified, the CLI/action will publish the main content first, then attach the provided link as a comment/reply on the post.

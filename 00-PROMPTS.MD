@@ -516,6 +516,18 @@ Requirements:
 - If `PIN_LINK_COMMENT` environment variable or `--pin-link-comment` option is also specified, pin the link comment so that it stays visible on top of the post.
 - This option does not affect the `SAVE_RESPONSE` implementation where it continues saving the post-content's response to file, not post-comment's response. 
 
+## v1.34.0 - Support text_format_preset_id in FB text post
+
+Support text_format_preset_id in FB post as long as the following condition is met:
+
+- Background posts cannot include images or videos.
+- Facebook Pages Only: Not supported on personal profiles or groups.
+- No Link in post. Supported in Link-in-comment mode
+- 130-character cap on background posts.
+
+The text_format_preset_id as an action input or CLI option
+
+
 Expectation:
 - Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅
 - Create unit tests for the changes ✅

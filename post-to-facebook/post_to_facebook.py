@@ -32,6 +32,7 @@ from social_media_utils import (
     validate_post_content,
     handle_api_error,
     log_success,
+    dry_run_guard,
     parse_media_files,
     parse_scheduled_time,
     is_value_empty_or_na,
@@ -306,6 +307,211 @@ def post_comment(post_id: str, access_token: str, message: str) -> str:
     return payload.get('id')
 
 
+def post_content() -> str:
+    """Create a new Facebook Page feed post and return the post id.
+
+    This helper centralizes the 'create post' flow so tests can call it directly.
+    It reads environment variables via the common helpers and performs the
+    necessary validations and uploads.
+    """
+    # Ensure logging is configured when called directly in tests
+    log_level = get_optional_env_var("LOG_LEVEL", "INFO")
+    logger = setup_logging(log_level)
+
+    # Required parameters
+    access_token = get_required_env_var("FB_ACCESS_TOKEN")
+    page_id = get_required_env_var("FB_PAGE_ID")
+
+    # Privacy and published state
+    privacy_mode = get_optional_env_var("POST_PRIVACY", "public").strip().lower()
+    if privacy_mode not in {"public", "private"}:
+        logger.error("POST_PRIVACY must be either 'public' or 'private'")
+        sys.exit(1)
+    published = privacy_mode == "public"
+
+    # Get templated content + link
+    content_raw = get_required_env_var("POST_CONTENT")
+    link = get_optional_env_var("POST_LINK", "")
+    title = get_optional_env_var("POST_TITLE", "")
+
+    templated = process_templated_contents(content_raw, link)
+    if isinstance(templated, tuple):
+        if len(templated) == 2:
+            content, link = templated
+        elif len(templated) == 1:
+            content = templated[0]
+        else:
+            content = templated
+    else:
+        content = templated
+
+    # Validate content
+    if not validate_post_content(content):
+        sys.exit(1)
+
+    media_input = get_optional_env_var("MEDIA_FILES", "")
+    media_files = parse_media_files(media_input)
+
+    # Scheduling
+    scheduled_time_str = get_optional_env_var("SCHEDULED_PUBLISH_TIME", "")
+    scheduled_publish_time = None
+    if scheduled_time_str:
+        scheduled_time_iso = parse_scheduled_time(scheduled_time_str)
+        if scheduled_time_iso:
+            dt = datetime.fromisoformat(scheduled_time_iso.replace('Z', '+00:00'))
+            scheduled_publish_time = int(dt.timestamp())
+            logger.info(f"Post will be scheduled for: {scheduled_time_iso} (Unix timestamp: {scheduled_publish_time})")
+            if published:
+                logger.info("Scheduling requires post to be initially unpublished. Setting published=False.")
+                published = False
+
+    # Link-in-comment options
+    link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
+    pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
+
+    # TEXT_FORMAT_PRESET_ID (background text posts)
+    text_format_preset_id = get_optional_env_var("TEXT_FORMAT_PRESET_ID", "").strip()
+
+    # Enforce constraints for background text posts
+    if text_format_preset_id:
+        if media_files:
+            logger.error("Background text posts (text_format_preset_id) cannot include images or videos.")
+            sys.exit(1)
+        if link and not link_in_comment:
+            logger.error("Background text posts (text_format_preset_id) cannot include links. Use LINK_IN_COMMENT to attach link as a comment.")
+            sys.exit(1)
+        if len(content) > 130:
+            logger.error("Post content exceeds maximum length of 130 characters")
+            sys.exit(1)
+
+    # Build post payload
+    post_data = {
+        'message': content,
+        'published': str(published).lower(),
+    }
+
+    if text_format_preset_id:
+        post_data['text_format_preset_id'] = text_format_preset_id
+
+    if link and not link_in_comment:
+        post_data['link'] = link
+    if not published:
+        post_data['published'] = 'false'
+    if scheduled_publish_time:
+        post_data['scheduled_publish_time'] = str(scheduled_publish_time)
+
+    # Dry-run guard
+    dry_run_request = dict(post_data)
+    if media_files:
+        dry_run_request['media_files'] = ', '.join(media_files)
+    dry_run_request['privacy'] = 'scheduled' if scheduled_publish_time else privacy_mode
+    if scheduled_publish_time:
+        dry_run_request['scheduled_for'] = scheduled_time_str
+    if link_in_comment and link:
+        dry_run_request['link_in_comment'] = link
+        dry_run_request['pin_link_comment'] = pin_link_comment
+    dry_run_guard("Facebook Page", content, media_files, dry_run_request)
+
+    # Handle media uploads and post creation
+    if media_files:
+        if len(media_files) == 1:
+            media_file = media_files[0]
+            file_ext = Path(media_file).suffix.lower()
+
+            if file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']:
+                post_id = upload_photo(page_id, media_file, content, published, access_token, scheduled_publish_time)
+            elif file_ext in ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']:
+                post_id = upload_video(page_id, media_file, content, published, access_token, scheduled_publish_time, title)
+            else:
+                logger.warning(f"Unsupported media type: {file_ext}")
+                payload = _graph_api_post(
+                    f"{page_id}/feed",
+                    access_token,
+                    data=post_data,
+                    action="create feed post"
+                )
+                post_id = payload.get('id')
+        else:
+            image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif'}
+            video_exts = {'.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv'}
+            image_files = [m for m in media_files if Path(m).suffix.lower() in image_exts]
+            video_files = [m for m in media_files if Path(m).suffix.lower() in video_exts]
+
+            if image_files and not video_files:
+                logger.info("Multiple images detected. Uploading as attached media.")
+                attached_media = []
+                for media_file in image_files:
+                    try:
+                        with open(media_file, 'rb') as photo_file:
+                            payload = _graph_api_post(
+                                f"{page_id}/photos",
+                                access_token,
+                                data={'published': 'false'},
+                                files={'source': photo_file},
+                                action="photo upload (unpublished)"
+                            )
+                        media_id = payload.get('id') or payload.get('post_id')
+                        if not media_id:
+                            raise RuntimeError(f"No media id returned for {media_file}")
+                        attached_media.append({'media_fbid': media_id})
+                    except Exception as exc:
+                        logger.error(f"Failed to upload photo {media_file} for attached media: {exc}")
+                        raise
+
+                post_data_with_media = dict(post_data)
+                post_data_with_media['attached_media'] = json.dumps(attached_media)
+                payload = _graph_api_post(
+                    f"{page_id}/feed",
+                    access_token,
+                    data=post_data_with_media,
+                    action="create feed post with attached media"
+                )
+                post_id = payload.get('id')
+            else:
+                logger.error("Facebook does not support mixed media types (photos + videos) or multiple videos in a single feed post.")
+                sys.exit(1)
+    else:
+        payload = _graph_api_post(
+            f"{page_id}/feed",
+            access_token,
+            data=post_data,
+            action="create feed post"
+        )
+        post_id = payload.get('id')
+
+    post_url = f"https://www.facebook.com/{post_id}" if (published and not scheduled_publish_time) else "(Scheduled/Unpublished post - no public URL yet)"
+
+    if 'GITHUB_OUTPUT' in os.environ:
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f"post-id={post_id}\n")
+            f.write(f"post-url={post_url}\n")
+            if scheduled_publish_time:
+                f.write(f"scheduled-time={scheduled_time_str}\n")
+
+    save_post_response("facebook", success=True, post_id=post_id, post_url=post_url)
+    log_success("Facebook Page", post_id)
+    logger.info(f"Post URL: {post_url}")
+    if scheduled_publish_time:
+        logger.info(f"Post scheduled for: {scheduled_time_str}")
+
+    # Post POST_LINK as a comment if LINK_IN_COMMENT flag is set (only for published posts)
+    if link_in_comment and link and not scheduled_publish_time:
+        logger.info(f"Posting link as comment on Facebook post {post_id}: {link}")
+        try:
+            comment_id = post_comment(post_id, access_token, link)
+            logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
+            if pin_link_comment:
+                logger.warning("Pinning comments is not supported by the Facebook Graph API.")
+        except Exception as comment_exc:
+            logger.warning(f"Failed to post link as comment on Facebook: {comment_exc}")
+    elif link_in_comment and not link:
+        logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
+    elif link_in_comment and link and scheduled_publish_time:
+        logger.info("LINK_IN_COMMENT is set but post is scheduled; comment will not be posted now.")
+
+    return post_id
+
+
 def post_to_facebook():
     """Main function to post content to Facebook Page or comment on a post."""
     # Setup logging
@@ -336,7 +542,14 @@ def post_to_facebook():
                 raw_media_urls = [url.strip() for url in media_input.split(',') if url.strip()]
             
             # Process templated content and link using the same JSON root
-            content, link = process_templated_contents(content, link)
+            templated = process_templated_contents(content, link)
+            if isinstance(templated, tuple):
+                if len(templated) == 2:
+                    content, link = templated
+                elif len(templated) == 1:
+                    content = templated[0]
+            else:
+                content = templated
             
             # Validate content
             if not validate_post_content(content):
@@ -361,7 +574,6 @@ def post_to_facebook():
                         logger.warning(f"Local file {media_url} cannot be included in a comment. Please provide a URL instead.")
             
             # DRY RUN GUARD
-            from social_media_utils import dry_run_guard
             dry_run_request = {
                 'post_id': fb_post_id,
                 'message': comment_message
@@ -384,187 +596,8 @@ def post_to_facebook():
             logger.info(f"Comment URL: {comment_url}")
             return
         
-        # Normal post mode - create a new post
-        page_id = get_required_env_var("FB_PAGE_ID")
-
-        # Determine privacy mode
-        privacy_mode = get_optional_env_var("POST_PRIVACY", "public").strip().lower()
-        if privacy_mode not in {"public", "private"}:
-            logger.error("POST_PRIVACY must be either 'public' or 'private'")
-            sys.exit(1)
-        published = privacy_mode == "public"
-
-        # Get optional parameters
-        link = get_optional_env_var("POST_LINK", "")
-        title = get_optional_env_var("POST_TITLE", "")
-        # Process templated content and link using the same JSON root
-        content, link = process_templated_contents(content, link)
-
-        # Validate content
-        if not validate_post_content(content):
-            sys.exit(1)
-        media_input = get_optional_env_var("MEDIA_FILES", "")
-        media_files = parse_media_files(media_input)
-        
-        # Get scheduling parameters
-        scheduled_time_str = get_optional_env_var("SCHEDULED_PUBLISH_TIME", "")
-        scheduled_publish_time = None
-        
-        if scheduled_time_str:
-            # Parse the scheduled time (supports ISO 8601 and offset format)
-            scheduled_time_iso = parse_scheduled_time(scheduled_time_str)
-            if scheduled_time_iso:
-                # Facebook API requires Unix timestamp (seconds since epoch)
-                dt = datetime.fromisoformat(scheduled_time_iso.replace('Z', '+00:00'))
-                scheduled_publish_time = int(dt.timestamp())
-                logger.info(f"Post will be scheduled for: {scheduled_time_iso} (Unix timestamp: {scheduled_publish_time})")
-                
-                # When scheduling, the post must be unpublished initially
-                if published:
-                    logger.info("Scheduling requires post to be initially unpublished. Setting published=False.")
-                    published = False
-        
-        # Get link-in-comment options (must be before post_data construction)
-        # LINK_IN_COMMENT is a boolean flag; when set, POST_LINK is posted as a comment
-        link_in_comment = get_optional_env_var("LINK_IN_COMMENT", "").lower() in ('1', 'true', 'yes')
-        pin_link_comment = get_optional_env_var("PIN_LINK_COMMENT", "").lower() in ('1', 'true', 'yes')
-
-        # Prepare post data
-        post_data = {
-            'message': content,
-            'published': str(published).lower(),
-            # 'text_format_preset_id': '696971568609418'
-        }
-
-        # Only attach link to post if not posting it as a comment
-        if link and not link_in_comment:
-            post_data['link'] = link
-        if not published:
-            post_data['published'] = 'false'
-        
-        # Add scheduled publish time to post data if provided
-        if scheduled_publish_time:
-            post_data['scheduled_publish_time'] = str(scheduled_publish_time)
-
-        # DRY RUN GUARD
-        from social_media_utils import dry_run_guard
-        dry_run_request = dict(post_data)
-        if media_files:
-            dry_run_request['media_files'] = ', '.join(media_files)
-        dry_run_request['privacy'] = 'scheduled' if scheduled_publish_time else privacy_mode
-        if scheduled_publish_time:
-            dry_run_request['scheduled_for'] = scheduled_time_str
-        if link_in_comment and link:
-            dry_run_request['link_in_comment'] = link  # show the actual URL in dry-run
-            dry_run_request['pin_link_comment'] = pin_link_comment
-        dry_run_guard("Facebook Page", content, media_files, dry_run_request)
-
-        # Handle media files
-        if media_files:
-            if len(media_files) == 1:
-                # Single media file
-                media_file = media_files[0]
-                file_ext = Path(media_file).suffix.lower()
-                
-                if file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif']:
-                    # Upload photo
-                    post_id = upload_photo(page_id, media_file, content, published, access_token, scheduled_publish_time)
-                elif file_ext in ['.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv']:
-                    # Upload video (with title if provided)
-                    post_id = upload_video(page_id, media_file, content, published, access_token, scheduled_publish_time, title)
-                else:
-                    logger.warning(f"Unsupported media type: {file_ext}")
-                    # Create text post with link if media type not supported
-                    payload = _graph_api_post(
-                        f"{page_id}/feed",
-                        access_token,
-                        data=post_data,
-                        action="create feed post"
-                    )
-                    post_id = payload.get('id')
-            else:
-                # Multiple media files
-                image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif'}
-                video_exts = {'.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv', '.m4v', '.mkv', '.3gp', '.3g2', '.ogv'}
-                image_files = [m for m in media_files if Path(m).suffix.lower() in image_exts]
-                video_files = [m for m in media_files if Path(m).suffix.lower() in video_exts]
-
-                if image_files and not video_files:
-                    # Multiple images: upload as unpublished and attach to a single feed post
-                    logger.info("Multiple images detected. Uploading as attached media.")
-                    attached_media = []
-                    for media_file in image_files:
-                        try:
-                            with open(media_file, 'rb') as photo_file:
-                                payload = _graph_api_post(
-                                    f"{page_id}/photos",
-                                    access_token,
-                                    data={'published': 'false'},
-                                    files={'source': photo_file},
-                                    action="photo upload (unpublished)"
-                                )
-                            media_id = payload.get('id') or payload.get('post_id')
-                            if not media_id:
-                                raise RuntimeError(f"No media id returned for {media_file}")
-                            attached_media.append({'media_fbid': media_id})
-                        except Exception as exc:
-                            logger.error(f"Failed to upload photo {media_file} for attached media: {exc}")
-                            raise
-
-                    # Create the main text post with attached media
-                    post_data_with_media = dict(post_data)
-                    post_data_with_media['attached_media'] = json.dumps(attached_media)
-                    payload = _graph_api_post(
-                        f"{page_id}/feed",
-                        access_token,
-                        data=post_data_with_media,
-                        action="create feed post with attached media"
-                    )
-                    post_id = payload.get('id')
-                else:
-                    # Mixed media types or multiple videos are not supported for a single feed post
-                    logger.error("Facebook does not support mixed media types (photos + videos) or multiple videos in a single feed post.")
-                    sys.exit(1)
-        else:
-            # Create text post
-            payload = _graph_api_post(
-                f"{page_id}/feed",
-                access_token,
-                data=post_data,
-                action="create feed post"
-            )
-            post_id = payload.get('id')
-        
-        post_url = f"https://www.facebook.com/{post_id}" if (published and not scheduled_publish_time) else "(Scheduled/Unpublished post - no public URL yet)"
-        
-        # Output for GitHub Actions
-        if 'GITHUB_OUTPUT' in os.environ:
-            with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                f.write(f"post-id={post_id}\n")
-                f.write(f"post-url={post_url}\n")
-                if scheduled_publish_time:
-                    f.write(f"scheduled-time={scheduled_time_str}\n")
-        
-        save_post_response("facebook", success=True, post_id=post_id, post_url=post_url)
-        log_success("Facebook Page", post_id)
-        logger.info(f"Post URL: {post_url}")
-        if scheduled_publish_time:
-            logger.info(f"Post scheduled for: {scheduled_time_str}")
-
-        # Post POST_LINK as a comment if LINK_IN_COMMENT flag is set (only for published posts)
-        if link_in_comment and link and not scheduled_publish_time:
-            logger.info(f"Posting link as comment on Facebook post {post_id}: {link}")
-            try:
-                comment_id = post_comment(post_id, access_token, link)
-                logger.info(f"Link comment posted successfully. Comment ID: {comment_id}")
-                if pin_link_comment:
-                    logger.warning("Pinning comments is not supported by the Facebook Graph API.")
-            except Exception as comment_exc:
-                logger.warning(f"Failed to post link as comment on Facebook: {comment_exc}")
-        elif link_in_comment and not link:
-            logger.warning("LINK_IN_COMMENT is set but no POST_LINK was provided; skipping comment.")
-        elif link_in_comment and link and scheduled_publish_time:
-            logger.info("LINK_IN_COMMENT is set but post is scheduled; comment will not be posted now.")
+        # Normal post mode - delegate to helper
+        return post_content()
         
     except Exception as e:
         save_post_response("facebook", success=False, error=str(e))
@@ -573,3 +606,7 @@ def post_to_facebook():
 
 if __name__ == "__main__":
     post_to_facebook()
+
+
+# Expose `main` for tests and CLI wiring
+main = post_to_facebook
