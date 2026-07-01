@@ -50,6 +50,7 @@ def _graph_api_post(path: str, access_token: str, *, data=None, files=None, para
     """Make a POST request to the Facebook Graph API and return the JSON payload."""
     params = dict(params or {})
     params['access_token'] = access_token
+    logger.debug(f"Making Facebook Graph API {action} request to {path} with params={params} and data={data}")
 
     url = f"{GRAPH_API_BASE_URL}/{path}"
     try:
