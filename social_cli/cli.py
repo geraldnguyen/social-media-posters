@@ -90,7 +90,7 @@ def main():
     """Social media posting CLI tool.
     
     Post content to various social media platforms from the command line.
-    Supports X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, Bluesky, Dailymotion, and Mastodon.
+    Supports X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, Bluesky, Dailymotion, Mastodon, and TikTok.
     """
     pass
 
@@ -334,6 +334,43 @@ def dailymotion(**kwargs):
 def mastodon(**kwargs):
     """Post to Mastodon."""
     import_and_run_post_script('post-to-mastodon', 'post_to_mastodon', 'post_to_mastodon')
+
+
+@main.command()
+@add_common_options
+@click.option('--tiktok-access-token', callback=set_env_from_option,
+              help='TikTok access token (with video.upload and video.publish scopes)')
+@click.option('--tiktok-client-key', callback=set_env_from_option,
+              help='TikTok app Client Key (for refresh-token auth)')
+@click.option('--tiktok-client-secret', callback=set_env_from_option,
+              help='TikTok app Client Secret (for refresh-token auth)')
+@click.option('--tiktok-refresh-token', callback=set_env_from_option,
+              help='TikTok OAuth2 refresh token')
+@click.option('--video-file', callback=set_env_from_option,
+              help='Path or public HTTPS URL to the video file')
+@click.option('--video-privacy-level', callback=set_env_from_option,
+              help='Privacy level: PUBLIC_TO_EVERYONE | MUTUAL_FOLLOW_FRIENDS | FOLLOWER_OF_CREATOR | SELF_ONLY')
+@click.option('--tiktok-disable-duet', callback=set_env_from_option,
+              help='Disable duet for this video (true/false)')
+@click.option('--tiktok-disable-comment', callback=set_env_from_option,
+              help='Disable comments for this video (true/false)')
+@click.option('--tiktok-disable-stitch', callback=set_env_from_option,
+              help='Disable stitch for this video (true/false)')
+@click.option('--tiktok-brand-content', callback=set_env_from_option,
+              help='Mark as branded content (true/false)')
+@click.option('--tiktok-brand-organic', callback=set_env_from_option,
+              help='Mark as organic branded content (true/false)')
+@click.option('--tiktok-is-aigc', callback=set_env_from_option,
+              help='Mark as AI-generated content (true/false)')
+@click.option('--tiktok-cover-timestamp-ms', callback=set_env_from_option, type=int,
+              help='Millisecond offset within the video to use as cover image (default: 1000)')
+@click.option('--video-publish-at', callback=set_env_from_option,
+              help='Schedule publish time. ISO 8601 or offset format (e.g. "+1d", "+2h", "+30m")')
+@click.option('--tiktok-chunk-size-mb', callback=set_env_from_option, type=int,
+              help='Upload chunk size in MB (5-64, default 10)')
+def tiktok(**kwargs):
+    """Upload video to TikTok."""
+    import_and_run_post_script('post-to-tiktok', 'post_to_tiktok', 'post_to_tiktok')
 
 
 if __name__ == '__main__':

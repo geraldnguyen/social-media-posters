@@ -528,6 +528,14 @@ Support text_format_preset_id in FB post as long as the following condition is m
 The text_format_preset_id as an action input or CLI option
 
 
+## v1.35.0 - Support video posting to Tiktok
+- Support instant and schedule posting
+- Use reasonable default input fields, allow users to override them via action's input or CLI's options
+- Extensive info and debug logging to facilitate troubleshooting
+- Support local-to-tiktok video upload if possible
+- Document all limitation e.g. video lengths, no link in descriptions in the folder README file.
+
+
 Expectation:
 - Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅
 - Create unit tests for the changes ✅

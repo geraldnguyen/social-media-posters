@@ -1,6 +1,6 @@
 # Social Media Posters
 
-A collection of GitHub Actions and a unified CLI tool for posting content to various social media platforms. Post to X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, and Bluesky from the command line or automate with GitHub Actions.
+A collection of GitHub Actions and a unified CLI tool for posting content to various social media platforms. Post to X (Twitter), Facebook, Instagram, Threads, LinkedIn, YouTube, Bluesky, Dailymotion, Mastodon, and TikTok from the command line or automate with GitHub Actions.
 
 ## Remote Media Support
 

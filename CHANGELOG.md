@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.0] - 2026-07-02
+
+### Added
+- **TikTok video posting** — New `post-to-tiktok` action and `social tiktok` CLI command.
+  - Supports instant publishing (DIRECT_POST) and scheduled publishing (with `VIDEO_PUBLISH_AT`).
+  - Supports local file upload (FILE_UPLOAD, chunked) and remote URL upload (PULL_FROM_URL).
+  - Configurable video metadata: privacy level, disable duet/stitch/comment, branded-content toggles, AI-generated-content flag, cover-image timestamp.
+  - Scheduling constraints documented: 20 minutes minimum, 10 days maximum from now.
+  - Logs a warning when the caption contains URLs (not permitted by TikTok and may cause rejection/shadowban).
+  - Supports both access-token auth and refresh-token auth (client_key + client_secret + refresh_token).
+  - Automatically queries creator info (allowed duration, privacy levels) at startup; failure is non-fatal.
+  - Chunk size is configurable via `TIKTOK_CHUNK_SIZE_MB` (5–64 MB, default 10 MB) and is clamped to the valid range.
+  - Full dry-run support (`DRY_RUN=true` / `--dry-run`).
+  - Response saved to `tiktok-response.json` when `SAVE_RESPONSE=true` / `--save-response`.
+  - GitHub Actions debug mode (`RUNNER_DEBUG`, `ACTIONS_STEP_DEBUG`, `ACTIONS_RUNNER_DEBUG`) auto-enables `DEBUG` logging.
+  - `post-to-tiktok/README.md` documents all limitations (video duration, formats, file size, scheduling window, no URLs in captions).
+- **CLI `social tiktok` command** — All TikTok-specific options exposed via `social tiktok --help`.
+
+### Changed
+- Bumped package version to `1.35.0` in `pyproject.toml`, `common/__init__.py`, `social_cli/__init__.py`.
+- Added `tiktok` keyword to `pyproject.toml`.
+
+### Testing
+- Added `post-to-tiktok/test_post_to_tiktok.py` with unit tests covering:
+  - `TikTokAPI` auth (access token, refresh token flow, error handling)
+  - `query_creator_info` (success and non-ok response)
+  - `init_video_upload` (FILE_UPLOAD, PULL_FROM_URL, error code)
+  - `upload_video_chunks` (single chunk, multiple chunks, HTTP error)
+  - `check_publish_status` (immediate complete, polling loop, failure, timeout)
+  - `post_to_tiktok()` entry-point (local file, remote URL fallback to PULL_FROM_URL, missing credentials, dry-run, scheduling, URL-in-description warning, save-response)
+  - Chunk-size clamping to minimum 5 MB
+
 ## [1.33.0] - 2026-06-24
 
 ## [1.34.0] - 2026-07-01

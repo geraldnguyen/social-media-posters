@@ -1,0 +1,130 @@
+name: 'Post to TikTok'
+description: 'Upload and publish videos to TikTok using the TikTok Content Posting API v2'
+author: 'Gerald Nguyen'
+branding:
+  icon: 'video'
+  color: 'black'
+
+inputs:
+  access-token:
+    description: 'TikTok access token (with video.upload and video.publish scopes). Provide this OR the refresh-token trio.'
+    required: false
+  client-key:
+    description: 'TikTok app Client Key. Required when using refresh-token authentication.'
+    required: false
+  client-secret:
+    description: 'TikTok app Client Secret. Required when using refresh-token authentication.'
+    required: false
+  refresh-token:
+    description: 'TikTok OAuth2 refresh token. Provide together with client-key and client-secret.'
+    required: false
+  video-file:
+    description: 'Local path or public HTTPS URL of the video file to upload'
+    required: true
+  content:
+    description: 'Video description/caption. NOTE: URLs/links are not allowed by TikTok in captions.'
+    required: false
+    default: ''
+  privacy-level:
+    description: 'Video privacy level: PUBLIC_TO_EVERYONE | MUTUAL_FOLLOW_FRIENDS | FOLLOWER_OF_CREATOR | SELF_ONLY'
+    required: false
+    default: 'PUBLIC_TO_EVERYONE'
+  disable-duet:
+    description: 'Disable duet for this video (true/false)'
+    required: false
+    default: 'false'
+  disable-comment:
+    description: 'Disable comments for this video (true/false)'
+    required: false
+    default: 'false'
+  disable-stitch:
+    description: 'Disable stitch for this video (true/false)'
+    required: false
+    default: 'false'
+  brand-content:
+    description: 'Mark as branded content (true/false)'
+    required: false
+    default: 'false'
+  brand-organic:
+    description: 'Mark as organic brand content (true/false)'
+    required: false
+    default: 'false'
+  is-aigc:
+    description: 'Mark as AI-generated content (true/false)'
+    required: false
+    default: 'false'
+  cover-timestamp-ms:
+    description: 'Millisecond timestamp within the video to use as the cover image (default: 1000)'
+    required: false
+    default: '1000'
+  video-publish-at:
+    description: 'Schedule video for future publishing. ISO 8601 (e.g. "2024-12-31T23:59:59Z") or offset format (e.g. "+1d", "+2h", "+30m"). Must be at least 20 minutes in the future and at most 10 days.'
+    required: false
+  chunk-size-mb:
+    description: 'Chunk size in MB for local file upload (5–64, default 10)'
+    required: false
+    default: '10'
+  log-level:
+    description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
+    required: false
+    default: 'INFO'
+  content-json:
+    description: 'JSON API URL and optional path for dynamic content templating (e.g. https://example.com/data.json | items[RANDOM])'
+    required: false
+  time-zone:
+    description: 'Time zone for date/time placeholders (e.g. UTC, UTC+7)'
+    required: false
+  dry-run:
+    description: 'Dry-run mode — print what would be posted without making any API calls.'
+    required: false
+    default: 'false'
+  save-response:
+    description: 'Save post response summary to tiktok-response.json (success, error, video_id, video_url).'
+    required: false
+    default: 'false'
+
+outputs:
+  video-id:
+    description: 'Published TikTok video ID'
+  video-url:
+    description: 'URL of the published TikTok video (may not be available for all account types)'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install -r ${{ github.action_path }}/requirements.txt
+
+    - name: Post to TikTok
+      shell: bash
+      env:
+        TIKTOK_ACCESS_TOKEN: ${{ inputs.access-token }}
+        TIKTOK_CLIENT_KEY: ${{ inputs.client-key }}
+        TIKTOK_CLIENT_SECRET: ${{ inputs.client-secret }}
+        TIKTOK_REFRESH_TOKEN: ${{ inputs.refresh-token }}
+        VIDEO_FILE: ${{ inputs.video-file }}
+        POST_CONTENT: ${{ inputs.content }}
+        VIDEO_PRIVACY_LEVEL: ${{ inputs.privacy-level }}
+        TIKTOK_DISABLE_DUET: ${{ inputs.disable-duet }}
+        TIKTOK_DISABLE_COMMENT: ${{ inputs.disable-comment }}
+        TIKTOK_DISABLE_STITCH: ${{ inputs.disable-stitch }}
+        TIKTOK_BRAND_CONTENT: ${{ inputs.brand-content }}
+        TIKTOK_BRAND_ORGANIC: ${{ inputs.brand-organic }}
+        TIKTOK_IS_AIGC: ${{ inputs.is-aigc }}
+        TIKTOK_COVER_TIMESTAMP_MS: ${{ inputs.cover-timestamp-ms }}
+        VIDEO_PUBLISH_AT: ${{ inputs.video-publish-at }}
+        TIKTOK_CHUNK_SIZE_MB: ${{ inputs.chunk-size-mb }}
+        LOG_LEVEL: ${{ inputs.log-level }}
+        CONTENT_JSON: ${{ inputs.content-json }}
+        TIME_ZONE: ${{ inputs.time-zone }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        SAVE_RESPONSE: ${{ inputs.save-response }}
+      run: |
+        python ${{ github.action_path }}/post_to_tiktok.py
