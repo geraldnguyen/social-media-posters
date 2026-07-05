@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.0] - 2026-07-05
+
+### Added
+- **Overall retry policy** — Added shared retry support for network requests across the CLI and composite GitHub Actions.
+  - Supported formats: `<retries>*immediately`, `<retries>*delay(<seconds>)`, and `<retries>*exp(<seconds>)`.
+  - Leaving the retry setting empty preserves fail-immediately behavior.
+  - Retry attempts are logged in `DEBUG` mode, including GitHub Actions debug mode.
+- **Shared requests integration** — The common utilities now apply the configured retry policy centrally so current and future `post-to-*` flows that use `requests` inherit the same behavior automatically.
+- **CLI and action wiring** — Added `--retry` to common CLI options and `retry` inputs to all composite action manifests.
+
+### Changed
+- Updated Threads publishing to rely on the new shared retry mechanism instead of a local retry loop.
+- Bumped package version to `1.36.0` in `pyproject.toml`, `common/__init__.py`, and `social_cli/__init__.py`.
+
+### Testing
+- Added `common/test_retry_mechanism.py` to cover retry parsing and retry execution behavior.
+- Updated CLI tests to verify `--retry` wiring.
+- Updated Threads tests to reflect shared retry handling.
+
+### Documentation
+- Updated the repository README, CLI guide, and action READMEs to document the new retry option.
+
 ## [1.35.0] - 2026-07-02
 
 ### Added

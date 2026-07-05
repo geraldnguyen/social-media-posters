@@ -28,6 +28,17 @@ GitHub Action and CLI command to upload and publish videos to TikTok using the [
 
 ---
 
+## Overall Retry
+
+All actions and the `social` CLI support an optional overall retry policy for network requests.
+
+- Leave `retry`, `RETRY`, or `--retry` empty to fail immediately
+- `3*immediately` retries immediately up to 3 times
+- `3*delay(5)` retries with a fixed 5-second delay up to 3 times
+- `3*exp(2)` retries with exponential backoff starting at 2 seconds up to 3 times
+
+When `LOG_LEVEL=DEBUG` or GitHub Actions debug mode is enabled, retry attempts are logged.
+
 ## Inputs
 
 | Input | Required | Default | Description |
@@ -49,6 +60,7 @@ GitHub Action and CLI command to upload and publish videos to TikTok using the [
 | `video-publish-at` | No | — | Schedule future publishing. See [Scheduling](#scheduling). |
 | `chunk-size-mb` | No | `10` | Upload chunk size in MB (5–64). Increase for better performance on fast connections. |
 | `log-level` | No | `INFO` | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR` |
+| `retry` | Overall retry policy for network requests: `<retries>*immediately`, `<retries>*delay(<seconds>)`, or `<retries>*exp(<seconds>)` | No | immediate failure |
 | `content-json` | No | — | URL (with optional JSON path) for dynamic content templating. |
 | `time-zone` | No | `UTC` | Time zone for built-in date/time placeholders. |
 | `dry-run` | No | `false` | Print what would be posted without calling the TikTok API. |

@@ -79,6 +79,9 @@ inputs:
     description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
     required: false
     default: 'INFO'
+  retry:
+    description: 'Overall retry policy for network requests: <retries>*immediately, <retries>*delay(<seconds>), or <retries>*exp(<seconds>). Leave empty to fail immediately.'
+    required: false
   content-json:
     description: 'JSON API URL and path for dynamic content templating (e.g. https://example.com/data.json | items[RANDOM])'
     required: false
@@ -145,6 +148,7 @@ runs:
         VIDEO_CONTAINS_SYNTHETIC_MEDIA: ${{ inputs.contains-synthetic-media }}
         YOUTUBE_OAUTH_SCOPES: ${{ inputs.oauth-scopes }}
         LOG_LEVEL: ${{ inputs.log-level }}
+        RETRY: ${{ inputs.retry }}
         CONTENT_JSON: ${{ inputs.content-json }}
         TIME_ZONE: ${{ inputs.time-zone }}
         DRY_RUN: ${{ inputs.dry-run }}

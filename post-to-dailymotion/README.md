@@ -64,7 +64,18 @@ You need to set up Dailymotion API access:
     description: "A detailed description of my video"
 ```
 
-### Inputs
+### Overall Retry
+
+All actions and the `social` CLI support an optional overall retry policy for network requests.
+
+- Leave `retry`, `RETRY`, or `--retry` empty to fail immediately
+- `3*immediately` retries immediately up to 3 times
+- `3*delay(5)` retries with a fixed 5-second delay up to 3 times
+- `3*exp(2)` retries with exponential backoff starting at 2 seconds up to 3 times
+
+When `LOG_LEVEL=DEBUG` or GitHub Actions debug mode is enabled, retry attempts are logged.
+
+## Inputs
 
 | Parameter | Description | Required | Default |
 |-----------|-------------|----------|---------|
@@ -81,6 +92,7 @@ You need to set up Dailymotion API access:
 | `publish-at` | Schedule video publication (ISO 8601 or offset like +1d) | No | - |
 | `made-for-kids` | Whether the video is made for kids (true/false) | No | `false` |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | `INFO` |
+| `retry` | Overall retry policy for network requests: `<retries>*immediately`, `<retries>*delay(<seconds>)`, or `<retries>*exp(<seconds>)` | No | immediate failure |
 | `content-json` | JSON API URL and path for dynamic content templating | No | - |
 | `time-zone` | Time zone for date/time placeholders | No | - |
 | `dry-run` | Dry run mode. If true, prints content but does not post | No | `false` |

@@ -85,6 +85,17 @@ If you're developing within the social-media-posters repository:
     log-level: "INFO"  # Optional
 ```
 
+## Overall Retry
+
+All actions and the `social` CLI support an optional overall retry policy for network requests.
+
+- Leave `retry`, `RETRY`, or `--retry` empty to fail immediately
+- `3*immediately` retries immediately up to 3 times
+- `3*delay(5)` retries with a fixed 5-second delay up to 3 times
+- `3*exp(2)` retries with exponential backoff starting at 2 seconds up to 3 times
+
+When `LOG_LEVEL=DEBUG` or GitHub Actions debug mode is enabled, retry attempts are logged.
+
 ## Inputs
 
 | Input | Description | Required | Default |
@@ -95,6 +106,7 @@ If you're developing within the social-media-posters repository:
 | `media-files` | Comma-separated list of image file paths (max 4) | No | - |
 | `link` | Link to include in the post | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
+| `retry` | Overall retry policy for network requests: `<retries>*immediately`, `<retries>*delay(<seconds>)`, or `<retries>*exp(<seconds>)` | No | immediate failure |
 | `content-json` | JSON API URL and path for dynamic content templating | No | - |
 | `time-zone` | Time zone for date/time placeholders | No | - |
 | `dry-run` | Dry run mode - print but don't post | No | false |

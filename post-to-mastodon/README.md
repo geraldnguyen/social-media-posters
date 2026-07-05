@@ -51,6 +51,17 @@ To use this action, you need:
    - Click **Submit**
    - Click on your newly created application and copy your **Your Access Token** (keep this token secret!)
 
+## Overall Retry
+
+All actions and the `social` CLI support an optional overall retry policy for network requests.
+
+- Leave `retry`, `RETRY`, or `--retry` empty to fail immediately
+- `3*immediately` retries immediately up to 3 times
+- `3*delay(5)` retries with a fixed 5-second delay up to 3 times
+- `3*exp(2)` retries with exponential backoff starting at 2 seconds up to 3 times
+
+When `LOG_LEVEL=DEBUG` or GitHub Actions debug mode is enabled, retry attempts are logged.
+
 ## Inputs
 
 | Input | Description | Required | Default |
@@ -62,6 +73,7 @@ To use this action, you need:
 | `media-files` | Comma-separated list of media files or URLs to attach | No | |
 | `scheduled-publish-time` | Schedule post for future publication. Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | |
 | `log-level` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) | No | `INFO` |
+| `retry` | Overall retry policy for network requests: `<retries>*immediately`, `<retries>*delay(<seconds>)`, or `<retries>*exp(<seconds>)` | No | immediate failure |
 | `content-json` | JSON API URL and path for dynamic content templating | No | |
 | `time-zone` | Time zone for date/time placeholders (e.g. UTC, UTC+7) | No | |
 | `dry-run` | Dry-run mode. If true, the content will be printed but not posted | No | `false` |

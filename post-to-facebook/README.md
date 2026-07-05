@@ -214,6 +214,17 @@ If you're developing within the social-media-posters repository:
     log-level: "INFO"  # Optional
 ```
 
+## Overall Retry
+
+All actions and the `social` CLI support an optional overall retry policy for network requests.
+
+- Leave `retry`, `RETRY`, or `--retry` empty to fail immediately
+- `3*immediately` retries immediately up to 3 times
+- `3*delay(5)` retries with a fixed 5-second delay up to 3 times
+- `3*exp(2)` retries with exponential backoff starting at 2 seconds up to 3 times
+
+When `LOG_LEVEL=DEBUG` or GitHub Actions debug mode is enabled, retry attempts are logged.
+
 ## Inputs
 
 | Input | Description | Required | Default |
@@ -228,6 +239,7 @@ If you're developing within the social-media-posters repository:
 | `post-title` | Title for video/reel posts (v1.22.0+, only used for video files) | No | - |
 | `scheduled-publish-time` | Schedule post for future publication (posts only, not supported for comments). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m") | No | - |
 | `log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | INFO |
+| `retry` | Overall retry policy for network requests: `<retries>*immediately`, `<retries>*delay(<seconds>)`, or `<retries>*exp(<seconds>)` | No | immediate failure |
 | `save-response` | Save response summary to `facebook-response.json` (`success`, `error`, `post_id`, `post_url`) | No | false |
 
 *`page-id` is required when creating a new post, but not required when posting a comment (use `fb-post-id` instead).

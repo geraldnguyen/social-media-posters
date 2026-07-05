@@ -34,6 +34,9 @@ inputs:
     description: 'Logging level (DEBUG, INFO, WARNING, ERROR)'
     required: false
     default: 'INFO'
+  retry:
+    description: 'Overall retry policy for network requests: <retries>*immediately, <retries>*delay(<seconds>), or <retries>*exp(<seconds>). Leave empty to fail immediately.'
+    required: false
   content-json:
     description: 'JSON API URL and path for dynamic content templating (e.g. https://example.com/data.json | items[RANDOM])'
     required: false
@@ -96,6 +99,7 @@ runs:
         POST_TITLE: ${{ inputs.post-title }}
         TEXT_FORMAT_PRESET_ID: ${{ inputs.text-format-preset-id }}
         LOG_LEVEL: ${{ inputs.log-level }}
+        RETRY: ${{ inputs.retry }}
         CONTENT_JSON: ${{ inputs.content-json }}
         TIME_ZONE: ${{ inputs.time-zone }}
         DRY_RUN: ${{ inputs.dry-run }}
