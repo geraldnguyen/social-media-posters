@@ -186,6 +186,12 @@ def configure_requests_retry() -> Optional[Dict[str, Any]]:
     return retry_config
 
 
+def reset_requests_retry_for_tests() -> None:
+    """Reset active retry configuration for test isolation."""
+    global _active_retry_config
+    _active_retry_config = None
+
+
 def load_json_config() -> Optional[Dict[str, Any]]:
     """
     Load configuration from a JSON file if available.

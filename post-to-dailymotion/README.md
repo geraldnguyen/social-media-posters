@@ -64,7 +64,7 @@ You need to set up Dailymotion API access:
     description: "A detailed description of my video"
 ```
 
-### Overall Retry
+## Overall Retry
 
 All actions and the `social` CLI support an optional overall retry policy for network requests.
 

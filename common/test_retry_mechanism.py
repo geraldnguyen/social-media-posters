@@ -11,11 +11,11 @@ import requests
 # Add common module to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-import social_media_utils
 from social_media_utils import (
     _perform_request_with_retry,
     configure_requests_retry,
     parse_retry_spec,
+    reset_requests_retry_for_tests,
 )
 
 
@@ -24,7 +24,7 @@ class TestRetrySpecParsing(unittest.TestCase):
 
     def tearDown(self):
         os.environ.pop("RETRY", None)
-        social_media_utils._active_retry_config = None
+        reset_requests_retry_for_tests()
 
     def test_parse_retry_spec_empty_returns_none(self):
         self.assertIsNone(parse_retry_spec(""))
