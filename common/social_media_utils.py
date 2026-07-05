@@ -25,7 +25,7 @@ _requests_retry_patched = False
 _active_retry_config = None
 
 
-def parse_retry_spec(retry_value: str) -> Optional[Dict[str, Any]]:
+def parse_retry_spec(retry_value: Optional[str]) -> Optional[Dict[str, Any]]:
     """Parse RETRY config into a normalized retry policy."""
     if retry_value is None:
         return None

@@ -60,7 +60,7 @@ When `LOG_LEVEL=DEBUG` or GitHub Actions debug mode is enabled, retry attempts a
 | `video-publish-at` | No | — | Schedule future publishing. See [Scheduling](#scheduling). |
 | `chunk-size-mb` | No | `10` | Upload chunk size in MB (5–64). Increase for better performance on fast connections. |
 | `log-level` | No | `INFO` | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR` |
-| `retry` | Overall retry policy for network requests: `<retries>*immediately`, `<retries>*delay(<seconds>)`, or `<retries>*exp(<seconds>)` | No | immediate failure |
+| `retry` | No | — | Overall retry policy for network requests: `<retries>*immediately`, `<retries>*delay(<seconds>)`, or `<retries>*exp(<seconds>)`. Leave empty to fail immediately. |
 | `content-json` | No | — | URL (with optional JSON path) for dynamic content templating. |
 | `time-zone` | No | `UTC` | Time zone for built-in date/time placeholders. |
 | `dry-run` | No | `false` | Print what would be posted without calling the TikTok API. |
