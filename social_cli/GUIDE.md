@@ -104,6 +104,22 @@ You can also enable this behavior via environment variable:
 export SAVE_RESPONSE=true
 ```
 
+## Overall Retry Policy
+
+Use `--retry` with any command to enable overall network request retries:
+
+```bash
+social x --post-content "Hello" --retry "3*exp(2)"
+```
+
+Supported formats:
+
+- `<retries>*immediately`
+- `<retries>*delay(<seconds>)`
+- `<retries>*exp(<seconds>)`
+
+If `--retry` is omitted, requests fail immediately. You can also set the same policy through the `RETRY` environment variable or JSON input config. Retry attempts are logged in `DEBUG` mode, including GitHub Actions debug mode.
+
 ## Platform Setup
 
 ### X (Twitter)

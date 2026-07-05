@@ -11,7 +11,10 @@ from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+repo_root = Path(__file__).parent.parent
+sys.path.insert(0, str(repo_root))
+for script_dir in repo_root.glob('post-to-*'):
+    sys.path.insert(0, str(script_dir))
 
 from social_cli.cli import main, __version__
 
@@ -25,7 +28,7 @@ class TestCLI(unittest.TestCase):
         # Clear environment variables that might interfere with tests
         self.env_backup = {}
         env_vars_to_clear = [
-            'POST_CONTENT', 'DRY_RUN', 'LOG_LEVEL', 'INPUT_FILE',
+            'POST_CONTENT', 'DRY_RUN', 'LOG_LEVEL', 'RETRY', 'INPUT_FILE',
             'SAVE_RESPONSE',
             'X_API_KEY', 'X_API_SECRET', 'X_ACCESS_TOKEN', 'X_ACCESS_TOKEN_SECRET',
             'FB_PAGE_ID', 'FB_ACCESS_TOKEN', 'IG_USER_ID', 'IG_ACCESS_TOKEN',
@@ -72,6 +75,7 @@ class TestCLI(unittest.TestCase):
         self.assertIn('--post-content', result.output)
         self.assertIn('--dry-run', result.output)
         self.assertIn('--save-response', result.output)
+        self.assertIn('--retry', result.output)
         self.assertIn('GitHub Actions debug mode', result.output)
     
     def test_facebook_help(self):
@@ -228,6 +232,7 @@ class TestCLI(unittest.TestCase):
                 '--content-json', 'https://api.example.com/data.json',
                 '--media-files', 'image1.jpg,image2.png',
                 '--max-download-size-mb', '10',
+                '--retry', '3*exp(2)',
                 '--save-response'
             ])
             
@@ -235,6 +240,7 @@ class TestCLI(unittest.TestCase):
             self.assertEqual(os.environ.get('CONTENT_JSON'), 'https://api.example.com/data.json')
             self.assertEqual(os.environ.get('MEDIA_FILES'), 'image1.jpg,image2.png')
             self.assertEqual(os.environ.get('MAX_DOWNLOAD_SIZE_MB'), '10')
+            self.assertEqual(os.environ.get('RETRY'), '3*exp(2)')
             self.assertEqual(os.environ.get('SAVE_RESPONSE'), 'true')
     
     def test_missing_credentials_error(self):

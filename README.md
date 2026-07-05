@@ -31,6 +31,24 @@ Saved response payload format:
 }
 ```
 
+## Overall Retry Policy
+
+All actions and the `social` CLI support an optional overall retry policy for network requests.
+
+- Leave `RETRY`, the action `retry` input, or the CLI `--retry` option empty to fail immediately
+- `<retries>*immediately` retries immediately up to the specified number of retries
+- `<retries>*delay(<seconds>)` retries with a fixed delay
+- `<retries>*exp(<seconds>)` retries with exponential backoff starting from the given base delay
+
+Examples:
+
+```bash
+export RETRY="3*exp(2)"
+social x --post-content "Hello" --retry "2*delay(5)"
+```
+
+Retry attempts are logged in `DEBUG` mode, including when GitHub Actions debug logging is enabled.
+
 ## Resolving Import Errors for Common Utilities
 
 If you encounter import errors such as `Import "social_media_utils" could not be resolved` when running or editing the post-to-* scripts, follow these steps to ensure Python and your editor can find the `common` utilities:

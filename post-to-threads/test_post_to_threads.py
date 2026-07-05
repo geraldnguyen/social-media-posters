@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for post_to_threads module, specifically link validation and retry logic.
+Unit tests for post_to_threads module, specifically link validation and publishing behavior.
 """
 
 import sys
@@ -200,12 +200,11 @@ class TestThreadsAPICreateMediaContainer(unittest.TestCase):
         self.assertEqual(data.get('media_type'), 'IMAGE')
 
 
-class TestThreadsAPIPublishMediaRetry(unittest.TestCase):
-    """Test cases for ThreadsAPI.publish_media retry logic."""
+class TestThreadsAPIPublishMedia(unittest.TestCase):
+    """Test cases for ThreadsAPI.publish_media."""
     
     @patch('post_to_threads.requests.post')
-    @patch('post_to_threads.time.sleep')
-    def test_publish_success_first_attempt(self, mock_sleep, mock_post):
+    def test_publish_success_first_attempt(self, mock_post):
         """Test publish succeeds on first attempt."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -217,79 +216,21 @@ class TestThreadsAPIPublishMediaRetry(unittest.TestCase):
         
         self.assertEqual(result, "thread123")
         self.assertEqual(mock_post.call_count, 1)
-        mock_sleep.assert_not_called()
     
     @patch('post_to_threads.requests.post')
-    @patch('post_to_threads.time.sleep')
-    def test_publish_retries_on_transient_error(self, mock_sleep, mock_post):
-        """Test publish retries on transient error (is_transient=true)."""
-        # First call: transient error
-        # Second call: success
+    def test_publish_raises_http_error_on_failure(self, mock_post):
+        """Test publish surfaces HTTP errors; global retry is handled elsewhere."""
         mock_response_error = MagicMock()
         mock_response_error.status_code = 400
         mock_response_error.json.return_value = {
             "error": {
                 "message": "Fatal",
-                "is_transient": True,
                 "error_user_msg": "Temporary issue"
             }
         }
+        mock_response_error.text = '{"error":{"message":"Fatal"}}'
         mock_response_error.raise_for_status.side_effect = requests.HTTPError("400 Error")
-        
-        mock_response_success = MagicMock()
-        mock_response_success.status_code = 200
-        mock_response_success.json.return_value = {"id": "thread123"}
-        
-        mock_post.side_effect = [mock_response_error, mock_response_success]
-        
-        api = ThreadsAPI("test_token")
-        result = api.publish_media(user_id="user123", creation_id="create456")
-        
-        self.assertEqual(result, "thread123")
-        self.assertEqual(mock_post.call_count, 2)
-        self.assertEqual(mock_sleep.call_count, 1)
-        # Verify exponential backoff: 2 * (2^0) = 2
-        mock_sleep.assert_called_with(2)
-    
-    @patch('post_to_threads.requests.post')
-    @patch('post_to_threads.time.sleep')
-    def test_publish_retries_on_server_error_503(self, mock_sleep, mock_post):
-        """Test publish retries on server error (503)."""
-        mock_response_error = MagicMock()
-        mock_response_error.status_code = 503
-        mock_response_error.json.return_value = {
-            "error": {"is_transient": False}
-        }
-        mock_response_error.raise_for_status.side_effect = requests.HTTPError("503 Error")
-        
-        mock_response_success = MagicMock()
-        mock_response_success.status_code = 200
-        mock_response_success.json.return_value = {"id": "thread123"}
-        
-        mock_post.side_effect = [mock_response_error, mock_response_success]
-        
-        api = ThreadsAPI("test_token")
-        result = api.publish_media(user_id="user123", creation_id="create456")
-        
-        self.assertEqual(result, "thread123")
-        self.assertEqual(mock_post.call_count, 2)
-    
-    @patch('post_to_threads.requests.post')
-    @patch('post_to_threads.time.sleep')
-    def test_publish_fails_on_non_transient_error(self, mock_sleep, mock_post):
-        """Test publish fails immediately on non-transient error."""
-        mock_response = MagicMock()
-        mock_response.status_code = 400
-        mock_response.json.return_value = {
-            "error": {
-                "message": "Invalid Link Attachment",
-                "is_transient": False,
-                "error_user_msg": "The post has an invalid link."
-            }
-        }
-        mock_response.text = '{"error": {"is_transient": false}}'
-        mock_response.raise_for_status.side_effect = requests.HTTPError("400 Error")
-        mock_post.return_value = mock_response
+        mock_post.return_value = mock_response_error
         
         api = ThreadsAPI("test_token")
         
@@ -297,30 +238,6 @@ class TestThreadsAPIPublishMediaRetry(unittest.TestCase):
             api.publish_media(user_id="user123", creation_id="create456")
         
         self.assertEqual(mock_post.call_count, 1)
-        mock_sleep.assert_not_called()
-    
-    @patch('post_to_threads.requests.post')
-    @patch('post_to_threads.time.sleep')
-    def test_publish_max_retries_exhausted(self, mock_sleep, mock_post):
-        """Test publish fails after exhausting max retries."""
-        mock_response = MagicMock()
-        mock_response.status_code = 503
-        mock_response.json.return_value = {
-            "error": {"is_transient": False}
-        }
-        mock_response.text = 'error'
-        mock_response.raise_for_status.side_effect = requests.HTTPError("503 Error")
-        mock_post.return_value = mock_response
-        
-        api = ThreadsAPI("test_token")
-        
-        with self.assertRaises(requests.HTTPError):
-            api.publish_media(user_id="user123", creation_id="create456", max_retries=3)
-        
-        # Should retry 3 times (attempts 0, 1, 2)
-        self.assertEqual(mock_post.call_count, 3)
-        # Should sleep 2 times (between attempts)
-        self.assertEqual(mock_sleep.call_count, 2)
 
 
 if __name__ == '__main__':

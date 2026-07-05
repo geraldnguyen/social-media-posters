@@ -7,7 +7,8 @@ import sys
 import logging
 import json
 import re
-from typing import Optional, Dict, Any
+import time
+from typing import Optional, Dict, Any, Callable
 import requests
 from pathlib import Path
 
@@ -19,6 +20,176 @@ logger = logging.getLogger(__name__)
 # Global cache for JSON config
 _json_config_cache: Optional[Dict[str, Any]] = None
 _json_config_loaded = False
+_original_requests_session_request = None
+_requests_retry_patched = False
+_active_retry_config = None
+
+
+def parse_retry_spec(retry_value: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Parse RETRY config into a normalized retry policy."""
+    if retry_value is None:
+        return None
+
+    retry_value = retry_value.strip()
+    if not retry_value:
+        return None
+
+    match = re.fullmatch(
+        r"(?i)\s*(\d+)\s*\*\s*(immediately|delay\s*\(\s*(\d+)\s*\)|exp\s*\(\s*(\d+)\s*\))\s*",
+        retry_value,
+    )
+    if not match:
+        raise ValueError(
+            "Invalid RETRY format. Expected one of: "
+            "'<retries>*immediately', '<retries>*delay(<seconds>)', "
+            "'<retries>*exp(<seconds>)'."
+        )
+
+    retries = int(match.group(1))
+    strategy_token = match.group(2).lower()
+
+    if retries < 0:
+        raise ValueError("RETRY count must be zero or greater.")
+
+    if strategy_token == "immediately":
+        return {
+            "raw": retry_value,
+            "retries": retries,
+            "strategy": "immediately",
+            "base_delay_seconds": 0,
+        }
+
+    if strategy_token.startswith("delay"):
+        delay_seconds = int(match.group(3))
+        return {
+            "raw": retry_value,
+            "retries": retries,
+            "strategy": "delay",
+            "base_delay_seconds": delay_seconds,
+        }
+
+    base_delay_seconds = int(match.group(4))
+    return {
+        "raw": retry_value,
+        "retries": retries,
+        "strategy": "exp",
+        "base_delay_seconds": base_delay_seconds,
+    }
+
+
+def _should_retry_response(response: requests.Response) -> bool:
+    """Return True when an HTTP response should be retried."""
+    return response.status_code in {408, 425, 429, 500, 502, 503, 504}
+
+
+def _should_retry_exception(exc: Exception) -> bool:
+    """Return True when a request exception is retryable."""
+    return isinstance(
+        exc,
+        (
+            requests.Timeout,
+            requests.ConnectionError,
+            requests.HTTPError,
+        ),
+    )
+
+
+def _compute_retry_delay_seconds(retry_config: Dict[str, Any], retry_index: int) -> int:
+    """Compute delay before the next retry."""
+    strategy = retry_config["strategy"]
+    base_delay = retry_config["base_delay_seconds"]
+    if strategy == "immediately":
+        return 0
+    if strategy == "delay":
+        return base_delay
+    return base_delay * (2 ** retry_index)
+
+
+def _perform_request_with_retry(
+    send_func: Callable[..., requests.Response],
+    method: str,
+    url: str,
+    kwargs: Dict[str, Any],
+    retry_config: Optional[Dict[str, Any]],
+) -> requests.Response:
+    """Execute a request with the configured retry policy."""
+    if not retry_config or retry_config.get("retries", 0) <= 0:
+        return send_func(method, url, **kwargs)
+
+    max_attempts = retry_config["retries"] + 1
+    method_upper = (method or "").upper()
+
+    for attempt_index in range(max_attempts):
+        attempt_number = attempt_index + 1
+        try:
+            response = send_func(method, url, **kwargs)
+            if attempt_index < retry_config["retries"] and _should_retry_response(response):
+                delay_seconds = _compute_retry_delay_seconds(retry_config, attempt_index)
+                logger.warning(
+                    "Request %s %s failed with status %s (attempt %s/%s). Retrying%s.",
+                    method_upper,
+                    url,
+                    response.status_code,
+                    attempt_number,
+                    max_attempts,
+                    f" in {delay_seconds} second(s)" if delay_seconds > 0 else " immediately",
+                )
+                if delay_seconds > 0:
+                    time.sleep(delay_seconds)
+                continue
+            return response
+        except requests.RequestException as exc:
+            if attempt_index >= retry_config["retries"] or not _should_retry_exception(exc):
+                raise
+
+            delay_seconds = _compute_retry_delay_seconds(retry_config, attempt_index)
+            logger.warning(
+                "Request %s %s raised %s (attempt %s/%s). Retrying%s.",
+                method_upper,
+                url,
+                exc.__class__.__name__,
+                attempt_number,
+                max_attempts,
+                f" in {delay_seconds} second(s)" if delay_seconds > 0 else " immediately",
+            )
+            if delay_seconds > 0:
+                time.sleep(delay_seconds)
+
+    return send_func(method, url, **kwargs)
+
+
+def configure_requests_retry() -> Optional[Dict[str, Any]]:
+    """Configure global requests retry handling from RETRY."""
+    global _original_requests_session_request, _requests_retry_patched, _active_retry_config
+
+    retry_value = get_optional_env_var("RETRY", "")
+    retry_config = parse_retry_spec(retry_value)
+    _active_retry_config = retry_config
+
+    if not _requests_retry_patched:
+        _original_requests_session_request = requests.sessions.Session.request
+
+        def _request_with_configured_retry(session, method, url, **kwargs):
+            return _perform_request_with_retry(
+                lambda req_method, req_url, **req_kwargs: _original_requests_session_request(
+                    session, req_method, req_url, **req_kwargs
+                ),
+                method,
+                url,
+                kwargs,
+                _active_retry_config,
+            )
+
+        requests.sessions.Session.request = _request_with_configured_retry
+        _requests_retry_patched = True
+
+    return retry_config
+
+
+def reset_requests_retry_for_tests() -> None:
+    """Reset active retry configuration for test isolation."""
+    global _active_retry_config
+    _active_retry_config = None
 
 
 def load_json_config() -> Optional[Dict[str, Any]]:
@@ -79,6 +250,18 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
     )
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
+    retry_config = configure_requests_retry()
+    if retry_config:
+        logger.info(
+            "Configured overall retry policy: %s retry/retries using %s%s",
+            retry_config["retries"],
+            retry_config["strategy"],
+            f"({retry_config['base_delay_seconds']}s)"
+            if retry_config["strategy"] != "immediately"
+            else "",
+        )
+    else:
+        logger.debug("No overall retry policy configured; requests will fail immediately.")
     return logger
 
 
