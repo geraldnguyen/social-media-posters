@@ -17,7 +17,6 @@ except ImportError:
     pass  # python-dotenv is not installed; skip loading .env
 import logging
 import requests
-import time
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -146,61 +145,40 @@ class ThreadsAPI:
             logger.error(f"Response content: {response.text}")
             raise
     
-    def publish_media(self, user_id, creation_id, max_retries=3, base_delay=2):
-        """Publish the media container with retry logic for transient failures.
-        
-        Args:
-            user_id: Threads user ID
-            creation_id: Creation ID to publish
-            max_retries: Maximum number of retry attempts
-            base_delay: Base delay in seconds for exponential backoff
-        """
+    def publish_media(self, user_id, creation_id):
+        """Publish the media container."""
         url = f"{self.base_url}/{user_id}/threads_publish"
         
         data = {
             "creation_id": creation_id,
             "access_token": self.access_token
         }
-        
-        for attempt in range(max_retries):
+
+        logger.info(f"Making API request to publish media: POST {url}")
+        logger.info(f"Publishing creation_id: {creation_id}")
+        response = requests.post(url, data=data)
+        logger.info(f"API response status: {response.status_code}")
+
+        try:
+            response.raise_for_status()
+            result = response.json()
+            logger.info(f"Media published successfully: {result.get('id')}")
+            return result["id"]
+        except requests.HTTPError as http_err:
             try:
-                logger.info(f"Making API request to publish media (attempt {attempt + 1}/{max_retries}): POST {url}")
-                logger.info(f"Publishing creation_id: {creation_id}")
-                response = requests.post(url, data=data)
-                logger.info(f"API response status: {response.status_code}")
-                
-                response.raise_for_status()
-                result = response.json()
-                logger.info(f"Media published successfully: {result.get('id')}")
-                return result["id"]
-                
-            except requests.HTTPError as http_err:
-                try:
-                    error_data = response.json()
-                    is_transient = error_data.get('error', {}).get('is_transient', False)
-                    error_msg = error_data.get('error', {}).get('error_user_msg', str(http_err))
-                except (ValueError, KeyError):
-                    is_transient = False
-                    error_msg = str(http_err)
-                
-                logger.error(f"HTTP error publishing media: {http_err}")
-                logger.error(f"Error message: {error_msg}")
-                logger.error(f"Response content: {response.text}")
-                
-                # Retry on transient errors or on certain status codes
-                if attempt < max_retries - 1 and (is_transient or response.status_code in [429, 500, 502, 503, 504]):
-                    delay = base_delay * (2 ** attempt)  # Exponential backoff
-                    logger.warning(f"Transient error detected. Retrying in {delay} seconds...")
-                    time.sleep(delay)
-                    continue
-                else:
-                    # Non-transient error or final attempt
-                    raise
-                    
-            except ValueError as json_err:
-                logger.error(f"Invalid JSON response: {json_err}")
-                logger.error(f"Response content: {response.text}")
-                raise
+                error_data = response.json()
+                error_msg = error_data.get('error', {}).get('error_user_msg', str(http_err))
+            except (ValueError, KeyError):
+                error_msg = str(http_err)
+
+            logger.error(f"HTTP error publishing media: {http_err}")
+            logger.error(f"Error message: {error_msg}")
+            logger.error(f"Response content: {response.text}")
+            raise
+        except ValueError as json_err:
+            logger.error(f"Invalid JSON response: {json_err}")
+            logger.error(f"Response content: {response.text}")
+            raise
     
     def get_thread_info(self, thread_id):
         """Get thread information."""
