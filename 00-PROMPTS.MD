@@ -535,6 +535,18 @@ The text_format_preset_id as an action input or CLI option
 - Support local-to-tiktok video upload if possible
 - Document all limitation e.g. video lengths, no link in descriptions in the folder README file.
 
+## v1.36.0 - Add overall retry mechanism
+
+Support a retry option, both in the CLI and github action.
+
+The following options are available:
+- If not specified, the network request must fail immediately
+- If `{number of retries}*immediately`, retry immediately, up to the specified number of retries
+- If `{number of retries}*delay(<number of seconds>)`: retry after the specified number of seconds, up to the specified number of retries
+- If `{number of retries}*exp(number of seconds)`: retry with exponential strategy from the based delay, up to the specified number of retries.
+
+This retry option apply to ALL post-to-<social> available, current and future.
+
 
 Expectation:
 - Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅
