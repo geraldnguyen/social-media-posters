@@ -319,7 +319,6 @@ def post_to_threads():
         
         # Wait a moment before publishing (API recommendation)
         logger.info("Waiting 2 seconds before publishing (API recommendation)")
-        time.sleep(2)
         
         # Publish thread
         logger.info("Publishing thread...")
@@ -357,7 +356,6 @@ def post_to_threads():
                     text=link,
                     reply_to_id=thread_id
                 )
-                time.sleep(2)
                 comment_id = threads_api.publish_media(user_id, comment_creation_id)
                 logger.info(f"Link reply posted successfully. Comment ID: {comment_id}")
                 if pin_link_comment:
