@@ -5,7 +5,11 @@ Post content to Threads using the Threads API.
 
 import os
 import sys
+import logging
+import requests
+import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Load environment variables from a local .env file if present (for local development)
 try:
