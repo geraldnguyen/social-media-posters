@@ -547,6 +547,10 @@ The following options are available:
 
 This retry option apply to ALL post-to-<social> available, current and future.
 
+## v1.37.0 - Debug and fix tiktok posting
+
+Fix in post_to_tiktok.py: Before building source_info, compute effective_chunk_size = min(chunk_size, video_size). This ensures the declared chunk size never exceeds the actual file size — the same effective value is used for both the
+
 
 Expectation:
 - Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅
