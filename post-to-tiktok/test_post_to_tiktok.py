@@ -679,7 +679,31 @@ class TestPostToTikTok(unittest.TestCase):
 
 
 class TestTikTokAPIChunkSizeConstraints(unittest.TestCase):
-    """Tests that chunk_size_mb is clamped to valid range."""
+    """Tests that chunk_size_mb is clamped to valid range and to video_size."""
+
+    def _base_env(self, overrides=None):
+        base = {
+            "TIKTOK_ACCESS_TOKEN": "token",
+            "VIDEO_FILE": "/fake/video.mp4",
+            "POST_CONTENT": "Test",
+            "VIDEO_PRIVACY_LEVEL": "SELF_ONLY",
+            "TIKTOK_DISABLE_DUET": "false",
+            "TIKTOK_DISABLE_COMMENT": "false",
+            "TIKTOK_DISABLE_STITCH": "false",
+            "TIKTOK_BRAND_CONTENT": "false",
+            "TIKTOK_BRAND_ORGANIC": "false",
+            "TIKTOK_IS_AIGC": "false",
+            "TIKTOK_COVER_TIMESTAMP_MS": "1000",
+            "VIDEO_PUBLISH_AT": "",
+            "TIKTOK_CHUNK_SIZE_MB": "10",
+            "LOG_LEVEL": "INFO",
+            "DRY_RUN": "false",
+            "SAVE_RESPONSE": "false",
+            "CONTENT_JSON": "",
+        }
+        if overrides:
+            base.update(overrides)
+        return base
 
     @patch('post_to_tiktok.TikTokAPI.check_publish_status')
     @patch('post_to_tiktok.TikTokAPI.upload_video_chunks')
@@ -695,41 +719,67 @@ class TestTikTokAPIChunkSizeConstraints(unittest.TestCase):
         mock_getsize, mock_creator_info, mock_init, mock_upload, mock_status
     ):
         """Chunk size below 5 MB is clamped to 5 MB."""
-        env = {
-            "TIKTOK_ACCESS_TOKEN": "token",
-            "VIDEO_FILE": "/fake/video.mp4",
-            "POST_CONTENT": "Test",
-            "VIDEO_PRIVACY_LEVEL": "SELF_ONLY",
-            "TIKTOK_DISABLE_DUET": "false",
-            "TIKTOK_DISABLE_COMMENT": "false",
-            "TIKTOK_DISABLE_STITCH": "false",
-            "TIKTOK_BRAND_CONTENT": "false",
-            "TIKTOK_BRAND_ORGANIC": "false",
-            "TIKTOK_IS_AIGC": "false",
-            "TIKTOK_COVER_TIMESTAMP_MS": "1000",
-            "VIDEO_PUBLISH_AT": "",
-            "TIKTOK_CHUNK_SIZE_MB": "1",  # below minimum
-            "LOG_LEVEL": "INFO",
-            "DRY_RUN": "false",
-            "SAVE_RESPONSE": "false",
-            "CONTENT_JSON": "",
-        }
+        env = self._base_env({"TIKTOK_CHUNK_SIZE_MB": "1", "VIDEO_FILE": "/fake/video.mp4"})
         mock_get_req.side_effect = lambda k: {"VIDEO_FILE": "/fake/video.mp4"}[k]
         mock_get_opt.side_effect = lambda k, d="": env.get(k, d)
         mock_template.return_value = ("Test",)
         mock_exists.return_value = True
-        mock_getsize.return_value = 1024
+        # File is 6 MB (larger than the clamped-up 5 MB minimum, so effective_chunk = 5 MB)
+        mock_getsize.return_value = 6 * 1024 * 1024
         mock_creator_info.return_value = {}
         mock_init.return_value = {"publish_id": "p1", "upload_url": "https://u"}
         mock_status.return_value = {"status": "PUBLISH_COMPLETE"}
 
         post_to_tiktok()
 
-        # Check that upload_video_chunks was called with chunk_size >= 5 MB
+        # chunk_size passed to upload_video_chunks should be clamped to the effective value
         mock_upload.assert_called_once()
         used_chunk_size = mock_upload.call_args[0][2] if len(mock_upload.call_args[0]) >= 3 else \
                           mock_upload.call_args[1].get("chunk_size", 0)
         self.assertGreaterEqual(used_chunk_size, 5 * 1024 * 1024)
+
+    @patch('post_to_tiktok.TikTokAPI.check_publish_status')
+    @patch('post_to_tiktok.TikTokAPI.upload_video_chunks')
+    @patch('post_to_tiktok.TikTokAPI.init_video_upload')
+    @patch('post_to_tiktok.TikTokAPI.query_creator_info')
+    @patch('post_to_tiktok.os.path.getsize')
+    @patch('post_to_tiktok.os.path.exists')
+    @patch('post_to_tiktok.get_optional_env_var')
+    @patch('post_to_tiktok.get_required_env_var')
+    @patch('post_to_tiktok.process_templated_contents')
+    def test_chunk_size_capped_to_video_size_when_file_is_smaller(
+        self, mock_template, mock_get_req, mock_get_opt, mock_exists,
+        mock_getsize, mock_creator_info, mock_init, mock_upload, mock_status
+    ):
+        """When the video file is smaller than the configured chunk size, chunk_size
+        must be capped to video_size so TikTok does not reject the request with
+        'The chunk size is invalid'."""
+        # 4 MB file with 10 MB configured chunk — should cap chunk_size to 4 MB
+        video_size = 4 * 1024 * 1024
+        env = self._base_env({"TIKTOK_CHUNK_SIZE_MB": "10"})
+        mock_get_req.side_effect = lambda k: {"VIDEO_FILE": "/fake/video.mp4"}[k]
+        mock_get_opt.side_effect = lambda k, d="": env.get(k, d)
+        mock_template.return_value = ("Test",)
+        mock_exists.return_value = True
+        mock_getsize.return_value = video_size
+        mock_creator_info.return_value = {}
+        mock_init.return_value = {"publish_id": "p_small", "upload_url": "https://u"}
+        mock_status.return_value = {"status": "PUBLISH_COMPLETE"}
+
+        post_to_tiktok()
+
+        # Verify source_info passed to init has chunk_size == video_size
+        call_args = mock_init.call_args
+        source_info = call_args[0][1] if len(call_args[0]) >= 2 else call_args[1]["source_info"]
+        self.assertEqual(source_info["chunk_size"], video_size,
+                         "chunk_size in source_info must equal video_size when file < configured chunk size")
+        self.assertEqual(source_info["total_chunk_count"], 1)
+
+        # And the same effective size must be passed to upload_video_chunks
+        mock_upload.assert_called_once()
+        used_chunk_size = mock_upload.call_args[0][2] if len(mock_upload.call_args[0]) >= 3 else \
+                          mock_upload.call_args[1].get("chunk_size", 0)
+        self.assertEqual(used_chunk_size, video_size)
 
 
 if __name__ == "__main__":

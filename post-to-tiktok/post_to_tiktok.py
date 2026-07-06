@@ -482,11 +482,19 @@ def post_to_tiktok() -> None:
                 "video_url": video_file,
             }
         else:
-            total_chunk_count = math.ceil(video_size / chunk_size)
+            # TikTok requires chunk_size <= video_size; cap it when the file is
+            # smaller than the configured chunk size (common for short clips).
+            effective_chunk_size = min(chunk_size, video_size)
+            if effective_chunk_size != chunk_size:
+                logger.debug(
+                    f"Adjusted chunk_size from {chunk_size:,} to {effective_chunk_size:,} bytes "
+                    f"because the video ({video_size:,} bytes) is smaller than the configured chunk size."
+                )
+            total_chunk_count = math.ceil(video_size / effective_chunk_size)
             source_info = {
                 "source": "FILE_UPLOAD",
                 "video_size": video_size,
-                "chunk_size": chunk_size,
+                "chunk_size": effective_chunk_size,
                 "total_chunk_count": total_chunk_count,
             }
 
@@ -515,6 +523,7 @@ def post_to_tiktok() -> None:
         if not use_pull_from_url:
             dry_run_request["video_size_bytes"] = video_size
             dry_run_request["total_chunk_count"] = source_info.get("total_chunk_count")
+            dry_run_request["effective_chunk_size_bytes"] = source_info.get("chunk_size")
             dry_run_request["chunk_size_mb"] = chunk_size_mb
 
         dry_run_guard("TikTok", description or "(no description)", [local_video_file], dry_run_request)
@@ -551,8 +560,9 @@ def post_to_tiktok() -> None:
                 raise RuntimeError(
                     "TikTok video init did not return an upload_url for FILE_UPLOAD source."
                 )
-            # Upload video in chunks
-            api.upload_video_chunks(upload_url, local_video_file, chunk_size)
+            # Upload video in chunks using the same effective chunk size that was
+            # declared to the TikTok init endpoint.
+            api.upload_video_chunks(upload_url, local_video_file, source_info["chunk_size"])
             logger.info("All chunks uploaded. Waiting for TikTok to process the video...")
         else:
             logger.info("PULL_FROM_URL source — TikTok is downloading the video. Waiting for processing...")
