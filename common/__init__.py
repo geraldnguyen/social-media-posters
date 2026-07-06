@@ -1,3 +1,3 @@
 """Common utilities for social media posting actions."""
 
-__version__ = "1.36.0"
+__version__ = "1.37.0"
