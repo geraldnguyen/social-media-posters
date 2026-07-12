@@ -23,6 +23,8 @@ _json_config_loaded = False
 _original_requests_session_request = None
 _requests_retry_patched = False
 _active_retry_config = None
+_retryable_http_status_codes = {408, 425, 429, 500, 502, 503, 504}
+_retryable_meta_error_subcodes = {4279009}
 
 
 def parse_retry_spec(retry_value: Optional[str]) -> Optional[Dict[str, Any]]:
@@ -79,7 +81,31 @@ def parse_retry_spec(retry_value: Optional[str]) -> Optional[Dict[str, Any]]:
 
 def _should_retry_response(response: requests.Response) -> bool:
     """Return True when an HTTP response should be retried."""
-    return response.status_code in {408, 425, 429, 500, 502, 503, 504}
+    if response.status_code in _retryable_http_status_codes:
+        return True
+
+    # Some APIs (including Threads) can return transient failures as HTTP 400.
+    # Detect known transient shapes so global RETRY policy can still apply.
+    if response.status_code == 400:
+        try:
+            response_data = response.json()
+        except ValueError:
+            return False
+
+        if not isinstance(response_data, dict):
+            return False
+
+        error_data = response_data.get("error")
+        if not isinstance(error_data, dict):
+            return False
+
+        if error_data.get("is_transient") is True:
+            return True
+
+        if error_data.get("error_subcode") in _retryable_meta_error_subcodes:
+            return True
+
+    return False
 
 
 def _should_retry_exception(exc: Exception) -> bool:

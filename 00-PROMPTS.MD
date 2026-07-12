@@ -551,6 +551,28 @@ This retry option apply to ALL post-to-<social> available, current and future.
 
 Fix in post_to_tiktok.py: Before building source_info, compute effective_chunk_size = min(chunk_size, video_size). This ensures the declared chunk size never exceeds the actual file size — the same effective value is used for both the
 
+## v1.38.0 - Debug and fix Thread retry
+
+- Root cause #1: `post_to_threads.py` logged "Waiting 2 seconds before publishing" but did not actually call `time.sleep(2)`, causing a race where `threads_publish` could run before the container is fully available.
+- Root cause #2: The global retry helper only retried a fixed status-code list (`408/425/429/5xx`). The Threads transient failure shape (`HTTP 400` with `error_subcode=4279009`, "Media Not Found") was not classified as retryable.
+
+### Fixes implemented
+
+- Added the missing `time.sleep(2)` in `post-to-threads/post_to_threads.py` before `threads_publish`.
+- Updated `common/social_media_utils.py` retry classification:
+  - Keep retrying on existing retryable status codes.
+  - Also retry on `HTTP 400` when API error payload indicates a transient condition:
+    - `error.is_transient == true`, or
+    - known transient Meta subcode `error_subcode == 4279009`.
+
+### Tests added/updated
+
+- Added unit test in `common/test_retry_mechanism.py` to verify `400 + error_subcode=4279009` is retried according to configured `RETRY` policy.
+
+### Expected behavior after fix
+
+- With `RETRY=2*delay(5)`, Threads publish now retries transient "Media Not Found" responses instead of failing immediately.
+- The pre-publish 2-second wait is now real, reducing race-condition frequency before retries are even needed.
 
 Expectation:
 - Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅

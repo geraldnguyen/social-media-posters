@@ -143,6 +143,33 @@ class TestRetryExecution(unittest.TestCase):
         self.assertEqual(mock_sleep.call_args_list[1].args[0], 4)
 
     @patch("social_media_utils.time.sleep")
+    def test_request_retries_on_known_transient_400_subcode(self, mock_sleep):
+        response_400 = MagicMock(spec=requests.Response)
+        response_400.status_code = 400
+        response_400.json.return_value = {
+            "error": {
+                "message": "The requested resource does not exist",
+                "error_subcode": 4279009,
+                "is_transient": False,
+            }
+        }
+        response_200 = MagicMock(spec=requests.Response)
+        response_200.status_code = 200
+        send_func = MagicMock(side_effect=[response_400, response_200])
+
+        result = _perform_request_with_retry(
+            send_func,
+            "post",
+            "https://graph.threads.net/user/threads_publish",
+            {},
+            parse_retry_spec("1*delay(5)"),
+        )
+
+        self.assertIs(result, response_200)
+        self.assertEqual(send_func.call_count, 2)
+        mock_sleep.assert_called_once_with(5)
+
+    @patch("social_media_utils.time.sleep")
     def test_request_does_not_retry_non_retryable_status(self, mock_sleep):
         response_400 = MagicMock(spec=requests.Response)
         response_400.status_code = 400
