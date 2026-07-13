@@ -131,7 +131,7 @@ def x(**kwargs):
 @click.option('--scheduled-publish-time', callback=set_env_from_option,
               help='Schedule post for future publication (posts only). Supports ISO 8601 (e.g., "2024-12-31T23:59:59Z") or offset format (e.g., "+1d", "+2h", "+30m")')
 def facebook(**kwargs):
-    """Post to Facebook Page or comment on a post."""
+    """Post to Facebook Page or comment on a post, including hosted video URLs."""
     import_and_run_post_script('post-to-facebook', 'post_to_facebook', 'post_to_facebook')
 
 
@@ -144,7 +144,7 @@ def facebook(**kwargs):
 @click.option('--media-file', callback=set_env_from_option, 
               help='Single media file URL (deprecated, use --media-files)')
 def instagram(**kwargs):
-    """Post to Instagram."""
+    """Post to Instagram using public image and video URLs."""
     import_and_run_post_script('post-to-instagram', 'post_to_instagram', 'post_to_instagram')
 
 
@@ -161,8 +161,8 @@ def instagram(**kwargs):
 def instagram_via_fb(**kwargs):
     """Post to Instagram using Facebook Graph API with resumable upload (v1.19.0+).
     
-    This method supports uploading local video files using Facebook's resumable upload API.
-    Videos are uploaded in chunks for better reliability. Images still require public URLs.
+    This method supports local video uploads via resumable upload and hosted video URLs via Meta's direct ingestion.
+    Images still require public URLs.
     """
     import_and_run_post_script('post-to-instagram', 'post_to_instagram_via_fb', 'post_to_instagram_via_fb')
 
@@ -178,7 +178,7 @@ def instagram_via_fb(**kwargs):
 @click.option('--media-file', callback=set_env_from_option, 
               help='Single media file URL (deprecated, use --media-files)')
 def threads(**kwargs):
-    """Post to Threads."""
+    """Post to Threads using public image and video URLs."""
     import_and_run_post_script('post-to-threads', 'post_to_threads', 'post_to_threads')
 
 

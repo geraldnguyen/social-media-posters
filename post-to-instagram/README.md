@@ -368,7 +368,7 @@ The Instagram via Facebook method (v1.19.0+) uses Facebook's access token to ena
    - Publish video container to Instagram
 
 2. **For Video URLs**:
-   - Video container is created with the URL
+  - The hosted video URL is passed directly to Instagram/Meta (`video_url` or hosted upload `file_url`), with no local download step
    - System waits for video processing to complete
    - Video container is published to Instagram
 
@@ -413,6 +413,8 @@ python post-to-instagram/post_to_instagram_via_fb.py
 export MEDIA_FILES="https://cdn.com/video.mp4"  # Remote URL
 python post-to-instagram/post_to_instagram_via_fb.py
 ```
+
+Hosted video URLs are sent directly to Instagram/Meta. They do not use the repository's local download path or the 5 MB default download cap.
 
 **Carousel with Mixed Media:**
 
@@ -527,7 +529,7 @@ POST /{ig_user_id}/media_publish
 |---------|----------------|---------------------|
 | Video Upload | URL only | Local files + URLs |
 | Image Upload | URL only | URL only |
-| Upload Method | Direct URL | Resumable chunks (videos) |
+| Upload Method | Direct URL | Resumable chunks for local videos, direct hosted ingestion for video URLs |
 | Reliability | Good | Better (chunked) |
 | File Size Limit | Per Instagram API | Up to 500MB (configurable) |
 | Best For | Pre-hosted media | Local video files |

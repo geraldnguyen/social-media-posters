@@ -577,6 +577,22 @@ def log_success(platform: str, post_id: Optional[str] = None) -> None:
         logger.info(f"Successfully posted to {platform}")
 
 
+VIDEO_FILE_EXTENSIONS = {
+    '.mp4', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.webm', '.flv',
+    '.m4v', '.mkv', '.3gp', '.3g2', '.ogv'
+}
+
+
+def is_remote_url(file_path: str) -> bool:
+    """Return True when the path points to a remote HTTP(S) resource."""
+    return isinstance(file_path, str) and file_path.startswith(("http://", "https://"))
+
+
+def is_video_file_path(file_path: str) -> bool:
+    """Return True when the path or URL suffix looks like a supported video file."""
+    return Path(file_path).suffix.lower() in VIDEO_FILE_EXTENSIONS
+
+
 def download_file_if_url(file_path, max_download_size_mb=5):
     """
     If file_path is an http(s) URL and file size is less than max_download_size_mb, download it and return the local path.
@@ -584,7 +600,7 @@ def download_file_if_url(file_path, max_download_size_mb=5):
     """
     max_bytes = max_download_size_mb * 1024 * 1024
     local_path = file_path
-    if file_path.startswith("http://") or file_path.startswith("https://"):
+    if is_remote_url(file_path):
         try:
             resp = requests.get(file_path, stream=True, timeout=30)
             resp.raise_for_status()
@@ -610,23 +626,47 @@ def download_file_if_url(file_path, max_download_size_mb=5):
     return local_path
 
 
-def parse_media_files(media_input: str, max_download_size_mb: int = 5):
-    """
-    Parse media files input (comma-separated paths). For remote files, download if under max_download_size_mb.
-    Returns a list of local file paths (downloaded or original).
-    """
+def _parse_media_files_internal(
+    media_input: str,
+    max_download_size_mb: int = 5,
+    preserve_remote_video_urls: bool = False,
+):
+    """Implementation helper for media parsing with optional hosted-video passthrough."""
     if not media_input:
         return []
 
     media_files = [f.strip() for f in media_input.split(',') if f.strip()]
     local_files = []
     for file_path in media_files:
+        if preserve_remote_video_urls and is_remote_url(file_path) and is_video_file_path(file_path):
+            logger.debug(f"Preserving remote video URL without downloading: {file_path}")
+            local_files.append(file_path)
+            continue
+
         local_path = download_file_if_url(file_path, max_download_size_mb)
+        if is_remote_url(local_path):
+            local_files.append(local_path)
+            continue
         if not os.path.exists(local_path):
             logger.error(f"Media file not found: {file_path}")
             sys.exit(1)
         local_files.append(local_path)
     return local_files
+
+
+def parse_media_files(media_input: str, max_download_size_mb: int = 5, preserve_remote_video_urls: bool = False):
+    """
+    Parse comma-separated media paths.
+
+    Remote files are downloaded when they fit within max_download_size_mb. When
+    preserve_remote_video_urls is True, remote video URLs are returned as-is so
+    platform-specific callers can hand them directly to APIs that support hosted video ingestion.
+    """
+    return _parse_media_files_internal(
+        media_input,
+        max_download_size_mb=max_download_size_mb,
+        preserve_remote_video_urls=preserve_remote_video_urls,
+    )
 
 
 def parse_scheduled_time(scheduled_time: str) -> Optional[str]:

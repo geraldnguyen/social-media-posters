@@ -37,6 +37,7 @@ from social_media_utils import (
     parse_scheduled_time,
     is_value_empty_or_na,
     save_post_response,
+    is_remote_url,
 )
 
 
@@ -114,6 +115,10 @@ def upload_video(page_id: str, video_path: str, description: str, published: boo
     
     For small videos (<5MB), falls back to simple upload.
     """
+    if is_remote_url(video_path):
+        logger.info(f"Uploading hosted video to Facebook directly from URL: {video_path}")
+        return _upload_video_from_url(page_id, video_path, description, published, access_token, scheduled_publish_time, title)
+
     video_size = os.path.getsize(video_path)
     logger.info(f"Uploading video {video_path} (size: {video_size} bytes)")
     
@@ -127,6 +132,30 @@ def upload_video(page_id: str, video_path: str, description: str, published: boo
     else:
         logger.info(f"Video is larger than {threshold_mb}MB, using resumable upload")
         return _upload_video_resumable(page_id, video_path, description, published, access_token, scheduled_publish_time, title)
+
+
+def _upload_video_from_url(page_id: str, video_url: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None, title: str = None) -> str:
+    """Upload a hosted video by passing its public URL to Facebook's Graph API."""
+    data = {
+        'published': str(published).lower(),
+        'file_url': video_url,
+    }
+    if description:
+        data['description'] = description
+    if title:
+        data['title'] = title
+        logger.info(f"Video title: {title}")
+    if scheduled_publish_time:
+        data['scheduled_publish_time'] = str(scheduled_publish_time)
+        logger.info(f"Video will be scheduled for: {scheduled_publish_time}")
+
+    payload = _graph_api_post(
+        f"{page_id}/videos",
+        access_token,
+        data=data,
+        action="video upload (file_url)"
+    )
+    return payload.get('id')
 
 
 def _upload_video_simple(page_id: str, video_path: str, description: str, published: bool, access_token: str, scheduled_publish_time: int = None, title: str = None) -> str:
@@ -350,7 +379,7 @@ def post_content() -> str:
         sys.exit(1)
 
     media_input = get_optional_env_var("MEDIA_FILES", "")
-    media_files = parse_media_files(media_input)
+    media_files = parse_media_files(media_input, preserve_remote_video_urls=True)
 
     # Scheduling
     scheduled_time_str = get_optional_env_var("SCHEDULED_PUBLISH_TIME", "")

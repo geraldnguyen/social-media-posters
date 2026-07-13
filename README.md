@@ -4,11 +4,13 @@ A collection of GitHub Actions and a unified CLI tool for posting content to var
 
 ## Remote Media Support
 
-All actions and the `social` CLI support using remote media files (images, videos, thumbnails, etc.) by specifying an HTTP or HTTPS URL as the media file path. If the remote file is within the configured size limit, it is automatically downloaded and uploaded from the local path.
+All actions and the `social` CLI support using remote media files (images, videos, thumbnails, etc.) by specifying an HTTP or HTTPS URL as the media file path.
 
-- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5MB)
-- This applies to every action that accepts media inputs, plus the CLI's media and video options
-- If the file is too large or cannot be downloaded, the command logs an error and exits
+- Actions that need a local file still download remote media up to the configured size limit
+- Facebook now sends hosted video URLs directly to the Graph API instead of downloading them first
+- Instagram and Threads already require public media URLs and pass hosted videos directly to Meta APIs
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit for download-first flows (default: 5MB)
+- If a download-first remote file is too large or cannot be downloaded, the command logs an error and exits
 
 This makes it easy to use media hosted on the internet in your automated social media posts.
 

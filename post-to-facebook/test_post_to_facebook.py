@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'common'))
 # Import the module to test
 from post_to_facebook import (
     upload_video,
+    _upload_video_from_url,
     _upload_video_simple,
     _upload_video_resumable,
     upload_photo,
@@ -55,6 +56,32 @@ class TestVideoUpload(unittest.TestCase):
             self.page_id, "/path/to/video.mp4", self.description, 
             self.published, self.access_token, None, None
         )
+        self.assertEqual(result, "test_video_id")
+
+    @patch('post_to_facebook.os.path.getsize')
+    @patch('post_to_facebook._upload_video_from_url')
+    def test_upload_video_remote_url_uses_direct_upload(self, mock_url_upload, mock_getsize):
+        """Test that hosted videos bypass local size checks and use file_url upload."""
+        mock_url_upload.return_value = "test_video_id"
+
+        result = upload_video(
+            self.page_id,
+            "https://cdn.example.com/video.mp4",
+            self.description,
+            self.published,
+            self.access_token,
+        )
+
+        mock_url_upload.assert_called_once_with(
+            self.page_id,
+            "https://cdn.example.com/video.mp4",
+            self.description,
+            self.published,
+            self.access_token,
+            None,
+            None,
+        )
+        mock_getsize.assert_not_called()
         self.assertEqual(result, "test_video_id")
     
     @patch('post_to_facebook.os.path.getsize')
@@ -96,6 +123,32 @@ class TestVideoUpload(unittest.TestCase):
         self.assertEqual(call_args[0][0], f"{self.page_id}/videos")
         self.assertEqual(call_args[0][1], self.access_token)
         self.assertEqual(call_args[1]['data']['description'], self.description)
+        self.assertEqual(call_args[1]['data']['published'], 'true')
+        self.assertEqual(result, 'test_video_id')
+
+    @patch('post_to_facebook._graph_api_post')
+    def test_upload_video_from_url(self, mock_api_post):
+        """Test hosted video upload using Facebook file_url support."""
+        mock_api_post.return_value = {'id': 'test_video_id'}
+
+        result = _upload_video_from_url(
+            self.page_id,
+            'https://cdn.example.com/video.mp4',
+            self.description,
+            self.published,
+            self.access_token,
+            1735689599,
+            'Hosted Video'
+        )
+
+        mock_api_post.assert_called_once()
+        call_args = mock_api_post.call_args
+        self.assertEqual(call_args[0][0], f"{self.page_id}/videos")
+        self.assertEqual(call_args[0][1], self.access_token)
+        self.assertEqual(call_args[1]['data']['file_url'], 'https://cdn.example.com/video.mp4')
+        self.assertEqual(call_args[1]['data']['description'], self.description)
+        self.assertEqual(call_args[1]['data']['title'], 'Hosted Video')
+        self.assertEqual(call_args[1]['data']['scheduled_publish_time'], '1735689599')
         self.assertEqual(call_args[1]['data']['published'], 'true')
         self.assertEqual(result, 'test_video_id')
     

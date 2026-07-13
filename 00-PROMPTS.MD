@@ -574,6 +574,14 @@ Fix in post_to_tiktok.py: Before building source_info, compute effective_chunk_s
 - With `RETRY=2*delay(5)`, Threads publish now retries transient "Media Not Found" responses instead of failing immediately.
 - The pre-publish 2-second wait is now real, reducing race-condition frequency before retries are even needed.
 
+## v1.39.0 - Upload video from remote URL if it is specified: Facebook, Instagram, Threads(?)
+
+Presently, posting to FB will download the video file if media file starts with "https://...". If the video is larger than 5MB, the download file.
+
+Given that Facebook, Instagram (and Thread?) supports posting video directly from remote URL, the relevant posting scripts should take advantage of that feature, skip download-and-post and do direct posting instead.
+
+
+
 Expectation:
 - Implement the above requirements including support for the DEBUG mode logging (`LOG_LEVEL = DEBUG and github debug mode) ✅
 - Create unit tests for the changes ✅

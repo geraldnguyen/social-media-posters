@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.39.0] - 2026-07-13
+
+### Changed
+- **Facebook hosted video uploads** — `post-to-facebook` now preserves remote video URLs and sends them directly to the Graph API with `file_url` instead of downloading them locally first.
+- **Shared media parsing** — `parse_media_files()` now supports an opt-in hosted-video passthrough mode so platforms that support remote video ingestion can keep the original URL.
+- **CLI/help text** — Updated command help and docs to distinguish download-first media handling from direct hosted-video ingestion for Facebook, Instagram, and Threads.
+
+### Testing
+- Added `common/test_remote_media_support.py` to verify hosted video URLs are preserved while remote images still follow the existing download path.
+- Added Facebook tests covering hosted video routing and the Graph API `file_url` payload.
+
+### Documentation
+- Updated the repository README, Facebook/Instagram/Threads action READMEs, and CLI guide to document direct remote-video uploads.
+
 ## [1.36.0] - 2026-07-05
 
 ### Added

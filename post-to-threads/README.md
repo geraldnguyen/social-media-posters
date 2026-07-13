@@ -30,10 +30,11 @@ This GitHub Action allows you to post content to Threads using the Threads API.
 
 ## Remote Media Files
 
-All actions and the `social` CLI support HTTP or HTTPS URLs for supported media inputs. If a remote file is within the configured size limit, it is downloaded first and then uploaded from the local path.
+Threads media inputs must already be public HTTP or HTTPS URLs.
 
-- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5 MB)
-- If a remote file is too large or cannot be downloaded, the action logs an error and stops
+- Images and videos are passed directly to the Threads API as hosted URLs
+- No local download step is used for Threads media files
+- `MAX_DOWNLOAD_SIZE_MB` does not apply to Threads media inputs
 
 ## Prerequisites
 
@@ -145,6 +146,7 @@ When `LOG_LEVEL=DEBUG` or GitHub Actions debug mode is enabled, retry attempts a
 - Maximum file size: 100MB
 - Maximum duration: 60 seconds
 - Recommended dimensions: 1080x1080 pixels (square)
+- Hosted video URLs are sent directly as `video_url`
 
 ### Content Requirements
 

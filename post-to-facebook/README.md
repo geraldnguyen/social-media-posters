@@ -24,6 +24,7 @@ This GitHub Action allows you to post content to a Facebook Page or comment on a
 - Post text content to Facebook Pages
 - **Post comments on Facebook posts** (v1.20.0+)
 - Attach media files (images, videos) to posts
+- **Upload hosted video URLs directly to Facebook** (v1.39.0+)
 - **Support video/reel titles** (v1.22.0+)
 - Include links in posts and comments
 - **Schedule posts for future publication** with flexible time formats
@@ -33,10 +34,24 @@ This GitHub Action allows you to post content to a Facebook Page or comment on a
 
 ## Remote Media Files
 
-All actions and the `social` CLI support HTTP or HTTPS URLs for supported media inputs. If a remote file is within the configured size limit, it is downloaded first and then uploaded from the local path.
+All actions and the `social` CLI support HTTP or HTTPS URLs for supported media inputs.
 
-- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5 MB)
-- If a remote file is too large or cannot be downloaded, the action logs an error and stops
+- Remote images still follow the existing download-first behavior and must fit within the configured size limit
+- Remote video URLs are now posted directly with Facebook's hosted-video support (`file_url`) and skip the local download step entirely
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit for download-first media flows (default: 5 MB)
+- If a download-first remote file is too large or cannot be downloaded, the action logs an error and stops
+
+Example hosted video post:
+
+```yaml
+- name: Post hosted video to Facebook
+  uses: geraldnguyen/social-media-posters/post-to-facebook@v1.39.0
+  with:
+    access-token: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+    page-id: ${{ secrets.FB_PAGE_ID }}
+    content: "Hosted reel upload"
+    media-files: "https://cdn.example.com/reels/demo.mp4"
+```
 
 ## Posting Comments (v1.20.0+)
 

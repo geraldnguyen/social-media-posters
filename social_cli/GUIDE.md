@@ -71,10 +71,13 @@ social x --help
 
 ## Remote Media Files
 
-The `social` CLI accepts HTTP or HTTPS URLs for supported media inputs, including post media, video uploads, and thumbnails. If a remote file is within the configured size limit, it is downloaded first and then uploaded from the local path.
+The `social` CLI accepts HTTP or HTTPS URLs for supported media inputs, including post media, video uploads, and thumbnails.
 
-- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit (default: 5 MB)
-- If a remote file is too large or cannot be downloaded, the command logs an error and stops
+- Download-first commands still fetch remote files locally up to the configured size limit
+- `social facebook` now passes hosted video URLs directly to Facebook instead of downloading them first
+- `social instagram`, `social instagram-via-fb`, and `social threads` already pass hosted video URLs directly to Meta APIs
+- Set `MAX_DOWNLOAD_SIZE_MB` to change the download limit for download-first flows (default: 5 MB)
+- If a download-first remote file is too large or cannot be downloaded, the command logs an error and stops
 
 ## Save Response Files
 
@@ -282,6 +285,16 @@ social facebook \
   --media-files "sunset.jpg"
 ```
 
+Hosted video URLs are supported too and are uploaded directly through Facebook's `file_url` support:
+
+```bash
+social facebook \
+  --fb-page-id "123456789" \
+  --fb-access-token "your_token" \
+  --post-content "Hosted reel upload" \
+  --media-files "https://cdn.example.com/reels/demo.mp4"
+```
+
 #### Example 4: Post a Comment (v1.20.0+)
 
 Post a text comment on an existing Facebook post:
@@ -342,7 +355,7 @@ social instagram \
 
 ### Instagram via Facebook Examples (v1.19.0+)
 
-The `instagram-via-fb` command supports uploading local video files using resumable upload to `rupload.facebook.com`. Images still require public URLs.
+The `instagram-via-fb` command supports local video files via resumable upload to `rupload.facebook.com` and hosted video URLs via Meta's direct ingestion. Images still require public URLs.
 
 #### Example 1: Upload Local Video
 
