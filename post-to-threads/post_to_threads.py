@@ -318,8 +318,8 @@ def post_to_threads():
         logger.info(f"Thread container created with ID: {creation_id}")
         
         # Wait a moment before publishing (API recommendation)
-        logger.info("Waiting 2 seconds before publishing (API recommendation)")
-        time.sleep(2)
+        logger.info("Waiting 10 seconds before publishing (API recommendation)")
+        time.sleep(10)
         
         # Publish thread
         logger.info("Publishing thread...")
